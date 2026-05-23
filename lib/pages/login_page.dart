@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import '../services/api_service.dart';
 import '../services/biometric_signature_service.dart';
+import '../services/translation_service.dart';
 import '../store/auth_store.dart';
 import 'dashboard_page.dart';
 import 'status_check_page.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
 import 'select_cooperative_page.dart';
+import 'biometric_setup_page.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LoginPage extends StatefulWidget {
   final String mobileNumber;
@@ -23,13 +27,42 @@ class _LoginPageState extends State<LoginPage> {
   final LocalAuthentication _auth = LocalAuthentication();
   bool _isLoading = false;
   bool _canAuthenticate = false;
+  bool _isFaceId = false;
   bool _obscurePassword = true;
+
+  bool get _isDarkMode => AuthStore().isDarkMode;
 
   @override
   void initState() {
     super.initState();
     _passwordController.addListener(_onPasswordChanged);
     _checkBiometrics();
+    _requestPermissionsAndWarmUp();
+  }
+
+  Future<void> _requestPermissionsAndWarmUp() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+    } catch (_) {}
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          await Geolocator.requestPermission();
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -47,10 +80,78 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final isSupported = await _auth.isDeviceSupported();
       final canCheck = await _auth.canCheckBiometrics;
+      final isEnabled = AuthStore().isBiometricEnabled;
+      
+      if (isSupported && canCheck && isEnabled) {
+        final availableBiometrics = await _auth.getAvailableBiometrics();
+        final hasFace = availableBiometrics.contains(BiometricType.face);
+        final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+        
+        setState(() {
+          _canAuthenticate = true;
+          _isFaceId = hasFace || isIOS;
+        });
+      } else {
+        setState(() {
+          _canAuthenticate = false;
+        });
+      }
+    } catch (_) {
       setState(() {
-        _canAuthenticate = isSupported && canCheck;
+        _canAuthenticate = false;
       });
+    }
+  }
+
+  Future<Map<String, String>> _getLocationAndFcmToken() async {
+    String? fcmToken;
+    String? latitude;
+    String? longitude;
+
+    // 1. Firebase Notification Permission and FCM token retrieval
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        fcmToken = await messaging.getToken();
+      }
     } catch (_) {}
+
+    // 2. GPS Location Permission and Coordinate retrieval
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 4),
+          );
+          latitude = position.latitude.toString();
+          longitude = position.longitude.toString();
+        }
+      }
+    } catch (_) {}
+
+    return {
+      'fcm_token': fcmToken ?? '',
+      'latitude': latitude ?? '',
+      'longitude': longitude ?? '',
+    };
   }
 
   Future<void> _handleResponseRouting(int responseCode, String apiMessage, Map<String, dynamic> res) async {
@@ -67,6 +168,7 @@ class _LoginPageState extends State<LoginPage> {
       case 1: // RESP_SUCCESS
         if (token != null) {
           await AuthStore().setToken(token);
+          await AuthStore().setMobile(widget.mobileNumber);
           
           final profileRes = await ApiService().getProfile();
           if (profileRes['profile'] != null) {
@@ -81,11 +183,24 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
-            (route) => false,
-          );
+          // Check if biometrics setup is required
+          final isServerBiometricSetup = (res['is_biometric_setup'] == true || res['is_biometric_setup'] == 1) || 
+                                         (data['is_biometric_setup'] == true || data['is_biometric_setup'] == 1);
+          final isLocallyEnabled = AuthStore().isBiometricEnabled;
+          
+          if (!isServerBiometricSetup || !isLocallyEnabled) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const BiometricSetupPage()),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+              (route) => false,
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -112,20 +227,20 @@ class _LoginPageState extends State<LoginPage> {
         final resubmit = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF0F172A),
-            title: const Text('Request Pending', style: TextStyle(color: Colors.white)),
-            content: const Text(
+            backgroundColor: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+            title: Text('Request Pending', style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B))),
+            content: Text(
               'Your registration request is pending admin approval. Do you want to resubmit the form?',
-              style: TextStyle(color: Color(0xFF94A3B8)),
+              style: TextStyle(color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                child: Text('Cancel', style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Yes, Resubmit', style: TextStyle(color: Color(0xFF3B82F6))),
+                child: Text('Yes, Resubmit', style: TextStyle(color: _isDarkMode ? const Color(0xFF3B82F6) : const Color(0xFF2563EB))),
               ),
             ],
           ),
@@ -192,7 +307,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final devId = await ApiService.getDeviceId();
-      final res = await ApiService().login(widget.mobileNumber, password, devId);
+      final extraData = await _getLocationAndFcmToken();
+      
+      final res = await ApiService().login(
+        widget.mobileNumber,
+        password,
+        devId,
+        fcmToken: extraData['fcm_token'],
+        latitude: extraData['latitude'],
+        longitude: extraData['longitude'],
+      );
       
       final responseCodeRaw = res['response_code'];
       final int responseCode = responseCodeRaw is int
@@ -246,10 +370,16 @@ class _LoginPageState extends State<LoginPage> {
           final signature = await BiometricSignatureService.signChallenge(widget.mobileNumber, challenge);
           
           final devId = await ApiService.getDeviceId();
+          final extraData = await _getLocationAndFcmToken();
+          
           final res = await ApiService().verifyBiometric({
             'mobile': widget.mobileNumber,
             'signed_data': signature,
             'device_id': devId,
+            'fcm_token': extraData['fcm_token'],
+            'firebase_token': extraData['fcm_token'],
+            'latitude': extraData['latitude'],
+            'longitude': extraData['longitude'],
           });
 
           final responseCodeRaw = res['response_code'];
@@ -289,7 +419,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -331,7 +461,7 @@ class _LoginPageState extends State<LoginPage> {
                                       color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withOpacity(0.2),
+                                          color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
                                           blurRadius: 16,
                                           offset: const Offset(0, 6),
                                         ),
@@ -387,20 +517,20 @@ class _LoginPageState extends State<LoginPage> {
                                     Text(
                                       sahakariName.isNotEmpty ? sahakariName : 'Welcome Back',
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w900,
-                                        color: Colors.white,
+                                        color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                         letterSpacing: -0.5,
                                       ),
                                     ),
                                     if (sahakariName.isNotEmpty) ...[
                                       const SizedBox(height: 6),
-                                      const Text(
+                                      Text(
                                         'Welcome Back',
                                         style: TextStyle(
                                           fontSize: 15,
-                                          color: Color(0xFF64748B),
+                                          color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -413,9 +543,9 @@ class _LoginPageState extends State<LoginPage> {
                             Center(
                               child: Text(
                                 widget.mobileNumber,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF60A5FA),
+                                  color: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -423,30 +553,44 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 40),
 
                              // Password Input Field
-                             const Text(
+                             Text(
                                'PASSWORD',
-                               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                               style: TextStyle(
+                                 color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                 fontSize: 11,
+                                 fontWeight: FontWeight.w600,
+                                 letterSpacing: 1.5,
+                               ),
                              ),
                              const SizedBox(height: 8),
                              Container(
                                decoration: BoxDecoration(
-                                 color: Colors.white.withOpacity(0.05),
+                                 color: _isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                                  borderRadius: BorderRadius.circular(16),
                                  border: Border.all(
-                                   color: Colors.white.withOpacity(0.1),
+                                   color: _isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                                  ),
+                                 boxShadow: _isDarkMode
+                                     ? []
+                                     : [
+                                         BoxShadow(
+                                           color: Colors.black.withValues(alpha: 0.02),
+                                           blurRadius: 8,
+                                           offset: const Offset(0, 3),
+                                         )
+                                       ],
                                ),
                                child: TextFormField(
                                  controller: _passwordController,
                                  keyboardType: TextInputType.visiblePassword,
                                  obscureText: _obscurePassword,
-                                 style: const TextStyle(color: Colors.white, fontSize: 16),
+                                 style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B), fontSize: 16),
                                  decoration: InputDecoration(
-                                   prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B)),
+                                   prefixIcon: Icon(Icons.lock_outline_rounded, color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                                    suffixIcon: IconButton(
                                      icon: Icon(
                                        _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                       color: const Color(0xFF64748B),
+                                       color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                                      ),
                                      onPressed: () {
                                        setState(() {
@@ -454,8 +598,8 @@ class _LoginPageState extends State<LoginPage> {
                                        });
                                      },
                                    ),
-                                   hintText: 'Enter your password',
-                                   hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                                   hintText: 'Enter Password'.tr,
+                                   hintStyle: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                                    border: InputBorder.none,
                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                                  ),
@@ -494,25 +638,31 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 24),
 
                             // Quick Biometric login trigger
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.fingerprint_rounded, color: Color(0xFF60A5FA), size: 50),
-                                  onPressed: _authenticateBiometrics,
-                                ),
-                              ],
-                            ),
-                            const Center(
-                              child: Text(
-                                'Tap to Login with Biometrics',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF64748B),
+                            if (_canAuthenticate) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
+                                      color: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                      size: 50,
+                                    ),
+                                    onPressed: _authenticateBiometrics,
+                                  ),
+                                ],
+                              ),
+                              Center(
+                                child: Text(
+                                  _isFaceId ? 'Tap to Login with Face ID'.tr : 'Tap to Login with Fingerprint'.tr,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 30),
+                              const SizedBox(height: 30),
+                            ],
                           ],
                         ),
 
@@ -541,9 +691,9 @@ class _LoginPageState extends State<LoginPage> {
                                     MaterialPageRoute(builder: (_) => const StatusCheckPage()),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Login with another phone number',
-                                  style: TextStyle(color: Color(0xFF64748B)),
+                                  style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569)),
                                 ),
                               ),
                             ),
@@ -555,9 +705,9 @@ class _LoginPageState extends State<LoginPage> {
                                   AuthStore().clearAll();
                                   Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Switch Cooperative Bank',
-                                  style: TextStyle(color: Color(0xFF64748B)),
+                                  style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569)),
                                 ),
                               ),
                             ),

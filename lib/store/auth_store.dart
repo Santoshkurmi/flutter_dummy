@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,11 +16,13 @@ class AuthStore extends ChangeNotifier {
   String? _customApiUrl;
 
   // App settings & preferences
+  String _language = 'en';
   bool _isBiometricEnabled = false;
   bool _neverAskBiometric = false;
   bool _pushEnabled = true;
   bool _smsAlertsEnabled = true;
   String _dailyLimit = '50000';
+  String _themeMode = 'system'; // 'system', 'dark', 'light'
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -28,11 +31,20 @@ class AuthStore extends ChangeNotifier {
   Map<String, dynamic>? get profile => _profile;
   String? get customApiUrl => _customApiUrl;
 
+  String get language => _language;
   bool get isBiometricEnabled => _isBiometricEnabled;
   bool get neverAskBiometric => _neverAskBiometric;
   bool get pushEnabled => _pushEnabled;
   bool get smsAlertsEnabled => _smsAlertsEnabled;
   String get dailyLimit => _dailyLimit;
+  String get themeMode => _themeMode;
+
+  bool get isDarkMode {
+    if (_themeMode == 'system') {
+      return ui.PlatformDispatcher.instance.platformBrightness == ui.Brightness.dark;
+    }
+    return _themeMode == 'dark';
+  }
 
   bool get isAuthenticated => _token != null;
   bool get hasCooperative => _selectedCooperative != null;
@@ -63,8 +75,29 @@ class AuthStore extends ChangeNotifier {
     _pushEnabled = prefs.getBool('pushEnabled') ?? true;
     _smsAlertsEnabled = prefs.getBool('smsAlertsEnabled') ?? true;
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
+    _themeMode = prefs.getString('themeMode') ?? 'system';
+    _language = prefs.getString('language') ?? 'en';
 
     notifyListeners();
+  }
+
+  Future<void> setLanguage(String value) async {
+    _language = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', value);
+    notifyListeners();
+  }
+
+  Future<void> setThemeMode(String value) async {
+    _themeMode = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('themeMode', value);
+    notifyListeners();
+  }
+
+  // Backward compat convenience
+  Future<void> setDarkMode(bool value) async {
+    await setThemeMode(value ? 'dark' : 'light');
   }
 
   Future<void> setCustomApiUrl(String? url) async {
@@ -188,6 +221,7 @@ class AuthStore extends ChangeNotifier {
     _pushEnabled = true;
     _smsAlertsEnabled = true;
     _dailyLimit = '50000';
+    _themeMode = 'system';
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();

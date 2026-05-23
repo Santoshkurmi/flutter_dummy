@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../store/auth_store.dart';
+import '../services/translation_service.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
-import 'login_page.dart';
 import 'register_member_page.dart';
+import 'login_page.dart';
 
 class StatusCheckPage extends StatefulWidget {
   const StatusCheckPage({super.key});
@@ -17,6 +18,8 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _mobileController = TextEditingController();
   bool _isLoading = false;
+
+  bool get _isDarkMode => AuthStore().isDarkMode;
 
   @override
   void initState() {
@@ -49,36 +52,22 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
       final responseCodeRaw = res['response_code'];
       final int responseCode = responseCodeRaw is int
           ? responseCodeRaw
-          : int.tryParse(responseCodeRaw?.toString() ?? '') ?? 0;
-      final message = res['message'] ?? '';
-
-      // Persist the mobile number in global state
-      await AuthStore().setMobile(mobile);
-
+          : int.tryParse(responseCodeRaw?.toString() ?? '0') ?? 0;
+      final String message = res['message'] ?? '';
+ 
       if (!mounted) return;
 
-      // Debug SnackBar to show exact response code & message returned by the backend
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text('Debug Response Code: $responseCode - Message: $message'),
-      //     backgroundColor: const Color(0xFF1E293B),
-      //     duration: const Duration(seconds: 4),
-      //   ),
-      // );
-
       switch (responseCode) {
-        case 1: // RESP_SUCCESS (Already active, directly go to Login)
-          await AuthStore().setRegisteredMobile(mobile);
-          if (!mounted) return;
-          Navigator.pushAndRemoveUntil(
+        case 1: // RESP_SUCCESS (Authenticated / Password required)
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => LoginPage(mobileNumber: mobile),
             ),
-            (route) => false,
           );
           break;
-        case 2: // RESP_ACTIVATION_REQUIRED (Activation needed)
+        case 2: // RESP_ACTIVATION_REQUIRED (Mobile service active but app registration required)
+        case 5: // RESP_REGISTRATION_INCOMPLETE (Pending activation pin)
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -86,25 +75,24 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
             ),
           );
           break;
-        case 6: // RESP_AWAITING_APPROVAL (Request Pending admin approval)
-          if (!mounted) return;
+        case 6: // RESP_AWAITING_APPROVAL
           final resubmit = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xFF0F172A),
-              title: const Text('Request Pending', style: TextStyle(color: Colors.white)),
-              content: const Text(
+              backgroundColor: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              title: Text('Request Pending', style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B))),
+              content: Text(
                 'Your registration request is pending admin approval. Do you want to resubmit the form?',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                  child: Text('Cancel', style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Yes, Resubmit', style: TextStyle(color: Color(0xFF3B82F6))),
+                  child: Text('Yes, Resubmit', style: TextStyle(color: _isDarkMode ? const Color(0xFF3B82F6) : const Color(0xFF2563EB))),
                 ),
               ],
             ),
@@ -157,12 +145,12 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
     final coopName = coop?['name'] ?? 'Your Cooperative';
     
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: _isDarkMode ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -190,27 +178,27 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                             // Heading
                             Text(
                               coopName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF60A5FA),
+                                color: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                               ),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              'Enter Mobile Number',
+                            Text(
+                              'Enter Mobile Number'.tr,
                               style: TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'We will check your registration status and guide you to the next step.',
+                            Text(
+                              'We will check your registration status and guide you to the next step.'.tr,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF94A3B8),
+                                color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -218,22 +206,31 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                             // Mobile Input Field
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
+                                color: _isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: _isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                                 ),
+                                boxShadow: _isDarkMode
+                                    ? []
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.02),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        )
+                                      ],
                               ),
                               child: TextFormField(
                                 controller: _mobileController,
                                 keyboardType: TextInputType.phone,
-                                style: const TextStyle(color: Colors.white, fontSize: 18),
-                                decoration: const InputDecoration(
-                                  prefixIcon: Icon(Icons.phone_iphone_rounded, color: Color(0xFF64748B)),
+                                style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B), fontSize: 18),
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.phone_iphone_rounded, color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                                   hintText: 'e.g. 98XXXXXXXX',
-                                  hintStyle: TextStyle(color: Color(0xFF64748B)),
+                                  hintStyle: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 16),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
                                 ),
                               ),
                             ),
@@ -264,9 +261,9 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     )
-                                  : const Text(
-                                      'Continue',
-                                      style: TextStyle(
+                                  : Text(
+                                      'Continue'.tr,
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
@@ -288,12 +285,12 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                 child: Text.rich(
                                   TextSpan(
                                     text: 'New to Bright Sahakari? ',
-                                    style: TextStyle(color: const Color(0xFF94A3B8), fontSize: 14),
+                                    style: TextStyle(color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14),
                                     children: [
                                       TextSpan(
                                         text: 'Register New Member',
                                         style: TextStyle(
-                                          color: const Color(0xFF3B82F6),
+                                          color: _isDarkMode ? const Color(0xFF3B82F6) : const Color(0xFF2563EB),
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -311,16 +308,16 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      backgroundColor: const Color(0xFF0F172A),
-                                      title: const Text('Switch Cooperative', style: TextStyle(color: Colors.white)),
-                                      content: const Text(
+                                      backgroundColor: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                                      title: Text('Switch Cooperative', style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B))),
+                                      content: Text(
                                         'Are you sure you want to disconnect and switch to a different cooperative bank? All local session data will be cleared.',
-                                        style: TextStyle(color: Color(0xFF94A3B8)),
+                                        style: TextStyle(color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(context, false),
-                                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                                          child: Text('Cancel', style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
                                         ),
                                         TextButton(
                                           onPressed: () => Navigator.pop(context, true),
@@ -336,10 +333,10 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                   }
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Change Cooperative Bank',
                                   style: TextStyle(
-                                    color: Color(0xFF64748B),
+                                    color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,

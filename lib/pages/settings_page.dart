@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../store/auth_store.dart';
+import '../services/translation_service.dart';
 import 'biometric_setup_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -11,8 +12,24 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   @override
+  void initState() {
+    super.initState();
+    AuthStore().addListener(_onStoreChange);
+  }
+
+  @override
+  void dispose() {
+    AuthStore().removeListener(_onStoreChange);
+    super.dispose();
+  }
+
+  void _onStoreChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = AuthStore().isDarkMode;
     final authStore = AuthStore();
 
     return Scaffold(
@@ -28,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Settings',
+          'Settings'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
@@ -40,12 +57,12 @@ class _SettingsPageState extends State<SettingsPage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           children: [
-            // Section 1: Security & Preferences
-            _buildSectionHeader('Preference Settings', isDarkMode),
+            // Section 1: Notifications
+            _buildSectionHeader('NOTIFICATIONS'.tr, isDarkMode),
             
             // Push Notifications Switch
             _buildToggleItem(
-              title: 'Push Notifications',
+              title: 'Push Notifications'.tr,
               subtitle: 'Receive real-time transaction updates and alerts',
               value: authStore.pushEnabled,
               onChanged: (val) async {
@@ -56,14 +73,31 @@ class _SettingsPageState extends State<SettingsPage> {
               isDarkMode: isDarkMode,
             ),
             
+            // SMS Alerts Switch
+            _buildToggleItem(
+              title: 'SMS Alerts'.tr,
+              subtitle: 'Backup copy of standard messages over cellular connection',
+              value: authStore.smsAlertsEnabled,
+              onChanged: (val) async {
+                await authStore.setSmsAlertsEnabled(val);
+                setState(() {});
+              },
+              icon: Icons.sms_rounded,
+              isDarkMode: isDarkMode,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Section 2: Security
+            _buildSectionHeader('SECURITY'.tr, isDarkMode),
+            
             // Biometric Switch
             _buildToggleItem(
-              title: 'Biometric Access Bypass',
+              title: 'Biometric Login'.tr,
               subtitle: 'Unlock account and authorise using hardware fingerprint',
               value: authStore.isBiometricEnabled,
               onChanged: (val) async {
                 if (val) {
-                  // Launch Biometric setup to authenticate and enroll keys properly
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const BiometricSetupPage()),
@@ -76,24 +110,11 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.fingerprint_rounded,
               isDarkMode: isDarkMode,
             ),
-            
-            // SMS Alerts Switch
-            _buildToggleItem(
-              title: 'SMS Alerts Gateway',
-              subtitle: 'Backup copy of standard messages over cellular connection',
-              value: authStore.smsAlertsEnabled,
-              onChanged: (val) async {
-                await authStore.setSmsAlertsEnabled(val);
-                setState(() {});
-              },
-              icon: Icons.sms_rounded,
-              isDarkMode: isDarkMode,
-            ),
 
             const SizedBox(height: 24),
             
-            // Section 2: Transaction Limit Rules
-            _buildSectionHeader('Transaction Thresholds', isDarkMode),
+            // Section 3: Transaction Limits
+            _buildSectionHeader('TRANSACTION LIMITS'.tr, isDarkMode),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16.0),
@@ -101,14 +122,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Daily Transfer limit',
+                    'Daily Transfer Limit'.tr,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -137,20 +158,30 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
 
+            const SizedBox(height: 24),
+
+            // Section 4: Appearance
+            _buildSectionHeader('APPEARANCE'.tr, isDarkMode),
+            const SizedBox(height: 12),
+            _buildThemeSelector(isDarkMode, authStore),
+
+            const SizedBox(height: 12),
+            _buildLanguageSelector(isDarkMode, authStore),
+
             const SizedBox(height: 32),
 
-            // Section 3: Reset / System options
+            // Section 5: Reset
             ElevatedButton.icon(
               onPressed: () => _confirmReset(context, authStore, isDarkMode),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444).withOpacity(0.08),
+                backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.08),
                 foregroundColor: const Color(0xFFEF4444),
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: const Color(0xFFEF4444).withOpacity(0.2),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -162,6 +193,135 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSelector(bool isDarkMode, AuthStore authStore) {
+    final currentMode = authStore.themeMode;
+    final modes = [
+      {'key': 'system', 'label': 'System'.tr, 'icon': Icons.brightness_auto_rounded},
+      {'key': 'light', 'label': 'Light'.tr, 'icon': Icons.light_mode_rounded},
+      {'key': 'dark', 'label': 'Dark'.tr, 'icon': Icons.dark_mode_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: modes.map((mode) {
+          final isSelected = currentMode == mode['key'];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => authStore.setThemeMode(mode['key'] as String),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected && !isDarkMode
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))]
+                      : [],
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      mode['icon'] as IconData,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF64748B),
+                      size: 18,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      mode['label'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector(bool isDarkMode, AuthStore authStore) {
+    final currentLang = authStore.language;
+    final langs = [
+      {'key': 'en', 'label': 'English', 'icon': Icons.language_rounded},
+      {'key': 'ne', 'label': 'नेपाली', 'icon': Icons.translate_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: langs.map((lang) {
+          final isSelected = currentLang == lang['key'];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => authStore.setLanguage(lang['key'] as String),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected && !isDarkMode
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))]
+                      : [],
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      lang['icon'] as IconData,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF64748B),
+                      size: 18,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      lang['label'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -193,7 +353,7 @@ class _SettingsPageState extends State<SettingsPage> {
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
@@ -201,7 +361,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withOpacity(0.08),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: const Color(0xFF2563EB), size: 20),
@@ -232,10 +392,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Switch(
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF2563EB),
+            activeTrackColor: const Color(0xFF2563EB),
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) return Colors.white;
+              return null;
+            }),
           ),
         ],
       ),
@@ -256,12 +420,12 @@ class _SettingsPageState extends State<SettingsPage> {
           decoration: BoxDecoration(
             color: isSelected 
                 ? const Color(0xFF2563EB) 
-                : (isDarkMode ? Colors.white.withOpacity(0.03) : Colors.white),
+                : (isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected 
                   ? const Color(0xFF2563EB) 
-                  : (isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFCBD5E1)),
+                  : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFCBD5E1)),
             ),
           ),
           child: Text(
@@ -294,7 +458,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+              child: Text('Cancel'.tr, style: const TextStyle(color: Color(0xFF64748B))),
             ),
             TextButton(
               onPressed: () async {

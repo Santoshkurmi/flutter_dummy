@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../store/auth_store.dart';
+import '../services/translation_service.dart';
 import 'status_check_page.dart';
 
 class SelectCooperativePage extends StatefulWidget {
@@ -15,6 +16,8 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
   List<Map<String, dynamic>> _cooperatives = [];
   List<Map<String, dynamic>> _filteredCooperatives = [];
   bool _isLoading = true;
+
+  bool get _isDarkMode => AuthStore().isDarkMode;
 
   @override
   void initState() {
@@ -82,7 +85,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -103,21 +106,21 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.08),
+                              color: _isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white,
+                              color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
                               size: 16,
                             ),
                           ),
                         ),
-                      const Text(
-                        'Select Cooperative',
+                      Text(
+                        'Select Cooperative'.tr,
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                          color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
                           letterSpacing: -0.6,
                         ),
                       ),
@@ -132,25 +135,34 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: _isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: _isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                   ),
+                  boxShadow: _isDarkMode
+                      ? []
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B)),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+                    prefixIcon: Icon(Icons.search_rounded, color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, color: Color(0xFF64748B)),
+                            icon: Icon(Icons.clear_rounded, color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                             onPressed: () => _searchController.clear(),
                           )
                         : null,
-                    hintText: 'Search cooperative or location...',
-                    hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                    hintText: 'Search Cooperative...'.tr,
+                    hintStyle: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -167,10 +179,10 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                       ),
                     )
                   : _filteredCooperatives.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'No cooperatives found.',
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                            style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 16),
                           ),
                         )
                       : ListView.builder(
@@ -200,11 +212,20 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.03),
+                                    color: _isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.06),
+                                      color: _isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
                                     ),
+                                    boxShadow: _isDarkMode
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.02),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 3),
+                                            )
+                                          ],
                                   ),
                                   child: Row(
                                     children: [
@@ -238,10 +259,10 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                               physics: const BouncingScrollPhysics(),
                                               child: Text(
                                                 coop['name'] ?? '',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w800,
-                                                  color: Colors.white,
+                                                  color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                                   letterSpacing: -0.3,
                                                 ),
                                               ),
@@ -249,10 +270,10 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                             const SizedBox(height: 4),
                                             Row(
                                               children: [
-                                                const Icon(
+                                                Icon(
                                                   Icons.location_on_rounded,
                                                   size: 14,
-                                                  color: Color(0xFF64748B),
+                                                  color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Expanded(
@@ -260,9 +281,9 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                                     coop['address'] ?? '',
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontSize: 13,
-                                                      color: Color(0xFF64748B),
+                                                      color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                                                     ),
                                                   ),
                                                 ),

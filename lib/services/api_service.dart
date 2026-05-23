@@ -158,16 +158,34 @@ class ApiService {
     return await post('/device-link/verify-otp', payload);
   }
 
-  Future<Map<String, dynamic>> login(String mobile, String pin, String deviceId) async {
+  Future<Map<String, dynamic>> login(
+    String mobile,
+    String pin,
+    String deviceId, {
+    String? fcmToken,
+    String? latitude,
+    String? longitude,
+  }) async {
     final devId = deviceId == 'flutter_device_unique_12345' || deviceId == 'mb_device_id_token'
         ? await getDeviceId()
         : deviceId;
-    return await post('/login', {
+    final payload = {
       'mobile': mobile,
       'pin': pin,
       'password': pin,
       'device_id': devId
-    });
+    };
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      payload['fcm_token'] = fcmToken;
+      payload['firebase_token'] = fcmToken;
+    }
+    if (latitude != null && latitude.isNotEmpty) {
+      payload['latitude'] = latitude;
+    }
+    if (longitude != null && longitude.isNotEmpty) {
+      payload['longitude'] = longitude;
+    }
+    return await post('/login', payload);
   }
 
   Future<Map<String, dynamic>> logout() async {

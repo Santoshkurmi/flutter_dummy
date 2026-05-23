@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../store/auth_store.dart';
-import 'select_cooperative_page.dart';
+import '../services/translation_service.dart';
+import 'app_preferences_setup_page.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -68,7 +69,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           _currentPage,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOutCubic,
-        );
+          );
       }
     });
   }
@@ -84,7 +85,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const SelectCooperativePage(),
+        builder: (_) => const AppPreferencesSetupPage(),
       ),
     );
   }
@@ -191,7 +192,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = AuthStore().isDarkMode;
     
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
@@ -242,8 +243,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        primaryGlow.withOpacity(isDarkMode ? 0.15 : 0.08),
-                        secondaryGlow.withOpacity(isDarkMode ? 0.05 : 0.02),
+                        primaryGlow.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                        secondaryGlow.withValues(alpha: isDarkMode ? 0.05 : 0.02),
                         Colors.transparent,
                       ],
                       radius: 0.8,
@@ -290,7 +291,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     height: 98,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: (slide['iconBg'] as Color).withOpacity(0.12),
+                                      color: (slide['iconBg'] as Color).withValues(alpha: 0.12),
                                     ),
                                   ),
                                   Container(
@@ -305,7 +306,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                       borderRadius: BorderRadius.circular(22),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: (slide['iconBg'] as Color).withOpacity(0.2),
+                                          color: (slide['iconBg'] as Color).withValues(alpha: 0.2),
                                           blurRadius: 15,
                                           offset: const Offset(0, 6),
                                         ),
@@ -323,7 +324,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                               // Subtitle
                               Text(
-                                (slide['subtitle'] as String).toUpperCase(),
+                                (slide['subtitle'] as String).tr.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
@@ -335,7 +336,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                               // Title
                               Text(
-                                slide['title'] as String,
+                                (slide['title'] as String).tr,
                                 style: TextStyle(
                                   fontSize: 30,
                                   fontWeight: FontWeight.w900,
@@ -346,7 +347,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                               // Description
                               Text(
-                                slide['description'] as String,
+                                (slide['description'] as String).tr,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
@@ -395,11 +396,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   borderRadius: BorderRadius.circular(3),
                                   gradient: activeRatio > 0.05
                                       ? LinearGradient(
-                                          colors: colors.map((c) => c.withOpacity(activeRatio)).toList(),
+                                          colors: colors.map((c) => c.withValues(alpha: activeRatio)).toList(),
                                         )
                                       : null,
                                   color: activeRatio <= 0.05
-                                      ? (isDarkMode ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.15))
+                                      ? (isDarkMode ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.15))
                                       : null,
                                 ),
                               );
@@ -418,8 +419,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           boxShadow: [
                             BoxShadow(
                               color: isDarkMode 
-                                  ? Colors.black.withOpacity(0.1) 
-                                  : const Color(0xFF2563EB).withOpacity(0.15),
+                                  ? Colors.black.withValues(alpha: 0.1) 
+                                  : const Color(0xFF2563EB).withValues(alpha: 0.15),
                               blurRadius: 15,
                               offset: const Offset(0, 4),
                             )
@@ -435,19 +436,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Get Started',
-                                style: TextStyle(
+                                'Get Started'.tr,
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded, size: 18),
                             ],
                           ),
                         ),

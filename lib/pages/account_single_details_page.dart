@@ -165,13 +165,13 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                 color: cardBg,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                 ),
                 boxShadow: isDarkMode
                     ? []
                     : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -223,10 +223,10 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withOpacity(0.08),
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: const Color(0xFF10B981).withOpacity(0.15),
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
                                   ),
                                 ),
                                 child: const Text(
@@ -353,7 +353,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                   ),
                 ),
               ),
@@ -398,7 +398,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
           ),
         ),
         child: Column(
@@ -407,7 +407,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.08),
+                color: color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -446,7 +446,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
             ),
           ),
           child: Column(
@@ -507,7 +507,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               );
             },
             style: OutlinedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB).withOpacity(0.04),
+              backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.04),
               side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
@@ -533,7 +533,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0), style: BorderStyle.none),
+                          border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0), style: BorderStyle.none),
                         ),
                         child: const Text(
                           'No transactions found for this account.',
@@ -559,7 +559,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                             color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                             ),
                           ),
                           child: Row(
@@ -571,8 +571,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: isCredit
-                                          ? const Color(0xFF10B981).withOpacity(0.08)
-                                          : const Color(0xFFEF4444).withOpacity(0.08),
+                                          ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                                          : const Color(0xFFEF4444).withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(

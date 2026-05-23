@@ -99,7 +99,6 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final name = widget.account['name'] ?? 'Account';
 
     final totalCredit = _calculateTotal('credit');
     final totalDebit = _calculateTotal('debit');
@@ -145,7 +144,7 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                   color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Column(
@@ -181,16 +180,16 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                   color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildSummaryCol('Total Credits', 'Rs. ${totalCredit.toStringAsFixed(2)}', const Color(0xFF10B981)),
-                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0)),
+                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
                     _buildSummaryCol('Total Debits', 'Rs. ${totalDebit.toStringAsFixed(2)}', const Color(0xFFEF4444)),
-                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0)),
+                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
                     _buildSummaryCol(
                       'Net Change',
                       '${netChange >= 0 ? "+" : "-"}Rs. ${netChange.abs().toStringAsFixed(2)}',
@@ -257,7 +256,7 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                                 color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                                 ),
                               ),
                               child: Row(
@@ -269,8 +268,8 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
                                           color: isCredit
-                                              ? const Color(0xFF10B981).withOpacity(0.08)
-                                              : const Color(0xFFEF4444).withOpacity(0.08),
+                                              ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                                              : const Color(0xFFEF4444).withValues(alpha: 0.08),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(
@@ -368,10 +367,10 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withOpacity(0.02) : Colors.white,
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
             ),
           ),
           child: DropdownButtonHideUnderline(

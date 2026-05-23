@@ -23,7 +23,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
 
     try {
       final authStore = AuthStore();
-      final mobile = authStore.mobile;
+      final mobile = authStore.mobile ?? authStore.registeredMobile;
       if (mobile == null) {
         throw Exception('User mobile session is not initialized.');
       }
@@ -48,7 +48,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
 
       // 4. Register key on cooperative server
       final res = await ApiService().registerBiometric(publicKeyPem);
-      if (res['response_code'] == 0) {
+      if (res['response_code'] == 1) {
         // Success
         await authStore.setBiometricEnabled(true);
         await authStore.setNeverAskBiometric(true);
@@ -124,9 +124,9 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                   height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF2563EB).withOpacity(isDarkMode ? 0.08 : 0.04),
+                    color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.08 : 0.04),
                     border: Border.all(
-                      color: const Color(0xFF2563EB).withOpacity(0.1),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                       width: 2,
                     ),
                   ),
@@ -136,7 +136,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                       height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF2563EB).withOpacity(isDarkMode ? 0.15 : 0.08),
+                        color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.15 : 0.08),
                       ),
                       child: const Icon(
                         Icons.fingerprint_rounded,
@@ -176,9 +176,9 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.08),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
                   ),
                   child: Text(
                     _errorMessage!,

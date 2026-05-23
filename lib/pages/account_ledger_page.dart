@@ -58,6 +58,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -66,11 +67,11 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF2563EB),
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF2563EB),
               onPrimary: Colors.white,
-              surface: Color(0xFF0F172A),
-              onSurface: Colors.white,
+              surface: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              onSurface: isDarkMode ? Colors.white : const Color(0xFF1E293B),
             ),
           ),
           child: child!,
@@ -104,18 +105,20 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF020617),
+      backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDarkMode ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.accountName,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : const Color(0xFF1E293B), fontSize: 18),
         ),
       ),
       body: SafeArea(
@@ -125,7 +128,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
             // Date Filter Panel
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              color: const Color(0xFF0F172A),
+              color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -138,9 +141,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.04),
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withOpacity(0.06)),
+                              border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -148,7 +151,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                                 Text(
                                   _fromDate != null ? _formatDate(_fromDate!) : 'From Date',
                                   style: TextStyle(
-                                    color: _fromDate != null ? Colors.white : const Color(0xFF64748B),
+                                    color: _fromDate != null ? (isDarkMode ? Colors.white : const Color(0xFF1E293B)) : const Color(0xFF64748B),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -166,9 +169,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.04),
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withOpacity(0.06)),
+                              border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -176,7 +179,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                                 Text(
                                   _toDate != null ? _formatDate(_toDate!) : 'To Date',
                                   style: TextStyle(
-                                    color: _toDate != null ? Colors.white : const Color(0xFF64748B),
+                                    color: _toDate != null ? (isDarkMode ? Colors.white : const Color(0xFF1E293B)) : const Color(0xFF64748B),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -212,10 +215,10 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                       ),
                     )
                   : _ledgerItems.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'No transactions found for this period.',
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                            style: TextStyle(color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 16),
                           ),
                         )
                       : ListView.builder(
@@ -231,11 +234,20 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A),
+                                color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.04),
+                                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
                                 ),
+                                boxShadow: isDarkMode
+                                    ? []
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.02),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 3),
+                                        )
+                                      ],
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -248,8 +260,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             color: isCredit
-                                                ? const Color(0xFF10B981).withOpacity(0.1)
-                                                : const Color(0xFFEF4444).withOpacity(0.1),
+                                                ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                                                : const Color(0xFFEF4444).withValues(alpha: 0.1),
                                           ),
                                           child: Icon(
                                             isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
@@ -264,9 +276,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                                             children: [
                                               Text(
                                                 tx['description'] ?? 'Transaction',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -289,7 +301,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                                     amountStr,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isCredit ? const Color(0xFF10B981) : Colors.white,
+                                      color: isCredit ? const Color(0xFF10B981) : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
                                       fontSize: 15,
                                     ),
                                   ),

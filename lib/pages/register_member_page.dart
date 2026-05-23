@@ -410,7 +410,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF2563EB).withOpacity(0.2),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.2),
                   blurRadius: 15,
                   offset: const Offset(0, 6),
                 )
@@ -432,7 +432,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                   'Submit your details self-registration details directly to bank board reviews.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     height: 1.4,
                   ),
                 ),
@@ -515,7 +515,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                           color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                           ),
                         ),
                         child: Row(
@@ -546,8 +546,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: isPending 
-                                          ? const Color(0xFFF59E0B).withOpacity(0.08) 
-                                          : const Color(0xFF10B981).withOpacity(0.08),
+                                          ? const Color(0xFFF59E0B).withValues(alpha: 0.08) 
+                                          : const Color(0xFF10B981).withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -613,7 +613,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
@@ -633,7 +633,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                   : isCompleted
                       ? const Color(0xFF10B981)
                       : isDarkMode
-                          ? Colors.white.withOpacity(0.04)
+                          ? Colors.white.withValues(alpha: 0.04)
                           : const Color(0xFFE2E8F0),
               border: Border.all(
                 color: isCurrent
@@ -641,7 +641,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                     : isCompleted
                         ? const Color(0xFF10B981)
                         : isDarkMode
-                            ? Colors.white.withOpacity(0.08)
+                            ? Colors.white.withValues(alpha: 0.08)
                             : const Color(0xFFCBD5E1),
               ),
             ),
@@ -680,7 +680,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   side: BorderSide(
-                    color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFCBD5E1),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFCBD5E1),
                   ),
                 ),
                 child: Text(
@@ -918,11 +918,11 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0)),
+                borderSide: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0)),
+                borderSide: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -966,7 +966,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
               decoration: BoxDecoration(
                 color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0)),
+                border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1075,10 +1075,10 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         width: 120,
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFF1F5F9),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
           ),
         ),
         child: Column(
@@ -1118,7 +1118,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                 top: 10,
                 right: 10,
                 child: CircleAvatar(
-                  backgroundColor: Colors.black.withOpacity(0.6),
+                  backgroundColor: Colors.black.withValues(alpha: 0.6),
                   child: IconButton(
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
@@ -1167,7 +1167,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Column(
@@ -1202,10 +1202,10 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             child: Container(
               height: 140,
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white.withOpacity(0.02) : Colors.white,
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
                 ),
               ),
               child: hasFile
@@ -1222,7 +1222,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.cloud_upload_outlined, size: 36, color: const Color(0xFF2563EB).withOpacity(0.8)),
+                          Icon(Icons.cloud_upload_outlined, size: 36, color: const Color(0xFF2563EB).withValues(alpha: 0.8)),
                           const SizedBox(height: 8),
                           Text(
                             'Tap to upload',
@@ -1310,7 +1310,7 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -1327,7 +1327,7 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0),
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1364,10 +1364,10 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFF1F5F9),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: TextField(
@@ -1399,7 +1399,7 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.search_off_rounded, size: 48, color: const Color(0xFF64748B).withOpacity(0.5)),
+                          Icon(Icons.search_off_rounded, size: 48, color: const Color(0xFF64748B).withValues(alpha: 0.5)),
                           const SizedBox(height: 12),
                           const Text(
                             'No matching options found',
@@ -1428,12 +1428,12 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFF2563EB).withOpacity(isDarkMode ? 0.15 : 0.08)
+                                    ? const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.15 : 0.08)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
-                                      ? const Color(0xFF2563EB).withOpacity(0.3)
+                                      ? const Color(0xFF2563EB).withValues(alpha: 0.3)
                                       : Colors.transparent,
                                 ),
                               ),

@@ -143,7 +143,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  isDarkMode ? const Color(0xFF020617).withOpacity(0.0) : Colors.white.withOpacity(0.0),
+                                  isDarkMode ? const Color(0xFF020617).withValues(alpha: 0.0) : Colors.white.withValues(alpha: 0.0),
                                   isDarkMode ? const Color(0xFF020617) : Colors.white,
                                 ],
                                 begin: Alignment.centerLeft,
@@ -228,13 +228,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                                   color: cardBg,
                                   borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
-                                    color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                                   ),
                                   boxShadow: isDarkMode
                                       ? []
                                       : [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.02),
+                                            color: Colors.black.withValues(alpha: 0.02),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           )
@@ -295,10 +295,10 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                                                     Container(
                                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                       decoration: BoxDecoration(
-                                                        color: isDarkMode ? Colors.white.withOpacity(0.03) : Colors.white,
+                                                        color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                                                         borderRadius: BorderRadius.circular(8),
                                                         border: Border.all(
-                                                          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                                                          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                                                         ),
                                                       ),
                                                       child: Text(
@@ -374,12 +374,12 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         decoration: BoxDecoration(
           color: isActive
               ? const Color(0xFF2563EB)
-              : (isDarkMode ? const Color(0xFF0F172A).withOpacity(0.4) : const Color(0xFFF1F5F9)),
+              : (isDarkMode ? const Color(0xFF0F172A).withValues(alpha: 0.4) : const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
                 ? const Color(0xFF2563EB)
-                : (isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0)),
+                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
           ),
         ),
         child: Row(
@@ -397,8 +397,8 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: isActive
-                    ? Colors.white.withOpacity(0.2)
-                    : (isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFCBD5E1)),
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFCBD5E1)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

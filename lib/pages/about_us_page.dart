@@ -43,7 +43,7 @@ class AboutUsPage extends StatelessWidget {
                     height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF2563EB).withOpacity(0.08),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.08),
                     ),
                   ),
                   Container(
@@ -58,7 +58,7 @@ class AboutUsPage extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withOpacity(0.2),
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.2),
                           blurRadius: 15,
                           offset: const Offset(0, 6),
                         )
@@ -102,7 +102,7 @@ class AboutUsPage extends StatelessWidget {
                 color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Text(
@@ -195,7 +195,7 @@ class AboutUsPage extends StatelessWidget {
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
@@ -204,7 +204,7 @@ class AboutUsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withOpacity(0.08),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: const Color(0xFF2563EB), size: 18),
@@ -252,7 +252,7 @@ class AboutUsPage extends StatelessWidget {
           color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
           ),
         ),
         child: InkWell(

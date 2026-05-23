@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../store/auth_store.dart';
@@ -289,9 +288,9 @@ class _ActivationPageState extends State<ActivationPage> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.08),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -346,10 +345,10 @@ class _ActivationPageState extends State<ActivationPage> {
                           ? const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)])
                           : null,
                   color: !isActive && !isDone
-                      ? (isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9))
+                      ? (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9))
                       : null,
                   boxShadow: isActive
-                      ? [BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
+                      ? [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))]
                       : null,
                 ),
                 child: Center(
@@ -374,7 +373,7 @@ class _ActivationPageState extends State<ActivationPage> {
                   height: 2,
                   color: isDone
                       ? const Color(0xFF10B981)
-                      : (isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0)),
+                      : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
                 ),
                 const SizedBox(width: 8),
               ]
@@ -415,7 +414,7 @@ class _ActivationPageState extends State<ActivationPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -507,7 +506,7 @@ class _ActivationPageState extends State<ActivationPage> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF10B981).withOpacity(0.08),
+              color: const Color(0xFF10B981).withValues(alpha: 0.08),
             ),
             child: const Icon(Icons.wallet_rounded, color: Color(0xFF10B981), size: 36),
           ),
@@ -522,9 +521,9 @@ class _ActivationPageState extends State<ActivationPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.06),
+            color: const Color(0xFF10B981).withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.12)),
+            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.12)),
           ),
           child: Column(
             children: [
@@ -573,7 +572,7 @@ class _ActivationPageState extends State<ActivationPage> {
             decoration: BoxDecoration(
               color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0)),
+              border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -603,7 +602,7 @@ class _ActivationPageState extends State<ActivationPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withOpacity(0.06),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Text(
@@ -634,11 +633,11 @@ class _ActivationPageState extends State<ActivationPage> {
     return Container(
       decoration: BoxDecoration(
         color: selected
-            ? const Color(0xFF2563EB).withOpacity(0.08)
+            ? const Color(0xFF2563EB).withValues(alpha: 0.08)
             : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: selected ? const Color(0xFF2563EB) : (isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0)),
+          color: selected ? const Color(0xFF2563EB) : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
           width: 2,
         ),
       ),
@@ -679,7 +678,7 @@ class _ActivationPageState extends State<ActivationPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.lock_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -754,7 +753,7 @@ class _ActivationPageState extends State<ActivationPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF4F46E5).withOpacity(0.08),
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.lock_rounded, color: Color(0xFF4F46E5), size: 36),
             ),
@@ -832,7 +831,7 @@ class _ActivationPageState extends State<ActivationPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                side: BorderSide(color: isDarkMode ? Colors.white.withOpacity(0.12) : const Color(0xFFE2E8F0)),
+                side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE2E8F0)),
               ),
               child: Text(
                 'Submit for Admin Approval',
@@ -868,7 +867,7 @@ class _ActivationPageState extends State<ActivationPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.sms_failed_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -939,7 +938,7 @@ class _ActivationPageState extends State<ActivationPage> {
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0)),
+        border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
       ),
       child: TextFormField(
         controller: controller,

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../store/auth_store.dart';
-import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'status_check_page.dart';
 
@@ -149,7 +148,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     if (withOtp) {
       try {
         final devId = await ApiService.getDeviceId();
-        final res = await ApiService().sendDeviceLinkOtp(
+        await ApiService().sendDeviceLinkOtp(
           widget.mobileNumber,
           devId,
         );
@@ -292,9 +291,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.08),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -349,10 +348,10 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
                           ? const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)])
                           : null,
                   color: !isActive && !isDone
-                      ? (isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9))
+                      ? (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9))
                       : null,
                   boxShadow: isActive
-                      ? [BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
+                      ? [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))]
                       : null,
                 ),
                 child: Center(
@@ -377,7 +376,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
                   height: 2,
                   color: isDone
                       ? const Color(0xFF10B981)
-                      : (isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0)),
+                      : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
                 ),
                 const SizedBox(width: 8),
               ]
@@ -418,7 +417,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.phonelink_lock_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -502,7 +501,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.vpn_key_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -577,7 +576,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF4F46E5).withOpacity(0.08),
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.lock_rounded, color: Color(0xFF4F46E5), size: 36),
             ),
@@ -659,7 +658,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                side: BorderSide(color: isDarkMode ? Colors.white.withOpacity(0.12) : const Color(0xFFE2E8F0)),
+                side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE2E8F0)),
               ),
               child: Text(
                 'Manual Admin Approval',
@@ -695,7 +694,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.08),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               ),
               child: const Icon(Icons.sms_failed_rounded, color: Color(0xFF2563EB), size: 36),
             ),
@@ -762,7 +761,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF10B981).withOpacity(0.08),
+              color: const Color(0xFF10B981).withValues(alpha: 0.08),
             ),
             child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 64),
           ),
@@ -816,7 +815,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0)),
+        border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
       ),
       child: TextFormField(
         controller: controller,

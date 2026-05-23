@@ -211,18 +211,18 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
             color: isTodayHighlight
                 ? const Color(0xFF2563EB)
                 : isWeekend
-                    ? const Color(0xFFEF4444).withOpacity(isDarkMode ? 0.08 : 0.04)
+                    ? const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.08 : 0.04)
                     : isDarkMode
-                        ? Colors.white.withOpacity(0.02)
+                        ? Colors.white.withValues(alpha: 0.02)
                         : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isTodayHighlight
                   ? const Color(0xFF2563EB)
                   : isWeekend
-                      ? const Color(0xFFEF4444).withOpacity(0.15)
+                      ? const Color(0xFFEF4444).withValues(alpha: 0.15)
                       : isDarkMode
-                          ? Colors.white.withOpacity(0.04)
+                          ? Colors.white.withValues(alpha: 0.04)
                           : const Color(0xFFE2E8F0),
             ),
           ),
@@ -315,7 +315,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                 color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Row(
@@ -326,7 +326,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                     icon: const Icon(Icons.chevron_left_rounded),
                     color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                     style: IconButton.styleFrom(
-                      backgroundColor: isDarkMode ? Colors.white.withOpacity(0.02) : Colors.white,
+                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -367,7 +367,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                     icon: const Icon(Icons.chevron_right_rounded),
                     color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
                     style: IconButton.styleFrom(
-                      backgroundColor: isDarkMode ? Colors.white.withOpacity(0.02) : Colors.white,
+                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -384,7 +384,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                 color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Column(
@@ -432,10 +432,10 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.08),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                   ),
                 ),
                 child: Row(
@@ -523,7 +523,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
         color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
@@ -556,7 +556,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withOpacity(0.08),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
