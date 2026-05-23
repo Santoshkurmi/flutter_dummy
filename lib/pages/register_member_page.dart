@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 
@@ -14,6 +16,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   bool _showForm = false;
   int _currentStep = 1;
   bool _isLoading = false;
+  late PageController _pageController;
 
   // Saved Applications (Dashboard)
   List<dynamic> _submittedApplications = [];
@@ -68,7 +71,14 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _currentStep - 1);
     _loadSubmittedApplications();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSubmittedApplications() async {
@@ -92,7 +102,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         .toList();
 
     try {
-      final res = await ApiService().checkRegistrationsStatus(phoneNumbers, 'mb_device_id_token');
+      final devId = await ApiService.getDeviceId();
+      final res = await ApiService().checkRegistrationsStatus(phoneNumbers, devId);
       if (res['response_code'] == 0 && res['statuses'] != null) {
         final statuses = res['statuses'] as Map<String, dynamic>;
         
@@ -119,7 +130,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     });
 
     try {
-      final res = await ApiService().deleteRegistrationApp(phone, 'mb_device_id_token');
+      final devId = await ApiService.getDeviceId();
+      final res = await ApiService().deleteRegistrationApp(phone, devId);
       if (res['response_code'] == 0) {
         setState(() {
           _submittedApplications.removeWhere((app) => app['mobile'] == phone);
@@ -185,7 +197,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     };
 
     try {
-      final res = await ApiService().registerMember(formData, 'mb_device_id_token');
+      final devId = await ApiService.getDeviceId();
+      final res = await ApiService().registerMember(formData, devId);
       if (res['response_code'] == 0) {
         // Success
         final newApp = {
@@ -255,9 +268,16 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
 
   void _nextStep() {
     if (_validateStep()) {
-      setState(() {
-        _currentStep++;
-      });
+      if (_currentStep < 6) {
+        setState(() {
+          _currentStep++;
+        });
+        _pageController.animateToPage(
+          _currentStep - 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
@@ -266,6 +286,11 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
       setState(() {
         _currentStep--;
       });
+      _pageController.animateToPage(
+        _currentStep - 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -301,6 +326,11 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
       if (_nomineeNameController.text.trim().isEmpty ||
           _nomineeRelationController.text.trim().isEmpty) {
         _showErrorSnackBar('Nominee fields are required.');
+        return false;
+      }
+    } else if (_currentStep == 6) {
+      if (_profilePhoto == null || _citizenshipPhoto == null || _signaturePhoto == null) {
+        _showErrorSnackBar('All document scans (profile photo, citizenship certificate, and signature specimen) are required.');
         return false;
       }
     }
@@ -548,136 +578,146 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     );
   }
 
-  // 6-step wizard content
   Widget _buildFormWizard(bool isDarkMode) {
-    return Column(
-      children: [
-        // Horizontal Steps Indicators
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(6, (idx) {
-              final stepNum = idx + 1;
-              final isCurrent = stepNum == _currentStep;
-              final isCompleted = stepNum < _currentStep;
+    return PageView.builder(
+      controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        final stepNum = index + 1;
+        return _buildStepPage(stepNum, isDarkMode);
+      },
+    );
+  }
 
-              return Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isCurrent
-                      ? const Color(0xFF2563EB)
-                      : isCompleted
-                          ? const Color(0xFF10B981)
-                          : isDarkMode
-                              ? Colors.white.withOpacity(0.04)
-                              : const Color(0xFFE2E8F0),
-                  border: Border.all(
-                    color: isCurrent
-                        ? const Color(0xFF2563EB)
-                        : isCompleted
-                            ? const Color(0xFF10B981)
+  Widget _buildStepPage(int stepNum, bool isDarkMode) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildStepsIndicator(stepNum, isDarkMode),
+          const SizedBox(height: 24),
+          _buildActiveStepFieldsForStep(stepNum, isDarkMode),
+          const SizedBox(height: 32),
+          _buildStepNavigationControls(stepNum, isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepsIndicator(int currentStep, bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(6, (idx) {
+          final stepNum = idx + 1;
+          final isCurrent = stepNum == currentStep;
+          final isCompleted = stepNum < currentStep;
+
+          return Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isCurrent
+                  ? const Color(0xFF2563EB)
+                  : isCompleted
+                      ? const Color(0xFF10B981)
+                      : isDarkMode
+                          ? Colors.white.withOpacity(0.04)
+                          : const Color(0xFFE2E8F0),
+              border: Border.all(
+                color: isCurrent
+                    ? const Color(0xFF2563EB)
+                    : isCompleted
+                        ? const Color(0xFF10B981)
+                        : isDarkMode
+                            ? Colors.white.withOpacity(0.08)
+                            : const Color(0xFFCBD5E1),
+              ),
+            ),
+            child: Center(
+              child: isCompleted
+                  ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : Text(
+                      '$stepNum',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: isCurrent || isCompleted
+                            ? Colors.white
                             : isDarkMode
-                                ? Colors.white.withOpacity(0.08)
-                                : const Color(0xFFCBD5E1),
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF475569),
+                      ),
+                    ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildStepNavigationControls(int stepNum, bool isDarkMode) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        if (stepNum > 1)
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: OutlinedButton(
+                onPressed: _prevStep,
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: BorderSide(
+                    color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFCBD5E1),
                   ),
                 ),
-                child: Center(
-                  child: isCompleted
-                      ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
-                      : Text(
-                          '$stepNum',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: isCurrent || isCompleted
-                                ? Colors.white
-                                : isDarkMode
-                                    ? const Color(0xFF64748B)
-                                    : const Color(0xFF475569),
-                          ),
-                        ),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              );
-            }),
-          ),
-        ),
-
-        // Steps Input Widgets
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: _buildActiveStepFields(isDarkMode),
-          ),
-        ),
-
-        // Bottom Controls
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-            border: Border(
-              top: BorderSide(
-                color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
               ),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (_currentStep > 1)
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: _prevStep,
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        side: BorderSide(
-                          color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFCBD5E1),
-                        ),
-                      ),
-                      child: Text(
-                        'Back',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              if (_currentStep > 1) const SizedBox(width: 12),
-              Expanded(
-                child: SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _currentStep == 6 ? _submitForm : _nextStep,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _currentStep == 6 ? 'Submit Application' : 'Continue',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
+        if (stepNum > 1) const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: stepNum == 6 ? _submitForm : _nextStep,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
               ),
-            ],
+              child: Text(
+                stepNum == 6 ? 'Submit Application' : 'Continue',
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildActiveStepFields(bool isDarkMode) {
-    switch (_currentStep) {
+  Widget _buildActiveStepFieldsForStep(int stepNum, bool isDarkMode) {
+    switch (stepNum) {
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -822,7 +862,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           children: [
             _buildStepTitle('Documents Upload'),
             const Text(
-              'Please click mock upload to attach requested scan photos. File size must be under 2MB.',
+              'Please select or take clear photos of the requested documents. Tap each card to pick from camera or gallery.',
               style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
             ),
             const SizedBox(height: 24),
@@ -857,11 +897,14 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+          ),
           const SizedBox(height: 6),
           TextField(
             controller: controller,
@@ -906,31 +949,207 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         children: [
           Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
           const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-                style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
-                isExpanded: true,
-                onChanged: onChanged,
-                items: items.map((item) {
-                  return DropdownMenuItem<String>(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
+          InkWell(
+            onTap: () {
+              _showSearchableSelect(
+                title: label,
+                options: items,
+                currentValue: value,
+                onSelected: (val) {
+                  onChanged(val);
+                },
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
+                    ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Uint8List _base64ToBytes(String base64Str) {
+    final cleanStr = base64Str.replaceFirst(RegExp(r'data:image/[^;]+;base64,'), '');
+    return base64.decode(cleanStr);
+  }
+
+  void _showImageSourceSheet(ValueChanged<String?> onUploaded) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Image Source',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildSourceTile(
+                    icon: Icons.camera_alt_rounded,
+                    label: 'Camera',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? file = await picker.pickImage(
+                        source: ImageSource.camera,
+                        imageQuality: 70,
+                      );
+                      if (file != null) {
+                        final bytes = await file.readAsBytes();
+                        onUploaded('data:image/jpeg;base64,${base64.encode(bytes)}');
+                      }
+                    },
+                    isDarkMode: isDarkMode,
+                  ),
+                  _buildSourceTile(
+                    icon: Icons.photo_library_rounded,
+                    label: 'Gallery',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? file = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 70,
+                      );
+                      if (file != null) {
+                        final bytes = await file.readAsBytes();
+                        onUploaded('data:image/jpeg;base64,${base64.encode(bytes)}');
+                      }
+                    },
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSourceTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDarkMode,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 120,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: const Color(0xFF2563EB)),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreviewDialog(String base64Str) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              InteractiveViewer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.memory(
+                    _base64ToBytes(base64Str),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.6),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSearchableSelect({
+    required String title,
+    required List<String> options,
+    required String currentValue,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _SearchableSelectSheet(
+          title: title,
+          options: options,
+          currentValue: currentValue,
+          onSelected: onSelected,
+        );
+      },
     );
   }
 
@@ -951,42 +1170,304 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFE2E8F0),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              if (hasFile)
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.visibility_rounded, color: Color(0xFF2563EB), size: 20),
+                      onPressed: () => _showImagePreviewDialog(path),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                      onPressed: () => onUploaded(null),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  hasFile ? 'File: $path' : 'No document attached',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: hasFile ? null : () => _showImageSourceSheet(onUploaded),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.white.withOpacity(0.02) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withOpacity(0.06) : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: hasFile
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.memory(
+                        _base64ToBytes(path),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_upload_outlined, size: 36, color: const Color(0xFF2563EB).withOpacity(0.8)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap to upload',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Camera or Gallery • Max 2MB',
+                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchableSelectSheet extends StatefulWidget {
+  final String title;
+  final List<String> options;
+  final String currentValue;
+  final ValueChanged<String> onSelected;
+
+  const _SearchableSelectSheet({
+    required this.title,
+    required this.options,
+    required this.currentValue,
+    required this.onSelected,
+  });
+
+  @override
+  State<_SearchableSelectSheet> createState() => _SearchableSelectSheetState();
+}
+
+class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
+  late List<String> _filteredOptions;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredOptions = widget.options;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase().trim();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredOptions = widget.options;
+      } else {
+        _filteredOptions = widget.options
+            .where((opt) => opt.toLowerCase().contains(query))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 8),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          
+          // Header title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Select ${widget.title}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  splashRadius: 20,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 14),
-          if (hasFile)
-            IconButton(
-              onPressed: () => onUploaded(null),
-              icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4444)),
-            )
-          else
-            ElevatedButton(
-              onPressed: () => onUploaded('${title.toLowerCase().replaceAll(' ', '_')}_upload.jpg'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB).withOpacity(0.08),
-                foregroundColor: const Color(0xFF2563EB),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+
+          // Search Field
+          if (widget.options.length > 5)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white.withOpacity(0.04) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: false,
+                  style: const TextStyle(fontSize: 15),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+                    hintText: 'Search options...',
+                    hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
               ),
-              child: const Text('Mock Upload', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             ),
+
+          const SizedBox(height: 8),
+
+          // Options List
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.45,
+              ),
+              child: _filteredOptions.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 48, color: const Color(0xFF64748B).withOpacity(0.5)),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No matching options found',
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+                      itemCount: _filteredOptions.length,
+                      itemBuilder: (context, index) {
+                        final opt = _filteredOptions[index];
+                        final isSelected = opt == widget.currentValue;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          child: InkWell(
+                            onTap: () {
+                              widget.onSelected(opt);
+                              Navigator.pop(context);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF2563EB).withOpacity(isDarkMode ? 0.15 : 0.08)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB).withOpacity(0.3)
+                                      : Colors.transparent,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      opt,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? const Color(0xFF2563EB)
+                                            : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: Color(0xFF2563EB),
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+          SizedBox(height: keyboardHeight),
         ],
       ),
     );

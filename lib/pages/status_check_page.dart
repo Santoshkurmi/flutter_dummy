@@ -4,6 +4,7 @@ import '../store/auth_store.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
 import 'login_page.dart';
+import 'register_member_page.dart';
 
 class StatusCheckPage extends StatefulWidget {
   const StatusCheckPage({super.key});
@@ -13,23 +14,42 @@ class StatusCheckPage extends StatefulWidget {
 }
 
 class _StatusCheckPageState extends State<StatusCheckPage> {
-  final TextEditingController _mobileController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _mobileController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _mobileController.addListener(_onMobileChanged);
+  }
+
+  @override
+  void dispose() {
+    _mobileController.removeListener(_onMobileChanged);
+    _mobileController.dispose();
+    super.dispose();
+  }
+
+  void _onMobileChanged() {
+    setState(() {});
+  }
+
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final mobile = _mobileController.text.trim();
+    if (mobile.length != 10) return;
     
     setState(() {
       _isLoading = true;
     });
 
-    final mobile = _mobileController.text.trim();
-    const deviceId = 'flutter_device_unique_12345'; // Static device ID for consistency
-
     try {
-      final res = await ApiService().checkStatus(mobile, deviceId);
-      final responseCode = res['response_code'];
+      final devId = await ApiService.getDeviceId();
+      final res = await ApiService().checkStatus(mobile, devId);
+      final responseCodeRaw = res['response_code'];
+      final int responseCode = responseCodeRaw is int
+          ? responseCodeRaw
+          : int.tryParse(responseCodeRaw?.toString() ?? '') ?? 0;
       final message = res['message'] ?? '';
 
       // Persist the mobile number in global state
@@ -37,8 +57,19 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
       if (!mounted) return;
 
+      // Debug SnackBar to show exact response code & message returned by the backend
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Debug Response Code: $responseCode - Message: $message'),
+      //     backgroundColor: const Color(0xFF1E293B),
+      //     duration: const Duration(seconds: 4),
+      //   ),
+      // );
+
       switch (responseCode) {
         case 1: // RESP_SUCCESS (Already active, directly go to Login)
+          await AuthStore().setRegisteredMobile(mobile);
+          if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -54,6 +85,38 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
               builder: (_) => ActivationPage(mobileNumber: mobile),
             ),
           );
+          break;
+        case 6: // RESP_AWAITING_APPROVAL (Request Pending admin approval)
+          if (!mounted) return;
+          final resubmit = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF0F172A),
+              title: const Text('Request Pending', style: TextStyle(color: Colors.white)),
+              content: const Text(
+                'Your registration request is pending admin approval. Do you want to resubmit the form?',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Yes, Resubmit', style: TextStyle(color: Color(0xFF3B82F6))),
+                ),
+              ],
+            ),
+          );
+          if (resubmit == true && mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ActivationPage(mobileNumber: mobile),
+              ),
+            );
+          }
           break;
         case 9: // RESP_DEVICE_LINKING_REQUIRED (New device linking needed)
           Navigator.push(
@@ -165,15 +228,6 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                 controller: _mobileController,
                                 keyboardType: TextInputType.phone,
                                 style: const TextStyle(color: Colors.white, fontSize: 18),
-                                validator: (val) {
-                                  if (val == null || val.trim().isEmpty) {
-                                    return 'Mobile number is required';
-                                  }
-                                  if (val.trim().length < 10) {
-                                    return 'Enter a valid 10-digit mobile number';
-                                  }
-                                  return null;
-                                },
                                 decoration: const InputDecoration(
                                   prefixIcon: Icon(Icons.phone_iphone_rounded, color: Color(0xFF64748B)),
                                   hintText: 'e.g. 98XXXXXXXX',
@@ -192,7 +246,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                           children: [
                             // Submit Button
                             ElevatedButton(
-                              onPressed: _isLoading ? null : _submit,
+                              onPressed: (_isLoading || _mobileController.text.trim().length != 10) ? null : _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2563EB),
                                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -218,6 +272,80 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                         color: Colors.white,
                                       ),
                                     ),
+                            ),
+                            const SizedBox(height: 20),
+                            // Register New Member
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterMemberPage(),
+                                    ),
+                                  );
+                                },
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: 'New to Bright Sahakari? ',
+                                    style: TextStyle(color: const Color(0xFF94A3B8), fontSize: 14),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Register New Member',
+                                        style: TextStyle(
+                                          color: const Color(0xFF3B82F6),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Change Cooperative Bank
+                            Center(
+                              child: TextButton(
+                                onPressed: () async {
+                                  // Show a confirmation dialog
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                      title: const Text('Switch Cooperative', style: TextStyle(color: Colors.white)),
+                                      content: const Text(
+                                        'Are you sure you want to disconnect and switch to a different cooperative bank? All local session data will be cleared.',
+                                        style: TextStyle(color: Color(0xFF94A3B8)),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          child: const Text('Switch', style: TextStyle(color: Colors.red)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    await AuthStore().clearAll();
+                                    if (!mounted) return;
+                                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                  }
+                                },
+                                child: const Text(
+                                  'Change Cooperative Bank',
+                                  style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 30),
                           ],

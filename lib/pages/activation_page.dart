@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../store/auth_store.dart';
 import 'login_page.dart';
 
 class ActivationPage extends StatefulWidget {
@@ -90,18 +92,19 @@ class _ActivationPageState extends State<ActivationPage> {
     });
 
     try {
+      final devId = await ApiService.getDeviceId();
       final res = await ApiService().activateValidate({
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
         'full_name': _fullNameController.text.trim(),
         'date_of_birth_bs': _dobController.text.trim(),
-        'device_id': 'flutter_device_unique_12345',
+        'device_id': devId,
       });
 
       final responseCode = res['response_code'];
       if (responseCode == 1) { // Success
         setState(() {
-          _chargeAmount = (res['charge_amount'] ?? 0).toDouble();
+          _chargeAmount = double.tryParse(res['charge_amount']?.toString() ?? '') ?? 0.0;
           _savingAccounts = res['saving_accounts'] ?? [];
           _isSmsEnabled = res['is_sms_enabled'] ?? false;
           if (_savingAccounts.isNotEmpty) {
@@ -155,15 +158,17 @@ class _ActivationPageState extends State<ActivationPage> {
 
     if (withOtp) {
       try {
+        final devId = await ApiService.getDeviceId();
         final res = await ApiService().activateSendOtp({
           'mobile': widget.mobileNumber,
           'membership_number': _membershipController.text.trim(),
           'full_name': _fullNameController.text.trim(),
           'date_of_birth_bs': _dobController.text.trim(),
+          'device_id': devId,
         });
 
         final responseCode = res['response_code'];
-        if (responseCode == 2) { // RESP_OTP_SENT or success code
+        if (responseCode == 3) { // RESP_OTP_SENT
           setState(() {
             _step = 5; // Move to final OTP confirmation step
           });
@@ -193,6 +198,7 @@ class _ActivationPageState extends State<ActivationPage> {
     });
 
     try {
+      final devId = await ApiService.getDeviceId();
       final res = await ApiService().activateSubmit({
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
@@ -203,9 +209,13 @@ class _ActivationPageState extends State<ActivationPage> {
         'otp': otpCode,
         'password': _passwordController.text,
         'transaction_pin': _pinController.text,
+        'device_id': devId,
       });
 
       if (!mounted) return;
+
+      // Successfully activated, store registeredMobile in global store!
+      await AuthStore().setRegisteredMobile(widget.mobileNumber);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -2,7 +2,7 @@ package com.brightbank.app.mobile_banking
 
 import android.os.Bundle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.security.keystore.KeyGenParameterSpec
@@ -16,7 +16,7 @@ import androidx.fragment.app.FragmentActivity
 import java.security.*
 import java.util.concurrent.Executor
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.brightbank.app/biometrics"
 
     override fun onCreate(savedInstanceState: Bundle?) {

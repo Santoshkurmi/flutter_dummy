@@ -259,96 +259,106 @@ class _OnboardingPageState extends State<OnboardingPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: _onPageChanged,
-                    itemCount: _slides.length,
-                    itemBuilder: (context, index) {
-                      final slide = _slides[index];
-                      final gradientColors = slide['colors'] as List<Color>;
-                      
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 30% Reduced Glassmorphic Icon controls
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 98,
-                                  height: 98,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: (slide['iconBg'] as Color).withOpacity(0.12),
-                                  ),
-                                ),
-                                Container(
-                                  width: 77,
-                                  height: 77,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: gradientColors,
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(22),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (slide['iconBg'] as Color).withOpacity(0.2),
-                                        blurRadius: 15,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    slide['icon'] as IconData,
-                                    size: 36,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 40),
-
-                            // Subtitle
-                            Text(
-                              (slide['subtitle'] as String).toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 2.2,
-                                color: slide['iconBg'] as Color,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Title
-                            Text(
-                              slide['title'] as String,
-                              style: TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.w900,
-                                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Description
-                            Text(
-                              slide['description'] as String,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification notification) {
+                      if (notification is UserScrollNotification) {
+                        if (_autoplayTimer != null && _autoplayTimer!.isActive) {
+                          _autoplayTimer?.cancel();
+                        }
+                      }
+                      return false;
                     },
+                    child: PageView.builder(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      itemCount: _slides.length,
+                      itemBuilder: (context, index) {
+                        final slide = _slides[index];
+                        final gradientColors = slide['colors'] as List<Color>;
+                        
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 30% Reduced Glassmorphic Icon controls
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 98,
+                                    height: 98,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: (slide['iconBg'] as Color).withOpacity(0.12),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 77,
+                                    height: 77,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: gradientColors,
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (slide['iconBg'] as Color).withOpacity(0.2),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      slide['icon'] as IconData,
+                                      size: 36,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 40),
+
+                              // Subtitle
+                              Text(
+                                (slide['subtitle'] as String).toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2.2,
+                                  color: slide['iconBg'] as Color,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Title
+                              Text(
+                                slide['title'] as String,
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+
+                              // Description
+                              Text(
+                                slide['description'] as String,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
 

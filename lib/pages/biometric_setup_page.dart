@@ -60,9 +60,10 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
               backgroundColor: Color(0xFF10B981),
             ),
           );
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const DashboardPage()),
+            (route) => false,
           );
         }
       } else {
@@ -79,9 +80,10 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
   void _skipSetup() async {
     await AuthStore().setNeverAskBiometric(true);
     if (mounted) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const DashboardPage()),
+        (route) => false,
       );
     }
   }

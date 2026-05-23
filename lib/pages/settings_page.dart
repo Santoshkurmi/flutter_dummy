@@ -300,8 +300,7 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () async {
                 await authStore.clearAll();
                 if (mounted) {
-                  Navigator.pop(context);
-                  Navigator.pop(context); // Close settings screen
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                 }
               },
               child: const Text('Reset', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),

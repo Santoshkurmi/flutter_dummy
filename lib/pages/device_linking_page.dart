@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../store/auth_store.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
+import 'status_check_page.dart';
 
 class DeviceLinkingPage extends StatefulWidget {
   final String mobileNumber;
@@ -89,12 +91,13 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     });
 
     try {
+      final devId = await ApiService.getDeviceId();
       final res = await ApiService().activateValidate({
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
         'full_name': _fullNameController.text.trim(),
         'date_of_birth_bs': _dobController.text.trim(),
-        'device_id': 'flutter_device_unique_12345',
+        'device_id': devId,
       });
 
       final responseCode = res['response_code'];
@@ -145,9 +148,10 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
     if (withOtp) {
       try {
+        final devId = await ApiService.getDeviceId();
         final res = await ApiService().sendDeviceLinkOtp(
           widget.mobileNumber,
-          'flutter_device_unique_12345',
+          devId,
         );
 
         // response_code 2 indicates success OTP sent (or response code returned from backend)
@@ -175,6 +179,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     });
 
     try {
+      final devId = await ApiService.getDeviceId();
       final payload = {
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
@@ -183,8 +188,8 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         'password': _needsPasswordSetup ? _passwordController.text : null,
         'transaction_pin': _needsPasswordSetup ? _pinController.text : null,
         'otp': otpCode.isNotEmpty ? otpCode : null,
-        'device_id': 'flutter_device_unique_12345',
-        'device_name': 'Mobile Device',
+        'device_id': devId,
+        'device_name': Platform.isAndroid ? 'Android Device' : 'iOS Device',
       };
 
       final res = await ApiService().submitDeviceLink(payload);
@@ -197,6 +202,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           final store = AuthStore();
           await store.setToken(data['token']);
           await store.setMobile(widget.mobileNumber);
+          await store.setRegisteredMobile(widget.mobileNumber);
           if (data['profile'] != null) {
             await store.setProfile(data['profile']);
           }
@@ -781,10 +787,10 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
         ElevatedButton(
           onPressed: () {
-            // Navigate back to login screen
+            // Navigate back to status check screen
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => LoginPage(mobileNumber: widget.mobileNumber)),
+              MaterialPageRoute(builder: (_) => const StatusCheckPage()),
               (route) => false,
             );
           },

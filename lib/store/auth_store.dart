@@ -9,6 +9,7 @@ class AuthStore extends ChangeNotifier {
 
   String? _token;
   String? _mobile;
+  String? _registeredMobile;
   Map<String, dynamic>? _selectedCooperative;
   Map<String, dynamic>? _profile;
   String? _customApiUrl;
@@ -22,6 +23,7 @@ class AuthStore extends ChangeNotifier {
 
   String? get token => _token;
   String? get mobile => _mobile;
+  String? get registeredMobile => _registeredMobile;
   Map<String, dynamic>? get selectedCooperative => _selectedCooperative;
   Map<String, dynamic>? get profile => _profile;
   String? get customApiUrl => _customApiUrl;
@@ -39,6 +41,7 @@ class AuthStore extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('auth_token');
     _mobile = prefs.getString('auth_mobile');
+    _registeredMobile = prefs.getString('registeredMobile');
     _customApiUrl = prefs.getString('customApiUrl');
     
     final coopStr = prefs.getString('selected_cooperative');
@@ -132,6 +135,17 @@ class AuthStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setRegisteredMobile(String? mobile) async {
+    _registeredMobile = mobile;
+    final prefs = await SharedPreferences.getInstance();
+    if (mobile != null) {
+      await prefs.setString('registeredMobile', mobile);
+    } else {
+      await prefs.remove('registeredMobile');
+    }
+    notifyListeners();
+  }
+
   Future<void> setSelectedCooperative(Map<String, dynamic>? cooperative) async {
     _selectedCooperative = cooperative;
     final prefs = await SharedPreferences.getInstance();
@@ -166,6 +180,7 @@ class AuthStore extends ChangeNotifier {
   Future<void> clearAll() async {
     _token = null;
     _mobile = null;
+    _registeredMobile = null;
     _selectedCooperative = null;
     _profile = null;
     _isBiometricEnabled = false;

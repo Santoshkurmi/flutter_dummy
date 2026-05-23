@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'store/auth_store.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/select_cooperative_page.dart';
+import 'pages/status_check_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
 
@@ -69,22 +70,26 @@ class _InitialRouterState extends State<InitialRouter> {
     final store = AuthStore();
 
     // 1. If no cooperative selected yet -> Onboarding Page
-    if (!store.hasCooperative) {
-      return const OnboardingPage();
-    }
+    // if (!store.hasCooperative) {
+    //   return const OnboardingPage();
+    // }
 
     // 2. If authenticated -> Go directly to the Banking Dashboard
     if (store.isAuthenticated) {
       return const DashboardPage();
     }
 
-    // 3. If cooperative selected but not logged in -> Go to PIN entry / Login
-    final mobile = store.mobile;
-    if (mobile != null && mobile.isNotEmpty) {
-      return LoginPage(mobileNumber: mobile);
+    // 3. If cooperative selected and device has been linked/registered -> Go to PIN entry / Login
+    final registeredMobile = store.registeredMobile;
+    if (registeredMobile != null && registeredMobile.isNotEmpty) {
+      return LoginPage(mobileNumber: registeredMobile);
+    }
+    else{
+      return const OnboardingPage();
+
     }
 
-    // Fallback: Boot into cooperative selection
-    return const SelectCooperativePage();
+    // 4. Fallback: If cooperative selected but device not linked yet -> Go to Status Check page
+    return const StatusCheckPage();
   }
 }

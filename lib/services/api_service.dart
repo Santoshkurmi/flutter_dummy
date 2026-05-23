@@ -89,10 +89,16 @@ class ApiService {
 
   // POST Request
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+    final payload = Map<String, dynamic>.from(data);
+    if (!payload.containsKey('device_id') ||
+        payload['device_id'] == 'flutter_device_unique_12345' ||
+        payload['device_id'] == 'mb_device_id_token') {
+      payload['device_id'] = await getDeviceId();
+    }
     final response = await http.post(
       Uri.parse('$_baseUrl$endpoint'),
       headers: _headers,
-      body: jsonEncode(data),
+      body: jsonEncode(payload),
     );
     return _handleResponse(response);
   }
@@ -156,7 +162,12 @@ class ApiService {
     final devId = deviceId == 'flutter_device_unique_12345' || deviceId == 'mb_device_id_token'
         ? await getDeviceId()
         : deviceId;
-    return await post('/login', {'mobile': mobile, 'pin': pin, 'device_id': devId});
+    return await post('/login', {
+      'mobile': mobile,
+      'pin': pin,
+      'password': pin,
+      'device_id': devId
+    });
   }
 
   Future<Map<String, dynamic>> logout() async {

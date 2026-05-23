@@ -89,7 +89,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
           children: [
             // Page Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 8.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 12.0, 24.0, 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -112,36 +112,16 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                             ),
                           ),
                         ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF2563EB).withOpacity(0.2),
-                        ),
-                        child: const Icon(
-                          Icons.account_balance_rounded,
-                          color: Color(0xFF60A5FA),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
                       const Text(
                         'Select Cooperative',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
                           color: Colors.white,
+                          letterSpacing: -0.6,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Search and select your Cooperative to continue activation.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF94A3B8),
-                    ),
                   ),
                 ],
               ),
@@ -253,14 +233,17 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              coop['name'] ?? '',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                            SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              physics: const BouncingScrollPhysics(),
+                                              child: Text(
+                                                coop['name'] ?? '',
+                                                style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Colors.white,
+                                                  letterSpacing: -0.3,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -287,11 +270,6 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                             ),
                                           ],
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: Color(0xFF64748B),
                                       ),
                                     ],
                                   ),
