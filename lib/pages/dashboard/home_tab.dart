@@ -11,6 +11,7 @@ class HomeTab extends StatefulWidget {
   final bool showBalance;
   final bool isDarkMode;
   final bool isLoadingSummary;
+  final bool hasError;
   final Future<void> Function() onRefresh;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
@@ -23,6 +24,7 @@ class HomeTab extends StatefulWidget {
     required this.showBalance,
     required this.isDarkMode,
     required this.isLoadingSummary,
+    required this.hasError,
     required this.onRefresh,
     required this.onThemeToggle,
     required this.onLogout,
@@ -73,11 +75,11 @@ class _HomeTabState extends State<HomeTab> {
   Widget build(BuildContext context) {
 
     final profile = AuthStore().profile;
-    final fullName = profile?['name'] ?? 'Sahakari User';
+    final firstName = profile?['member_first_name'] ?? (profile?['member_name']?.toString().split(' ').first) ?? 'User';
     
-    final savingsVal = _formatAmount(widget.summaryData?['savingBalance']);
-    final shareVal = _formatAmount(widget.summaryData?['shareBalance']);
-    final loanVal = _formatAmount(widget.summaryData?['loanBalance']);
+    final savingsVal = _formatAmount(widget.summaryData?['savings_balance']);
+    final shareVal = _formatAmount(widget.summaryData?['share_balance']);
+    final loanVal = _formatAmount(widget.summaryData?['loan_balance']);
 
     final savingsBalance = 'Rs. $savingsVal';
     final shareBalance = 'Rs. $shareVal';
@@ -107,7 +109,7 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                   Text(
-                    fullName,
+                    firstName,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -118,6 +120,28 @@ class _HomeTabState extends State<HomeTab> {
               ),
               Row(
                 children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                      border: Border.all(
+                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                      ),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: Icon(
+                        widget.showBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        size: 16,
+                      ),
+                      onPressed: widget.onToggleBalanceVisibility,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
                   Container(
                     width: 36,
                     height: 36,
@@ -165,9 +189,12 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          if (widget.hasError)
+            _buildErrorView(context, widget.isDarkMode)
+          else ...[
+            const SizedBox(height: 20),
 
-          GestureDetector(
+            GestureDetector(
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
@@ -267,17 +294,6 @@ class _HomeTabState extends State<HomeTab> {
                                 color: Colors.white,
                                 letterSpacing: 0.5,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: Icon(
-                                widget.showBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.white.withValues(alpha: 0.8),
-                                size: 18,
-                              ),
-                              onPressed: widget.onToggleBalanceVisibility,
                             ),
                           ],
                         ),
@@ -521,6 +537,7 @@ class _HomeTabState extends State<HomeTab> {
                         );
                       }).toList(),
                     ),
+          ],
         ],
       ),
     );
@@ -581,6 +598,163 @@ class _HomeTabState extends State<HomeTab> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, bool isDarkMode) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 70),
+          // Animated Cartoon-like Network Error illustration
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, val, child) {
+              return Transform.scale(
+                scale: val,
+                child: child,
+              );
+            },
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: isDarkMode 
+                      ? [const Color(0xFFEF4444).withValues(alpha: 0.2), const Color(0xFFF87171).withValues(alpha: 0.05)]
+                      : [const Color(0xFFFEE2E2), const Color(0xFFFEF2F2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Animated glowing rings
+                  _ErrorPulseRing(delay: 0, isDarkMode: isDarkMode),
+                  _ErrorPulseRing(delay: 500, isDarkMode: isDarkMode),
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 60,
+                    color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Connection Failed'.tr,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            child: Text(
+              'We had trouble communicating with the cooperative servers. Please check your internet connection.'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+          // Swipe to reload indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.swap_vert_rounded,
+                  size: 16,
+                  color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Swipe down to reload'.tr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorPulseRing extends StatefulWidget {
+  final int delay;
+  final bool isDarkMode;
+  const _ErrorPulseRing({required this.delay, required this.isDarkMode});
+
+  @override
+  State<_ErrorPulseRing> createState() => _ErrorPulseRingState();
+}
+
+class _ErrorPulseRingState extends State<_ErrorPulseRing> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.repeat();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          width: 140 * _controller.value,
+          height: 140 * _controller.value,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: (widget.isDarkMode ? const Color(0xFFEF4444) : const Color(0xFFF87171))
+                  .withValues(alpha: (1.0 - _controller.value) * 0.3),
+              width: 1.5,
+            ),
+          ),
+        );
+      },
     );
   }
 }

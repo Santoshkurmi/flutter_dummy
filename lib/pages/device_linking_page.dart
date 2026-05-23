@@ -202,8 +202,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           await store.setToken(data['token']);
           await store.setMobile(widget.mobileNumber);
           await store.setRegisteredMobile(widget.mobileNumber);
-          if (data['profile'] != null) {
-            await store.setProfile(data['profile']);
+          final profileRes = await ApiService().getProfile();
+          if (profileRes['data'] != null) {
+            await store.setProfile(profileRes['data']);
           }
 
           if (!mounted) return;

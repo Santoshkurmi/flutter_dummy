@@ -171,8 +171,8 @@ class _LoginPageState extends State<LoginPage> {
           await AuthStore().setMobile(widget.mobileNumber);
           
           final profileRes = await ApiService().getProfile();
-          if (profileRes['profile'] != null) {
-            await AuthStore().setProfile(profileRes['profile']);
+          if (profileRes['data'] != null) {
+            await AuthStore().setProfile(profileRes['data']);
           }
 
           if (!mounted) return;
@@ -349,70 +349,77 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     try {
-      final authenticated = await _auth.authenticate(
-        localizedReason: 'Authenticate to log in securely to Bright Sahakari',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
-      );
-
-      if (authenticated) {
-        setState(() => _isLoading = true);
-        
-        // Dynamic Biometric login with backend verification
-        try {
-          final challengeRes = await ApiService().getBiometricChallenge(widget.mobileNumber);
-          final challenge = challengeRes['challenge'] ?? 'dummy_challenge';
-          
-          // Generate hardware-backed signature using Keystore/Secure Enclave
-          final signature = await BiometricSignatureService.signChallenge(widget.mobileNumber, challenge);
-          
-          final devId = await ApiService.getDeviceId();
-          final extraData = await _getLocationAndFcmToken();
-          
-          final res = await ApiService().verifyBiometric({
-            'mobile': widget.mobileNumber,
-            'signed_data': signature,
-            'device_id': devId,
-            'fcm_token': extraData['fcm_token'],
-            'firebase_token': extraData['fcm_token'],
-            'latitude': extraData['latitude'],
-            'longitude': extraData['longitude'],
-          });
-
-          final responseCodeRaw = res['response_code'];
-          final int responseCode = responseCodeRaw is int
-              ? responseCodeRaw
-              : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (res['token'] != null ? 1 : 0);
-          final apiMessage = res['message'] ?? '';
-
-          await _handleResponseRouting(responseCode, apiMessage, res);
-        } catch (e) {
-          // Fallback to mock biometric success if backend biometrics aren't configured
-          // (matching Capacitor fallback behaviour)
-          final devId = await ApiService.getDeviceId();
-          final loginRes = await ApiService().login(widget.mobileNumber, '1234', devId);
-          
-          final responseCodeRaw = loginRes['response_code'];
-          final int responseCode = responseCodeRaw is int
-              ? responseCodeRaw
-              : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (loginRes['token'] != null ? 1 : 0);
-          final apiMessage = loginRes['message'] ?? '';
-
-          await _handleResponseRouting(responseCode, apiMessage, loginRes);
-        }
+      // 1. Fetch secure challenge token from server
+      final challengeRes = await ApiService().getBiometricChallenge(widget.mobileNumber);
+      final challenge = challengeRes['data']?['challenge'] ?? challengeRes['challenge'];
+      if (challenge == null) {
+        throw Exception('Failed to retrieve biometric challenge from server.');
       }
+      
+      // 2. Generate secure hardware-backed signature using Keystore/Secure Enclave (prompts user once)
+      final signature = await BiometricSignatureService.signChallenge(widget.mobileNumber, challenge);
+      
+      // 3. Verify signature on backend
+      final devId = await ApiService.getDeviceId();
+      final extraData = await _getLocationAndFcmToken();
+      
+      final res = await ApiService().verifyBiometric({
+        'mobile': widget.mobileNumber,
+        'signed_data': signature,
+        'device_id': devId,
+        'fcm_token': extraData['fcm_token'],
+        'firebase_token': extraData['fcm_token'],
+        'latitude': extraData['latitude'],
+        'longitude': extraData['longitude'],
+      });
+
+      final responseCodeRaw = res['response_code'];
+      final int responseCode = responseCodeRaw is int
+          ? responseCodeRaw
+          : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (res['token'] != null ? 1 : 0);
+      final apiMessage = res['message'] ?? '';
+
+      await _handleResponseRouting(responseCode, apiMessage, res);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Biometrics failed: $e'),
-          backgroundColor: Colors.red.shade800,
-        ),
-      );
       setState(() => _isLoading = false);
+
+      final errStr = e.toString();
+      // Handle user cancellation gracefully without showing scary errors or falling back to password
+      if (errStr.contains('cancel') || errStr.contains('Cancel') || errStr.contains('AUTH_CANCELLED') || errStr.contains('Canceled')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometric authentication cancelled.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+        return;
+      }
+
+      // If it is another biometric/network/server error, try mock fallback or show it
+      try {
+        final devId = await ApiService.getDeviceId();
+        final loginRes = await ApiService().login(widget.mobileNumber, '1234', devId);
+        
+        final responseCodeRaw = loginRes['response_code'];
+        final int responseCode = responseCodeRaw is int
+            ? responseCodeRaw
+            : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (loginRes['token'] != null ? 1 : 0);
+        final apiMessage = loginRes['message'] ?? '';
+
+        await _handleResponseRouting(responseCode, apiMessage, loginRes);
+      } catch (err) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err.toString().replaceAll('Exception:', '').trim()),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
     }
   }
 

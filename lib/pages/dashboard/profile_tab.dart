@@ -20,8 +20,8 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = AuthStore().profile;
     final coop = AuthStore().selectedCooperative;
-    final name = profile?['name'] ?? 'Sahakari User';
-    final mobile = profile?['mobile'] ?? '98XXXXXXXX';
+    final name = profile?['member_name'] ?? 'Sahakari User';
+    final mobile = profile?['mobile'] ?? AuthStore().mobile ?? '98XXXXXXXX';
     final coopName = coop?['name'] ?? 'Bright Saving & Credit Co-operative';
 
     return ListView(

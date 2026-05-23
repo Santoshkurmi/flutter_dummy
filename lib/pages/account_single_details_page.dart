@@ -68,24 +68,24 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     if (isSaving) {
       return [
-        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.', 'desc': 'Quarterly capitalization capitalization' },
-        { 'label': 'Accrued Interest', 'value': 'Rs. ${acc['accrued_interest'] ?? '120.50'}', 'desc': 'Accumulated this quarter threshold' },
-        { 'label': 'Minimum Balance', 'value': 'Rs. ${acc['min_balance'] ?? '500.00'}', 'desc': 'Required minimum balance threshold' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date'] ?? '2081-02-15', 'desc': 'Active savings account setup date' },
+        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.', 'desc': 'Quarterly capitalization' },
+        { 'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}', 'desc': 'Accumulated this quarter threshold' },
+        { 'label': 'Minimum Balance', 'value': 'Rs. ${_formatAmount(acc['min_balance'])}', 'desc': 'Required minimum balance threshold' },
+        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2081-02-15', 'desc': 'Active savings account setup date' },
       ];
     } else if (isLoan) {
       return [
-        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.', 'desc': 'Calculated monthly capitalization capitalization' },
-        { 'label': 'Accrued Interest Due', 'value': 'Rs. ${acc['accrued_interest'] ?? '1,250.00'}', 'desc': 'Pending current capitalization cycle' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date'] ?? '2080-11-10', 'desc': 'Loan approval execution date' },
-        { 'label': 'Maturity Date (BS)', 'value': acc['maturity_date'] ?? '2085-11-10', 'desc': 'Loan final maturity schedule' },
+        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.', 'desc': 'Calculated monthly capitalization' },
+        { 'label': 'Accrued Interest Due', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}', 'desc': 'Pending current capitalization cycle' },
+        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2080-11-10', 'desc': 'Loan approval execution date' },
+        { 'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? '2085-11-10', 'desc': 'Loan final maturity schedule' },
       ];
     } else {
       // shares
       return [
-        { 'label': 'Share Capital Value', 'value': acc['balance'] ?? 'Rs. 10,000.00', 'desc': 'Total capitalized share investment value' },
+        { 'label': 'Share Capital Value', 'value': 'Rs. ${_formatAmount(acc['balance'])}', 'desc': 'Total capitalized share investment value' },
         { 'label': 'Total Share Units', 'value': '${acc['share_count'] ?? '100'} Units', 'desc': 'NPR 100.00 face value per share unit' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date'] ?? '2079-05-18', 'desc': 'Active member shareholding setup date' },
+        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2079-05-18', 'desc': 'Active member shareholding setup date' },
         { 'label': 'Member Status', 'value': 'Active Shareholder', 'desc': 'Bright Cooperative Member core status' },
       ];
     }
@@ -112,13 +112,26 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     );
   }
 
+  String _formatAmount(dynamic amt) {
+    if (amt == null) return '0.00';
+    if (amt is num) {
+      return amt.toStringAsFixed(2);
+    }
+    final str = amt.toString().replaceAll(',', '');
+    final d = double.tryParse(str) ?? 0.0;
+    return d.toStringAsFixed(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final acc = widget.account;
     final name = acc['name'] ?? 'Account';
-    final balance = acc['balance'] ?? 'Rs. 0.00';
-    final accountNo = acc['account_no'] ?? 'N/A';
+    
+    final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
+    final balance = 'Rs. ${_formatAmount(rawBalance)}';
+    
+    final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final scheme = (acc['scheme'] ?? widget.accountType.toUpperCase()).toString().toUpperCase();
 
     Color accentColor = const Color(0xFF2563EB); // savings blue
@@ -546,11 +559,11 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                       itemBuilder: (context, index) {
                         final tx = _ledgerItems[index];
                         final isCredit = tx['type'] == 'credit' || tx['type'] == 'CR';
-                        final amount = tx['amount'] ?? '0.00';
+                        final amount = _formatAmount(tx['amount']);
                         final amountStr = '${isCredit ? "+" : "-"} Rs. $amount';
-                        final balance = tx['balance'] ?? '0.00';
+                        final balance = _formatAmount(tx['balance']);
                         final desc = tx['description'] ?? tx['desc'] ?? 'Transaction';
-                        final dateStr = tx['date'] ?? '';
+                        final dateStr = tx['nepaliDate'] ?? tx['date'] ?? '';
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),

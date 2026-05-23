@@ -33,11 +33,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      torchEnabled: false,
-      autoStart: true,
-    );
+    // REMOVED: Do not initialize the controller here.
   }
 
   /// Call this from outside when the tab becomes visible
@@ -63,6 +59,13 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
         _isScanning = true;
         _cameraError = false;
         _cameraErrorMessage = '';
+        
+        // Initialize the controller safely here, right when we are ready to spin up the camera
+        _controller = MobileScannerController(
+          detectionSpeed: DetectionSpeed.normal,
+          torchEnabled: false,
+          autoStart: true,
+        );
       });
     }
   }
@@ -70,22 +73,28 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
   /// Call this from outside when the tab becomes hidden
   void stopCamera() {
     if (!_isActive) return;
+    
+    _controller?.stop();
+    _controller?.dispose(); // Clean up native resources completely
+    
     if (mounted) {
       setState(() {
         _isActive = false;
         _isScanning = false;
+        _controller = null; // Reset instance to avoid operating on a stale runtime pointer
       });
     }
-    _controller?.stop();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_isActive) return;
+    if (!_isActive || _controller == null) return;
+    
     if (state == AppLifecycleState.paused) {
       _controller?.stop();
     } else if (state == AppLifecycleState.resumed && _isScanning && !_hasResult) {
-      if (_controller != null && !_controller!.value.isRunning) {
+      // Safely access the value property now that initialization is gated
+      if (!_controller!.value.isRunning) {
         _controller?.start();
       }
     }
@@ -118,6 +127,8 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
     });
 
     _controller?.stop();
+    _controller?.dispose();
+    _controller = null;
   }
 
   String _detectContentType(String value) {
@@ -189,10 +200,21 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
       _torchEnabled = false;
       _cameraError = false;
     });
+    
     if (_isActive) {
       setState(() {
         _isScanning = true;
       });
+      // Re-instantiate controller cleanly if it was discarded during a stop/reset loop
+      if (_controller == null) {
+        _controller = MobileScannerController(
+          detectionSpeed: DetectionSpeed.normal,
+          torchEnabled: false,
+          autoStart: true,
+        );
+      } else {
+        _controller?.start();
+      }
     }
   }
 
@@ -229,6 +251,8 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
             _isScanning = false;
           });
           controller.stop();
+          controller.dispose();
+          _controller = null;
           return;
         }
       }

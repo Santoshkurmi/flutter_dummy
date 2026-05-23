@@ -94,8 +94,13 @@ class AllServicesPage extends StatelessWidget {
           children: allActions.map((act) {
             return InkWell(
               onTap: () {
-                Navigator.pop(context);
-                _handleActionTap(context, act['label'] as String);
+                final label = act['label'] as String;
+                if (label == 'Utility' || label == 'Payment' || label == 'Send Money' || label == 'Scan QR' || label == 'QR Scan') {
+                  Navigator.pop(context);
+                  _handleActionTap(context, label);
+                } else {
+                  _handleActionTap(context, label);
+                }
               },
               borderRadius: BorderRadius.circular(16),
               child: Column(

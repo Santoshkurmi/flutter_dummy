@@ -7,6 +7,7 @@ import 'dashboard/payments_tab.dart';
 import 'dashboard/qr_tab.dart';
 import 'dashboard/notifications_tab.dart';
 import 'dashboard/profile_tab.dart';
+import 'login_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -19,6 +20,7 @@ class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0;
   bool _showBalance = false;
   bool _isLoadingSummary = true;
+  bool _hasError = false;
   Map<String, dynamic>? _summaryData;
   bool get _isDarkMode => AuthStore().isDarkMode;
 
@@ -47,21 +49,89 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         _summaryData = res['data'];
         _isLoadingSummary = false;
+        _hasError = false;
       });
     } catch (_) {
       setState(() {
+        _summaryData = null;
         _isLoadingSummary = false;
+        _hasError = true;
       });
     }
   }
 
   void _logout() async {
+    final confirm = await _showLogoutConfirmation();
+    if (confirm != true) return;
+
     try {
       await ApiService().logout();
     } catch (_) {}
-    await AuthStore().clearAuth();
+    
+    final store = AuthStore();
+    final mobile = store.registeredMobile ?? store.mobile ?? '';
+    await store.clearAuth();
+    
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    
+    // Explicitly navigate to LoginPage instead of the InitialRouter / Phone page
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage(mobileNumber: mobile)),
+      (route) => false,
+    );
+  }
+
+  Future<bool?> _showLogoutConfirmation() async {
+    final isDark = AuthStore().isDarkMode;
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Confirm Logout',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to log out?',
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+          ),
+          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _cycleTheme() {
@@ -109,6 +179,7 @@ class _DashboardPageState extends State<DashboardPage> {
               showBalance: _showBalance,
               isDarkMode: _isDarkMode,
               isLoadingSummary: _isLoadingSummary,
+              hasError: _hasError,
               onRefresh: _loadSummary,
               onThemeToggle: _cycleTheme,
               onLogout: _logout,

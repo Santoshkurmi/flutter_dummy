@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import 'account_single_details_page.dart';
 
 class AccountDetailsPage extends StatefulWidget {
@@ -10,11 +11,11 @@ class AccountDetailsPage extends StatefulWidget {
 }
 
 class _AccountDetailsPageState extends State<AccountDetailsPage> {
-  bool _isLoading = true;
   List<dynamic> _savingsAccounts = [];
   List<dynamic> _loanAccounts = [];
   List<dynamic> _shareAccounts = [];
-  
+  bool _isLoading = true;
+  bool _hasError = false;
   String _activeFilter = 'all'; // all, savings, loans, shares
   final ScrollController _scrollController = ScrollController();
   double _scrollProgress = 0.0;
@@ -45,6 +46,16 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     }
   }
 
+  String _formatAmount(dynamic amt) {
+    if (amt == null) return '0.00';
+    if (amt is num) {
+      return amt.toStringAsFixed(2);
+    }
+    final str = amt.toString().replaceAll(',', '');
+    final d = double.tryParse(str) ?? 0.0;
+    return d.toStringAsFixed(2);
+  }
+
   Future<void> _loadAccounts() async {
     try {
       final res = await ApiService().getAccounts();
@@ -55,10 +66,15 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         _loanAccounts = data['loans'] ?? [];
         _shareAccounts = data['shares'] ?? [];
         _isLoading = false;
+        _hasError = false;
       });
     } catch (_) {
       setState(() {
+        _savingsAccounts = [];
+        _loanAccounts = [];
+        _shareAccounts = [];
         _isLoading = false;
+        _hasError = true;
       });
     }
   }
@@ -109,8 +125,10 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
                 ),
               )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            : _hasError
+                ? _buildErrorView(context, isDarkMode)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Category Filter Bar with scroll indicators
                   const SizedBox(height: 10),
@@ -204,8 +222,9 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                             itemCount: displayAccounts.length,
                             itemBuilder: (context, index) {
                               final acc = displayAccounts[index];
-                              final balance = acc['balance'] ?? 'Rs. 0.00';
-                              final accountNo = acc['account_no'] ?? 'N/A';
+                              final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
+                              final balance = 'Rs. ${_formatAmount(rawBalance)}';
+                              final accountNo = acc['accNo'] ?? 'N/A';
                               final name = acc['name'] ?? 'Account';
                               final type = acc['type'] as String;
 
@@ -412,6 +431,107 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, bool isDarkMode) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 50),
+          // Animated Cartoon-like Network Error illustration
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, val, child) {
+              return Transform.scale(
+                scale: val,
+                child: child,
+              );
+            },
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: isDarkMode 
+                      ? [const Color(0xFFEF4444).withValues(alpha: 0.2), const Color(0xFFF87171).withValues(alpha: 0.05)]
+                      : [const Color(0xFFFEE2E2), const Color(0xFFFEF2F2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.cloud_off_rounded,
+                    size: 60,
+                    color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Something went wrong'.tr,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            child: Text(
+              'Failed to retrieve your cooperative accounts. Please go back and try opening the page again.'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+          // "Go Back & Try Again" action button
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 4,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.arrow_back_rounded, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Go Back & Try Again'.tr,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+        ],
       ),
     );
   }
