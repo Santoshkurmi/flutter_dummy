@@ -1,0 +1,867 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../services/translation_service.dart';
+
+class QRTab extends StatefulWidget {
+  final bool isDarkMode;
+
+  const QRTab({
+    super.key,
+    required this.isDarkMode,
+  });
+
+  @override
+  State<QRTab> createState() => QRTabState();
+}
+
+class QRTabState extends State<QRTab> with WidgetsBindingObserver {
+  MobileScannerController? _controller;
+  bool _isScanning = false;
+  bool _torchEnabled = false;
+  bool _hasResult = false;
+  String? _scannedValue;
+  String? _scannedType;
+  bool _cameraError = false;
+  String _cameraErrorMessage = '';
+  bool _isActive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      torchEnabled: false,
+      autoStart: true,
+    );
+  }
+
+  /// Call this from outside when the tab becomes visible
+  Future<void> startCamera() async {
+    if (_isActive) return;
+
+    // Check camera permission first explicitly
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        setState(() {
+          _isActive = true;
+          _cameraError = true;
+          _cameraErrorMessage = 'Camera permission is required to scan QR codes.';
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isActive = true;
+        _isScanning = true;
+        _cameraError = false;
+        _cameraErrorMessage = '';
+      });
+    }
+  }
+
+  /// Call this from outside when the tab becomes hidden
+  void stopCamera() {
+    if (!_isActive) return;
+    if (mounted) {
+      setState(() {
+        _isActive = false;
+        _isScanning = false;
+      });
+    }
+    _controller?.stop();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isActive) return;
+    if (state == AppLifecycleState.paused) {
+      _controller?.stop();
+    } else if (state == AppLifecycleState.resumed && _isScanning && !_hasResult) {
+      if (_controller != null && !_controller!.value.isRunning) {
+        _controller?.start();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.dispose();
+    _controller = null;
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_hasResult) return;
+    final barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+
+    final barcode = barcodes.first;
+    final value = barcode.rawValue ?? '';
+    if (value.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
+
+    setState(() {
+      _hasResult = true;
+      _scannedValue = value;
+      _scannedType = _detectContentType(value);
+      _isScanning = false;
+    });
+
+    _controller?.stop();
+  }
+
+  String _detectContentType(String value) {
+    final lower = value.toLowerCase().trim();
+
+    if (lower.startsWith('http://') || lower.startsWith('https://')) return 'URL';
+    if (lower.startsWith('wifi:')) return 'WiFi';
+    if (lower.startsWith('tel:') || RegExp(r'^\+?\d{7,15}$').hasMatch(lower)) return 'Phone';
+    if (lower.startsWith('mailto:') || RegExp(r'^[\w.+-]+@[\w-]+\.[\w.]+$').hasMatch(lower)) return 'Email';
+    if (lower.startsWith('smsto:') || lower.startsWith('sms:')) return 'SMS';
+    if (lower.startsWith('geo:') || lower.contains(',') && RegExp(r'^-?\d+\.?\d*,-?\d+\.?\d*$').hasMatch(lower.replaceAll(' ', ''))) return 'Location';
+    if (lower.startsWith('begin:vcard')) return 'Contact';
+    if (lower.startsWith('begin:vevent')) return 'Event';
+    if (lower.startsWith('upi://')) return 'UPI Payment';
+
+    return 'Text';
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case 'URL': return Icons.language_rounded;
+      case 'WiFi': return Icons.wifi_rounded;
+      case 'Phone': return Icons.phone_rounded;
+      case 'Email': return Icons.email_rounded;
+      case 'SMS': return Icons.sms_rounded;
+      case 'Location': return Icons.location_on_rounded;
+      case 'Contact': return Icons.contact_phone_rounded;
+      case 'Event': return Icons.event_rounded;
+      case 'UPI Payment': return Icons.payment_rounded;
+      default: return Icons.text_fields_rounded;
+    }
+  }
+
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'URL': return const Color(0xFF2563EB);
+      case 'WiFi': return const Color(0xFF9333EA);
+      case 'Phone': return const Color(0xFF10B981);
+      case 'Email': return const Color(0xFFEA580C);
+      case 'SMS': return const Color(0xFF0D9488);
+      case 'Location': return const Color(0xFFEF4444);
+      case 'Contact': return const Color(0xFF3B82F6);
+      case 'Event': return const Color(0xFFF59E0B);
+      case 'UPI Payment': return const Color(0xFF059669);
+      default: return const Color(0xFF64748B);
+    }
+  }
+
+  Map<String, String>? _parseWifi(String value) {
+    final typeMatch = RegExp(r'T:([^;]*)').firstMatch(value);
+    final ssidMatch = RegExp(r'S:([^;]*)').firstMatch(value);
+    final passMatch = RegExp(r'P:([^;]*)').firstMatch(value);
+    final hiddenMatch = RegExp(r'H:([^;]*)').firstMatch(value);
+
+    if (ssidMatch == null) return null;
+    return {
+      'type': typeMatch?.group(1) ?? 'WPA',
+      'ssid': ssidMatch.group(1) ?? '',
+      'password': passMatch?.group(1) ?? '',
+      'hidden': hiddenMatch?.group(1) ?? 'false',
+    };
+  }
+
+  void _resetScanner() {
+    setState(() {
+      _hasResult = false;
+      _scannedValue = null;
+      _scannedType = null;
+      _torchEnabled = false;
+      _cameraError = false;
+    });
+    if (_isActive) {
+      setState(() {
+        _isScanning = true;
+      });
+    }
+  }
+
+  void _toggleTorch() async {
+    try {
+      await _controller?.toggleTorch();
+      setState(() {
+        _torchEnabled = !_torchEnabled;
+      });
+    } catch (_) {}
+  }
+
+  void _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      final file = File(image.path);
+      final controller = _controller;
+      if (controller == null) return;
+
+      final result = await controller.analyzeImage(file.path);
+
+      if (result != null && result.barcodes.isNotEmpty) {
+        final barcode = result.barcodes.first;
+        final value = barcode.rawValue ?? '';
+        if (value.isNotEmpty) {
+          HapticFeedback.mediumImpact();
+          setState(() {
+            _hasResult = true;
+            _scannedValue = value;
+            _scannedType = _detectContentType(value);
+            _isScanning = false;
+          });
+          controller.stop();
+          return;
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No QR code or barcode found in the image.'.tr),
+            backgroundColor: const Color(0xFFF59E0B),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process image: ${e.toString()}'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
+    }
+  }
+
+  void _copyToClipboard() {
+    if (_scannedValue == null) return;
+    Clipboard.setData(ClipboardData(text: _scannedValue!));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Copied to clipboard!'),
+        backgroundColor: Color(0xFF10B981),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDarkMode;
+
+    if (_hasResult && _scannedValue != null) {
+      return _buildResultView(isDark);
+    }
+
+    // If not active yet, show a placeholder
+    if (!_isActive || _controller == null) {
+      return _buildPlaceholder(isDark);
+    }
+
+    return _buildScannerView(isDark);
+  }
+
+  Widget _buildPlaceholder(bool isDark) {
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.qr_code_scanner_rounded,
+              size: 64,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Scan QR'.tr,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap to activate camera',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScannerView(bool isDark) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Camera preview
+          if (!_cameraError && _controller != null)
+            MobileScanner(
+              controller: _controller!,
+              onDetect: _onDetect,
+              errorBuilder: (context, error, child) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      _cameraError = true;
+                      _cameraErrorMessage = error.errorDetails?.message ?? 'Camera error';
+                    });
+                  }
+                });
+                return const SizedBox.shrink();
+              },
+            ),
+
+          // Camera error state
+          if (_cameraError)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.camera_alt_rounded, size: 64, color: Color(0xFF64748B)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Camera Unavailable',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _cameraErrorMessage,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+
+          // Overlay with cutout
+          if (!_cameraError)
+            _buildScanOverlay(),
+
+          // Top action bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Title
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Scan QR'.tr,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      // Torch toggle
+                      _buildActionButton(
+                        icon: _torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                        onTap: _toggleTorch,
+                        color: _torchEnabled ? const Color(0xFFFFA825) : Colors.white,
+                      ),
+                      const SizedBox(width: 10),
+                      // Gallery picker
+                      _buildActionButton(
+                        icon: Icons.photo_library_rounded,
+                        onTap: _pickImage,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom hint
+          Positioned(
+            bottom: 100,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  'Point camera at a QR code or barcode',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color color = Colors.white,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.5),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: color, size: 22),
+      ),
+    );
+  }
+
+  Widget _buildScanOverlay() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scanSize = constraints.maxWidth * 0.7;
+        final left = (constraints.maxWidth - scanSize) / 2;
+        final top = (constraints.maxHeight - scanSize) / 2 - 30;
+
+        return Stack(
+          children: [
+            // Dark mask around scanner area
+            ColorFiltered(
+              colorFilter: ColorFilter.mode(
+                Colors.black.withValues(alpha: 0.6),
+                BlendMode.srcOut,
+              ),
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      backgroundBlendMode: BlendMode.dstOut,
+                    ),
+                  ),
+                  Positioned(
+                    left: left,
+                    top: top,
+                    child: Container(
+                      width: scanSize,
+                      height: scanSize,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Corner accents
+            Positioned(
+              left: left,
+              top: top,
+              child: _buildCorner(Alignment.topLeft),
+            ),
+            Positioned(
+              right: left,
+              top: top,
+              child: _buildCorner(Alignment.topRight),
+            ),
+            Positioned(
+              left: left,
+              bottom: constraints.maxHeight - top - scanSize,
+              child: _buildCorner(Alignment.bottomLeft),
+            ),
+            Positioned(
+              right: left,
+              bottom: constraints.maxHeight - top - scanSize,
+              child: _buildCorner(Alignment.bottomRight),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCorner(Alignment alignment) {
+    const size = 28.0;
+    const thickness = 4.0;
+    const color = Color(0xFF2563EB);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _CornerPainter(alignment, thickness, color),
+      ),
+    );
+  }
+
+  Widget _buildResultView(bool isDark) {
+    final type = _scannedType ?? 'Text';
+    final value = _scannedValue ?? '';
+    final typeIcon = _getTypeIcon(type);
+    final typeColor = _getTypeColor(type);
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+          onPressed: _resetScanner,
+        ),
+        title: Text(
+          'Scan Result'.tr,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.qr_code_scanner_rounded,
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+            ),
+            onPressed: _resetScanner,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const SizedBox(height: 10),
+            // Type badge
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: typeColor.withValues(alpha: 0.1),
+                  border: Border.all(color: typeColor.withValues(alpha: 0.2), width: 2),
+                ),
+                child: Icon(typeIcon, color: typeColor, size: 42),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: typeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  type.toUpperCase(),
+                  style: TextStyle(
+                    color: typeColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Content card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                ),
+                boxShadow: isDark
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.data_object_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SCANNED DATA',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SelectableText(
+                    value,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      height: 1.6,
+                    ),
+                  ),
+
+                  // WiFi details
+                  if (type == 'WiFi') ..._buildWifiDetails(value, isDark),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: _buildResultAction(
+                    icon: Icons.copy_rounded,
+                    label: 'Copy'.tr,
+                    color: const Color(0xFF2563EB),
+                    isDark: isDark,
+                    onTap: _copyToClipboard,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildResultAction(
+                    icon: Icons.share_rounded,
+                    label: 'Share'.tr,
+                    color: const Color(0xFF10B981),
+                    isDark: isDark,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Share functionality coming soon.'), backgroundColor: Color(0xFF64748B)),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Full width scan again button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _resetScanner,
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                label: Text(
+                  'Scan Again'.tr,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                  foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildWifiDetails(String value, bool isDark) {
+    final wifi = _parseWifi(value);
+    if (wifi == null) return [];
+
+    return [
+      const SizedBox(height: 16),
+      Container(
+        height: 1,
+        color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+      ),
+      const SizedBox(height: 16),
+      _wifiDetailRow('Network (SSID)', wifi['ssid'] ?? '', isDark),
+      _wifiDetailRow('Security', wifi['type'] ?? 'WPA', isDark),
+      if ((wifi['password'] ?? '').isNotEmpty)
+        _wifiDetailRow('Password', wifi['password']!, isDark),
+      _wifiDetailRow('Hidden', wifi['hidden'] == 'true' ? 'Yes' : 'No', isDark),
+    ];
+  }
+
+  Widget _wifiDetailRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CornerPainter extends CustomPainter {
+  final Alignment alignment;
+  final double thickness;
+  final Color color;
+
+  _CornerPainter(this.alignment, this.thickness, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = thickness
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    const len = 20.0;
+
+    if (alignment == Alignment.topLeft) {
+      path.moveTo(0, len);
+      path.lineTo(0, 0);
+      path.lineTo(len, 0);
+    } else if (alignment == Alignment.topRight) {
+      path.moveTo(size.width - len, 0);
+      path.lineTo(size.width, 0);
+      path.lineTo(size.width, len);
+    } else if (alignment == Alignment.bottomLeft) {
+      path.moveTo(0, size.height - len);
+      path.lineTo(0, size.height);
+      path.lineTo(len, size.height);
+    } else if (alignment == Alignment.bottomRight) {
+      path.moveTo(size.width - len, size.height);
+      path.lineTo(size.width, size.height);
+      path.lineTo(size.width, size.height - len);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

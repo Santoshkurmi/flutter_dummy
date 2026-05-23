@@ -1,0 +1,586 @@
+import 'package:flutter/material.dart';
+import '../../store/auth_store.dart';
+import '../../services/translation_service.dart';
+import '../account_details_page.dart';
+import '../nepali_calendar_page.dart';
+import '../register_member_page.dart';
+import '../all_services_page.dart';
+
+class HomeTab extends StatefulWidget {
+  final Map<String, dynamic>? summaryData;
+  final bool showBalance;
+  final bool isDarkMode;
+  final bool isLoadingSummary;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onThemeToggle;
+  final VoidCallback onLogout;
+  final void Function(int) onTabChange;
+  final VoidCallback onToggleBalanceVisibility;
+
+  const HomeTab({
+    super.key,
+    required this.summaryData,
+    required this.showBalance,
+    required this.isDarkMode,
+    required this.isLoadingSummary,
+    required this.onRefresh,
+    required this.onThemeToggle,
+    required this.onLogout,
+    required this.onTabChange,
+    required this.onToggleBalanceVisibility,
+  });
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+
+  String _formatAmount(dynamic amt) {
+    if (amt == null) return '0.00';
+    if (amt is num) {
+      return amt.toStringAsFixed(2);
+    }
+    final str = amt.toString().replaceAll(',', '');
+    final d = double.tryParse(str) ?? 0.0;
+    return d.toStringAsFixed(2);
+  }
+
+  void _handleActionTap(BuildContext context, String label) {
+    if (label == 'Statement' || label == 'Savings') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+    } else if (label == 'Calendar') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
+    } else if (label == 'Ledger') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+    } else if (label == 'Self Register') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
+    } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
+      widget.onTabChange(1); // Payments Tab
+    } else if (label == 'Scan QR' || label == 'QR Scan') {
+      widget.onTabChange(2); // Scan QR Tab
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$label service initialized.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    final profile = AuthStore().profile;
+    final fullName = profile?['name'] ?? 'Sahakari User';
+    
+    final savingsVal = _formatAmount(widget.summaryData?['savingBalance']);
+    final shareVal = _formatAmount(widget.summaryData?['shareBalance']);
+    final loanVal = _formatAmount(widget.summaryData?['loanBalance']);
+
+    final savingsBalance = 'Rs. $savingsVal';
+    final shareBalance = 'Rs. $shareVal';
+    final loanBalance = 'Rs. $loanVal';
+    final recentTransactions = widget.summaryData?['recent_transactions'] as List?;
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      color: const Color(0xFF2563EB),
+      backgroundColor: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        children: [
+          const SizedBox(height: 35),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Namaste, 🙏',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  Text(
+                    fullName,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                      border: Border.all(
+                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                      ),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: Icon(
+                        widget.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        size: 16,
+                      ),
+                      onPressed: widget.onThemeToggle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.isDarkMode ? const Color(0xFF1C1017) : const Color(0xFFFEF2F2),
+                      border: Border.all(
+                        color: widget.isDarkMode ? const Color(0xFF3B1A1A) : const Color(0xFFFEE2E2),
+                      ),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(
+                        Icons.power_settings_new_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 16,
+                      ),
+                      onPressed: widget.onLogout,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: widget.isDarkMode
+                      ? const LinearGradient(
+                          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: widget.isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.15),
+                              ),
+                              child: const Icon(
+                                Icons.stars_rounded,
+                                color: Color(0xFFFFA825),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Bright Savings Account'.tr,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TOTAL ACCOUNT BALANCE'.tr,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: widget.isDarkMode ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              widget.showBalance ? savingsBalance : '••••••••',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                widget.showBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                size: 18,
+                              ),
+                              onPressed: widget.onToggleBalanceVisibility,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.business_center_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'LOAN BALANCE'.tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      widget.showBalance ? loanBalance : '••••',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'SHARE CAPITAL'.tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      widget.showBalance ? shareBalance : '••••',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.pie_chart_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'QUICK ACTIONS'.tr,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                  letterSpacing: 1.5,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AllServicesPage(
+                        isDarkMode: widget.isDarkMode,
+                        onTabChange: widget.onTabChange,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View All'.tr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          _buildQuickActions(context),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'RECENT TRANSACTIONS'.tr,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                  letterSpacing: 1.5,
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage())),
+                child: Text(
+                  'View All'.tr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          widget.isLoadingSummary
+              ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)))))
+              : recentTransactions == null || recentTransactions.isEmpty
+                  ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.', style: TextStyle(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4), fontSize: 13))))
+                  : Column(
+                      children: recentTransactions.map((tx) {
+                        final isCredit = tx['type'] == 'credit' || tx['type'] == 'CR';
+                        final amount = tx['amount'] ?? '0.00';
+                        final amountStr = '${isCredit ? "+" : "-"} Rs. $amount';
+                        final desc = tx['description'] ?? 'Transaction';
+                        final dateStr = tx['date'] ?? '';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: widget.isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.black.withValues(alpha: 0.04),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: isCredit ? const Color(0xFF10B981).withValues(alpha: 0.1) : const Color(0xFFEF4444).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                                    child: Icon(isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444), size: 14),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        desc,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        dateStr,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                amountStr,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isCredit ? const Color(0xFF10B981) : (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    final actions = [
+      {'icon': Icons.send_rounded, 'label': 'Send Money', 'color': const Color(0xFF3B82F6)},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive', 'color': const Color(0xFF10B981)},
+      {'icon': Icons.receipt_long_rounded, 'label': 'Statement', 'color': const Color(0xFFEC4899)},
+      {'icon': Icons.savings_rounded, 'label': 'Deposit', 'color': const Color(0xFFF97316)},
+      {'icon': Icons.menu_book_rounded, 'label': 'Ledger', 'color': const Color(0xFFD97706)},
+      {'icon': Icons.pie_chart_rounded, 'label': 'Share', 'color': const Color(0xFF6366F1)},
+      {'icon': Icons.business_center_rounded, 'label': 'Loan', 'color': const Color(0xFFF43F5E)},
+      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar', 'color': const Color(0xFFF57C00)},
+      {'icon': Icons.bolt_rounded, 'label': 'Utility', 'color': const Color(0xFFEAB308)},
+      {'icon': Icons.newspaper_rounded, 'label': 'Notice', 'color': const Color(0xFF0D9488)},
+      {'icon': Icons.calculate_rounded, 'label': 'Calculator', 'color': const Color(0xFF64748B)},
+      {'icon': Icons.app_registration_rounded, 'label': 'Self Register', 'color': const Color(0xFF06B6D4)},
+    ];
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.9,
+      children: actions.map((act) {
+        return InkWell(
+          onTap: () => _handleActionTap(context, act['label'] as String),
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (act['color'] as Color).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: (act['color'] as Color).withValues(alpha: 0.2)),
+                ),
+                child: Icon(act['icon'] as IconData, color: act['color'] as Color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                (act['label'] as String).tr,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
