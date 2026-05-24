@@ -696,7 +696,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           context,
           MaterialPageRoute(
             builder: (_) => AccountSingleDetailsPage(
-              account: cardData['raw'],
+              account: Map<String, dynamic>.from(cardData['raw']),
               accountType: type,
             ),
           ),

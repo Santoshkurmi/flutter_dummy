@@ -247,7 +247,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => AccountSingleDetailsPage(
-                                          account: acc,
+                                          account: Map<String, dynamic>.from(acc),
                                           accountType: type,
                                         ),
                                       ),
