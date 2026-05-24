@@ -18,7 +18,7 @@ class QRTab extends StatefulWidget {
   State<QRTab> createState() => QRTabState();
 }
 
-class QRTabState extends State<QRTab> with WidgetsBindingObserver {
+class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   MobileScannerController? _controller;
   bool _isScanning = false;
   bool _torchEnabled = false;
@@ -29,11 +29,20 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
   String _cameraErrorMessage = '';
   bool _isActive = false;
 
+  late AnimationController _overlayAnimationController;
+  List<Offset>? _scannedCorners;
+  Size? _scannedFrameSize;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // REMOVED: Do not initialize the controller here.
+    _overlayAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..addListener(() {
+        setState(() {});
+      });
   }
 
   /// Call this from outside when the tab becomes visible
@@ -103,6 +112,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _overlayAnimationController.dispose();
     _controller?.dispose();
     _controller = null;
     super.dispose();
@@ -117,13 +127,33 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
     final value = barcode.rawValue ?? '';
     if (value.isEmpty) return;
 
-    HapticFeedback.mediumImpact();
-
     setState(() {
       _hasResult = true;
+    });
+
+    HapticFeedback.mediumImpact();
+
+    if (barcode.corners.isNotEmpty) {
+      setState(() {
+        _scannedCorners = barcode.corners;
+        _scannedFrameSize = capture.size;
+      });
+      _overlayAnimationController.forward(from: 0.0).then((_) {
+        _processScanResult(value);
+      });
+    } else {
+      _processScanResult(value);
+    }
+  }
+
+  void _processScanResult(String value) {
+    if (!mounted) return;
+    setState(() {
       _scannedValue = value;
       _scannedType = _detectContentType(value);
       _isScanning = false;
+      _scannedCorners = null;
+      _scannedFrameSize = null;
     });
 
     _controller?.stop();
@@ -199,6 +229,8 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
       _scannedType = null;
       _torchEnabled = false;
       _cameraError = false;
+      _scannedCorners = null;
+      _scannedFrameSize = null;
     });
     
     if (_isActive) {
@@ -343,132 +375,146 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver {
   Widget _buildScannerView(bool isDark) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Camera preview
-          if (!_cameraError && _controller != null)
-            MobileScanner(
-              controller: _controller!,
-              onDetect: _onDetect,
-              errorBuilder: (context, error, child) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      _cameraError = true;
-                      _cameraErrorMessage = error.errorDetails?.message ?? 'Camera error';
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              // Camera preview
+              if (!_cameraError && _controller != null)
+                MobileScanner(
+                  controller: _controller!,
+                  onDetect: _onDetect,
+                  errorBuilder: (context, error, child) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() {
+                          _cameraError = true;
+                          _cameraErrorMessage = error.errorDetails?.message ?? 'Camera error';
+                        });
+                      }
                     });
-                  }
-                });
-                return const SizedBox.shrink();
-              },
-            ),
+                    return const SizedBox.shrink();
+                  },
+                ),
 
-          // Camera error state
-          if (_cameraError)
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.camera_alt_rounded, size: 64, color: Color(0xFF64748B)),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Camera Unavailable',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _cameraErrorMessage,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-
-          // Overlay with cutout
-          if (!_cameraError)
-            _buildScanOverlay(),
-
-          // Top action bar
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Title
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Scan QR'.tr,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
+              // Camera error state
+              if (_cameraError)
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Torch toggle
-                      _buildActionButton(
-                        icon: _torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-                        onTap: _toggleTorch,
-                        color: _torchEnabled ? const Color(0xFFFFA825) : Colors.white,
+                      const Icon(Icons.camera_alt_rounded, size: 64, color: Color(0xFF64748B)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Camera Unavailable',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      // Gallery picker
-                      _buildActionButton(
-                        icon: Icons.photo_library_rounded,
-                        onTap: _pickImage,
-                        color: Colors.white,
+                      const SizedBox(height: 8),
+                      Text(
+                        _cameraErrorMessage,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom hint
-          Positioned(
-            bottom: 100,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Text(
-                  'Point camera at a QR code or barcode',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+
+              // Overlay with cutout (static scanner viewfinder OR animated glowing detection overlay)
+              if (!_cameraError)
+                _scannedCorners != null && _scannedFrameSize != null
+                    ? Positioned.fill(
+                        child: CustomPaint(
+                          painter: QRScannerOverlayPainter(
+                            corners: _scannedCorners!,
+                            frameSize: _scannedFrameSize!,
+                            animationProgress: _overlayAnimationController.value,
+                          ),
+                        ),
+                      )
+                    : _buildScanOverlay(),
+
+              // Top action bar
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Title
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Scan QR'.tr,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // Torch toggle
+                          _buildActionButton(
+                            icon: _torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                            onTap: _toggleTorch,
+                            color: _torchEnabled ? const Color(0xFFFFA825) : Colors.white,
+                          ),
+                          const SizedBox(width: 10),
+                          // Gallery picker
+                          _buildActionButton(
+                            icon: Icons.photo_library_rounded,
+                            onTap: _pickImage,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+
+              // Bottom hint
+              Positioned(
+                bottom: 100,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Text(
+                      'Point camera at a QR code or barcode',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -888,4 +934,149 @@ class _CornerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class QRScannerOverlayPainter extends CustomPainter {
+  final List<Offset> corners;
+  final Size frameSize;
+  final double animationProgress;
+
+  QRScannerOverlayPainter({
+    required this.corners,
+    required this.frameSize,
+    required this.animationProgress,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (corners.length < 4 || frameSize.width == 0 || frameSize.height == 0) return;
+
+    // ML Kit provides cornerPoints already rotated to the display orientation.
+    // However, capture.size comes from mediaImage.width/height which is the
+    // raw sensor resolution (typically landscape, e.g. 640x480).
+    // The MobileScanner widget displays the preview using FittedBox(BoxFit.cover)
+    // with the already-rotated size. So we must:
+    // 1. Swap frameSize to portrait if sensor is landscape but widget is portrait
+    // 2. Apply BoxFit.cover scaling (same as the widget)
+    // 3. Do NOT rotate the corners — they're already correct
+
+    final bool isWidgetPortrait = size.height > size.width;
+    final bool isFrameLandscape = frameSize.width > frameSize.height;
+
+    // Effective frame size in display orientation
+    final Size effectiveFrame = (isWidgetPortrait && isFrameLandscape)
+        ? Size(frameSize.height, frameSize.width)  // swap to portrait
+        : frameSize;
+
+    // BoxFit.cover: scale to fill the widget, cropping the excess
+    final double scaleX = size.width / effectiveFrame.width;
+    final double scaleY = size.height / effectiveFrame.height;
+    final double scale = scaleX > scaleY ? scaleX : scaleY;
+
+    // Centering offset (one axis will be cropped, the other fits exactly)
+    final double offsetX = (size.width - effectiveFrame.width * scale) / 2;
+    final double offsetY = (size.height - effectiveFrame.height * scale) / 2;
+
+    final List<Offset> projectedCorners = corners.map((pt) {
+      return Offset(pt.dx * scale + offsetX, pt.dy * scale + offsetY);
+    }).toList();
+
+    double minX = double.infinity;
+    double maxX = double.negativeInfinity;
+    double minY = double.infinity;
+    double maxY = double.negativeInfinity;
+    for (final pt in projectedCorners) {
+      if (pt.dx < minX) minX = pt.dx;
+      if (pt.dx > maxX) maxX = pt.dx;
+      if (pt.dy < minY) minY = pt.dy;
+      if (pt.dy > maxY) maxY = pt.dy;
+    }
+
+    final rect = Rect.fromLTRB(minX, minY, maxX, maxY);
+
+    final overlayPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6 * (1.0 - animationProgress))
+      ..style = PaintingStyle.fill;
+      
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRect(rect);
+    path.fillType = PathFillType.evenOdd;
+    canvas.drawPath(path, overlayPaint);
+
+    final double pulseScale = 1.0 + 0.08 * animationProgress;
+    final center = rect.center;
+    final rotatedRect = Rect.fromCenter(
+      center: center,
+      width: rect.width * pulseScale,
+      height: rect.height * pulseScale,
+    );
+
+    final boxPaint = Paint()
+      ..color = const Color(0xFF10B981).withValues(alpha: 1.0 - animationProgress)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+      
+    final rrect = RRect.fromRectAndRadius(rotatedRect, const Radius.circular(12));
+    canvas.drawRRect(rrect, boxPaint);
+
+    final bracketPaint = Paint()
+      ..color = const Color(0xFF10B981).withValues(alpha: 1.0 - animationProgress)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0
+      ..strokeCap = StrokeCap.round;
+
+    final double length = (rect.width * 0.2).clamp(15.0, 30.0);
+    canvas.drawPath(
+      Path()
+        ..moveTo(rotatedRect.left, rotatedRect.top + length)
+        ..lineTo(rotatedRect.left, rotatedRect.top)
+        ..lineTo(rotatedRect.left + length, rotatedRect.top),
+      bracketPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(rotatedRect.right - length, rotatedRect.top)
+        ..lineTo(rotatedRect.right, rotatedRect.top)
+        ..lineTo(rotatedRect.right, rotatedRect.top + length),
+      bracketPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(rotatedRect.left, rotatedRect.bottom - length)
+        ..lineTo(rotatedRect.left, rotatedRect.bottom)
+        ..lineTo(rotatedRect.left + length, rotatedRect.bottom),
+      bracketPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(rotatedRect.right - length, rotatedRect.bottom)
+        ..lineTo(rotatedRect.right, rotatedRect.bottom)
+        ..lineTo(rotatedRect.right, rotatedRect.bottom - length),
+      bracketPaint,
+    );
+
+    final double scanLineY = rotatedRect.top + (rotatedRect.height * animationProgress);
+    final scanLinePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF10B981).withValues(alpha: 0.0),
+          const Color(0xFF10B981).withValues(alpha: 0.8 * (1.0 - animationProgress)),
+          const Color(0xFF10B981).withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTRB(rotatedRect.left, scanLineY - 10, rotatedRect.right, scanLineY + 10))
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromLTRB(rotatedRect.left + 4, scanLineY - 8, rotatedRect.right - 4, scanLineY + 8),
+      scanLinePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant QRScannerOverlayPainter oldDelegate) {
+    return oldDelegate.animationProgress != animationProgress ||
+        oldDelegate.corners != corners ||
+        oldDelegate.frameSize != frameSize;
+  }
 }
