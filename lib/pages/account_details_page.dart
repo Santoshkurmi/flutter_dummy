@@ -128,138 +128,206 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               )
             : _hasError
                 ? _buildErrorView(context, isDarkMode)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Category Filter Bar with scroll indicators
-                  const SizedBox(height: 10),
-                  Stack(
+                : ListView(
+                    padding: const EdgeInsets.only(top: 0, bottom: 24),
                     children: [
-                      SingleChildScrollView(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Row(
-                          children: [
-                            _buildFilterPill('all', 'All', totalCount, isDarkMode),
-                            const SizedBox(width: 10),
-                            _buildFilterPill('savings', 'Savings', _savingsAccounts.length, isDarkMode),
-                            const SizedBox(width: 10),
-                            _buildFilterPill('loans', 'Loans', _loanAccounts.length, isDarkMode),
-                            const SizedBox(width: 10),
-                            _buildFilterPill('shares', 'Share Capital', _shareAccounts.length, isDarkMode),
-                          ],
-                        ),
-                      ),
-                      // Fade Overlay (on the right)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 30,
-                        child: IgnorePointer(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  isDarkMode ? const Color(0xFF020617).withValues(alpha: 0.0) : Colors.white.withValues(alpha: 0.0),
-                                  isDarkMode ? const Color(0xFF020617) : Colors.white,
-                                ],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
+                      // Category Filter Bar with scroll indicators
+                      const SizedBox(height: 10),
+                      Stack(
+                        children: [
+                          SingleChildScrollView(
+                            controller: _scrollController,
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: Row(
+                              children: [
+                                _buildFilterPill('all', 'All', totalCount, isDarkMode),
+                                const SizedBox(width: 10),
+                                _buildFilterPill('savings', 'Savings', _savingsAccounts.length, isDarkMode),
+                                const SizedBox(width: 10),
+                                _buildFilterPill('loans', 'Loans', _loanAccounts.length, isDarkMode),
+                                const SizedBox(width: 10),
+                                _buildFilterPill('shares', 'Share Capital', _shareAccounts.length, isDarkMode),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Custom progress tracker bar
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Container(
-                      width: 48,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Stack(
-                        children: [
+                          // Fade Overlay (on the right)
                           Positioned(
-                            left: _scrollProgress * 32.0,
+                            right: 0,
                             top: 0,
                             bottom: 0,
-                            width: 16,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB),
-                                borderRadius: BorderRadius.circular(2),
+                            width: 30,
+                            child: IgnorePointer(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      isDarkMode ? const Color(0xFF020617).withValues(alpha: 0.0) : Colors.white.withValues(alpha: 0.0),
+                                      isDarkMode ? const Color(0xFF020617) : Colors.white,
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
 
-                  // Accounts List
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: displayAccounts.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No accounts found in this category.',
-                              style: TextStyle(
-                                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            itemCount: displayAccounts.length,
-                            itemBuilder: (context, index) {
-                              final acc = displayAccounts[index];
-                              final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
-                              final balance = 'Rs. ${_formatAmount(rawBalance)}';
-                              final accountNo = acc['accNo'] ?? 'N/A';
-                              final name = acc['name'] ?? 'Account';
-                              final type = acc['type'] as String;
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: CooperativeAccountCard(
-                                  isOverview: false,
-                                  accountType: type,
-                                  title: acc['scheme'] ?? name,
-                                  balance: balance,
-                                  accountNo: accountNo,
-                                  interestRate: acc['interest_rate'],
-                                  shareCount: acc['share_count'],
-                                  maturityDate: acc['maturity_date'],
-                                  showBalance: true,
-                                  isDarkMode: isDarkMode,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => AccountSingleDetailsPage(
-                                          account: Map<String, dynamic>.from(acc),
-                                          accountType: type,
-                                        ),
-                                      ),
-                                    ).then((_) => _loadAccounts()); // Refresh upon returning
-                                  },
-                                ),
-                              );
-                            },
+                      // Custom progress tracker bar
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(2),
                           ),
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: _scrollProgress * 32.0,
+                                top: 0,
+                                bottom: 0,
+                                width: 16,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2563EB),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Grouped Account Lists by Section
+                      ..._buildAccountsList(isDarkMode),
+                    ],
                   ),
-                ],
+      ),
+    );
+  }
+
+  List<Widget> _buildAccountsList(bool isDarkMode) {
+    final List<Widget> list = [];
+    bool hasAnyAccount = false;
+
+    // Savings Section
+    if (_activeFilter == 'all' || _activeFilter == 'savings') {
+      if (_savingsAccounts.isNotEmpty) {
+        hasAnyAccount = true;
+        list.add(_buildSectionHeader('Savings Accounts', const Color(0xFF2563EB), isDarkMode));
+        for (var acc in _savingsAccounts) {
+          list.add(_buildAccountCardWidget(acc, 'savings', isDarkMode));
+        }
+      }
+    }
+
+    // Loans Section
+    if (_activeFilter == 'all' || _activeFilter == 'loans') {
+      if (_loanAccounts.isNotEmpty) {
+        hasAnyAccount = true;
+        list.add(_buildSectionHeader('Loan Accounts', const Color(0xFFEF4444), isDarkMode));
+        for (var acc in _loanAccounts) {
+          list.add(_buildAccountCardWidget(acc, 'loans', isDarkMode));
+        }
+      }
+    }
+
+    // Shares Section
+    if (_activeFilter == 'all' || _activeFilter == 'shares') {
+      if (_shareAccounts.isNotEmpty) {
+        hasAnyAccount = true;
+        list.add(_buildSectionHeader('Share Capital Accounts', const Color(0xFF10B981), isDarkMode));
+        for (var acc in _shareAccounts) {
+          list.add(_buildAccountCardWidget(acc, 'shares', isDarkMode));
+        }
+      }
+    }
+
+    if (!hasAnyAccount) {
+      list.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 80, left: 20, right: 20),
+          child: Center(
+            child: Text(
+              'No accounts found in this category.',
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return list;
+  }
+
+  Widget _buildSectionHeader(String title, Color color, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 14,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountCardWidget(dynamic acc, String type, bool isDarkMode) {
+    final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
+    final balance = 'Rs. ${_formatAmount(rawBalance)}';
+    final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
+    final name = acc['name'] ?? 'Account';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: CooperativeAccountCard(
+        isOverview: false,
+        accountType: type,
+        title: acc['scheme'] ?? name,
+        balance: balance,
+        accountNo: accountNo,
+        interestRate: acc['interest_rate'],
+        shareCount: acc['share_count'],
+        maturityDate: acc['maturity_date'],
+        showBalance: true,
+        isDarkMode: isDarkMode,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AccountSingleDetailsPage(
+                account: Map<String, dynamic>.from(acc),
+                accountType: type,
+              ),
+            ),
+          ).then((_) => _loadAccounts()); // Refresh upon returning
+        },
       ),
     );
   }
