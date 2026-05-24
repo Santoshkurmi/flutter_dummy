@@ -140,97 +140,95 @@ class CooperativeAccountCard extends StatelessWidget {
               ),
             ),
             // Content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.15),
-                              ),
-                              child: Icon(
-                                headerIcon,
-                                color: iconColor,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                ),
+                                child: Icon(
+                                  headerIcon,
+                                  color: iconColor,
+                                  size: 16,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (showArrow)
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white,
-                            size: 20,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          onPressed: onTap,
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Balance Column
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isOverview ? 'TOTAL ACCOUNT BALANCE'.tr : 'AVAILABLE BALANCE'.tr,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white.withValues(alpha: 0.65),
-                          letterSpacing: 1,
+                        if (showArrow)
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: onTap,
+                          ),
+                      ],
+                    ),
+                    
+                    // Balance Column
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isOverview ? 'TOTAL ACCOUNT BALANCE'.tr : 'AVAILABLE BALANCE'.tr,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white.withValues(alpha: 0.65),
+                            letterSpacing: 1,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        showBalance ? balance : '••••••••',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
+                        const SizedBox(height: 4),
+                        Text(
+                          showBalance ? balance : '••••••••',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Divider
-                  Container(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Bottom row
+                      ],
+                    ),
+                    
+                    // Divider
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                    
+                    // Bottom row
                   isOverview
                       ? Row(
                           children: [
@@ -436,9 +434,10 @@ class CooperativeAccountCard extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
