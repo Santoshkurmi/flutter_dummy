@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'store/auth_store.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/status_check_page.dart';
@@ -37,6 +38,13 @@ class BrightBankApp extends StatelessWidget {
             useMaterial3: true,
             brightness: isDark ? Brightness.dark : Brightness.light,
             scaffoldBackgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+            appBarTheme: AppBarTheme(
+              systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              ),
+            ),
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF2563EB),
               brightness: isDark ? Brightness.dark : Brightness.light,
