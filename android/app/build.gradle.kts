@@ -14,6 +14,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        resValues = true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.brightbank.app.mobile_banking"
@@ -23,6 +27,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resValue("string", "app_name", "Bright Sahakari")
     }
 
     signingConfigs {
@@ -35,8 +40,12 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             signingConfig = signingConfigs.getByName("release")
+        }
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Bright🪲 Sahakari")
         }
     }
 }
