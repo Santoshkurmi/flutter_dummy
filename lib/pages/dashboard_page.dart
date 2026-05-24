@@ -176,6 +176,13 @@ class _DashboardPageState extends State<DashboardPage> {
       canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
+          if (_currentIndex == 2) {
+            final qrState = _qrKey.currentState;
+            if (qrState != null && qrState.hasResult) {
+              qrState.resetScanner();
+              return;
+            }
+          }
           _onTabChanged(0);
         }
       },

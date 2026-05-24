@@ -34,6 +34,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   String _cameraErrorMessage = '';
   bool _isActive = false;
 
+  bool get hasResult => _hasResult;
+  void resetScanner() => _resetScanner();
+
   // Custom QR Mode
   bool _customQrMode = false;
   String _customQrLabel = 'Cooperative Payment QR';
@@ -62,12 +65,26 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   Future<void> startCamera() async {
     if (_isActive) return;
 
+    if (mounted) {
+      setState(() {
+        _isActive = true;
+      });
+    }
+
+    // If we have scanned a result and are showing the result view, do NOT spin up camera
+    if (_hasResult) {
+      return;
+    }
+
+    await _startCameraController();
+  }
+
+  Future<void> _startCameraController() async {
     // Check camera permission first explicitly
     final status = await Permission.camera.request();
     if (!status.isGranted) {
       if (mounted) {
         setState(() {
-          _isActive = true;
           _cameraError = true;
           _cameraErrorMessage = 'Camera permission is required to scan QR codes.';
         });
@@ -77,7 +94,6 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
 
     if (mounted) {
       setState(() {
-        _isActive = true;
         _isScanning = true;
         _cameraError = false;
         _cameraErrorMessage = '';
@@ -96,8 +112,14 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   void stopCamera() {
     if (!_isActive) return;
     
-    _controller?.stop();
-    _controller?.dispose(); // Clean up native resources completely
+    if (_controller != null) {
+      try {
+        _controller?.stop();
+      } catch (_) {}
+      try {
+        _controller?.dispose(); // Clean up native resources completely
+      } catch (_) {}
+    }
     
     if (mounted) {
       setState(() {
@@ -113,11 +135,15 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     if (!_isActive || _controller == null) return;
     
     if (state == AppLifecycleState.paused) {
-      _controller?.stop();
+      try {
+        _controller?.stop();
+      } catch (_) {}
     } else if (state == AppLifecycleState.resumed && _isScanning && !_hasResult) {
       // Safely access the value property now that initialization is gated
-      if (!_controller!.value.isRunning) {
-        _controller?.start();
+      if (_controller != null && !_controller!.value.isRunning) {
+        try {
+          _controller?.start();
+        } catch (_) {}
       }
     }
   }
@@ -244,6 +270,17 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   void _resetScanner() {
     _customLabelController?.dispose();
     _customLabelController = null;
+
+    if (_controller != null) {
+      try {
+        _controller?.stop();
+      } catch (_) {}
+      try {
+        _controller?.dispose();
+      } catch (_) {}
+      _controller = null;
+    }
+
     setState(() {
       _hasResult = false;
       _scannedValue = null;
@@ -255,19 +292,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     });
     
     if (_isActive) {
-      setState(() {
-        _isScanning = true;
-      });
-      // Re-instantiate controller cleanly if it was discarded during a stop/reset loop
-      if (_controller == null) {
-        _controller = MobileScannerController(
-          detectionSpeed: DetectionSpeed.normal,
-          torchEnabled: false,
-          autoStart: true,
-        );
-      } else {
-        _controller?.start();
-      }
+      _startCameraController();
     }
   }
 
@@ -347,10 +372,16 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     final isDark = widget.isDarkMode;
 
     if (_hasResult && _scannedValue != null) {
-      if (_customQrMode) {
-        return _buildCustomQrResultView(isDark);
-      }
-      return _buildResultView(isDark);
+      final resultView = _customQrMode ? _buildCustomQrResultView(isDark) : _buildResultView(isDark);
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _resetScanner();
+          }
+        },
+        child: resultView,
+      );
     }
 
     // If not active yet, show a placeholder
