@@ -204,11 +204,11 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   void _handleActionTap(BuildContext context, String label) {
     if (label == 'Statement' || label == 'Savings') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
     } else if (label == 'Ledger') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Self Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
@@ -598,7 +598,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage())),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData))),
                 child: Text(
                   'View All'.tr,
                   style: TextStyle(
@@ -693,7 +693,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     void onTapArrow() {
       if (isOverview) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
       } else {
         Navigator.push(
           context,
@@ -863,28 +863,29 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 40),
-          // Swipe to reload indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(30),
+          ElevatedButton(
+            onPressed: () {
+              widget.onRefresh();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 4,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.swap_vert_rounded,
-                  size: 16,
-                  color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
-                ),
+                const Icon(Icons.refresh_rounded, size: 16),
                 const SizedBox(width: 8),
                 Text(
-                  'Swipe down to reload'.tr,
-                  style: TextStyle(
-                    fontSize: 12,
+                  'Try Again'.tr,
+                  style: const TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                   ),
                 ),
               ],

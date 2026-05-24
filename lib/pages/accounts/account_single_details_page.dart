@@ -217,20 +217,21 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           children: [
-            // Account Card
-            const SizedBox(height: 10),
-            CooperativeAccountCard(
-              isOverview: false,
-              accountType: widget.accountType,
-              title: scheme,
-              balance: balance,
-              accountNo: accountNo,
-              interestRate: acc['interest_rate'],
-              shareCount: acc['share_count'],
-              maturityDate: acc['maturity_date'],
-              showBalance: true,
-              isDarkMode: isDarkMode,
-              showArrow: false,
+            SizedBox(
+              height: 190,
+              child: CooperativeAccountCard(
+                isOverview: false,
+                accountType: widget.accountType,
+                title: scheme,
+                balance: balance,
+                accountNo: accountNo,
+                interestRate: acc['interest_rate'],
+                shareCount: acc['share_count'],
+                maturityDate: acc['maturity_date'],
+                showBalance: true,
+                isDarkMode: isDarkMode,
+                showArrow: false,
+              ),
             ),
 
             const SizedBox(height: 28),

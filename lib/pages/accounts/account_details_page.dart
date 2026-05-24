@@ -5,7 +5,12 @@ import 'account_single_details_page.dart';
 import '../../widgets/cooperative_account_card.dart';
 
 class AccountDetailsPage extends StatefulWidget {
-  const AccountDetailsPage({super.key});
+  final Map<String, dynamic>? initialAccountsData;
+
+  const AccountDetailsPage({
+    super.key,
+    this.initialAccountsData,
+  });
 
   @override
   State<AccountDetailsPage> createState() => _AccountDetailsPageState();
@@ -24,7 +29,15 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _loadAccounts();
+    if (widget.initialAccountsData != null) {
+      _savingsAccounts = widget.initialAccountsData!['savings'] ?? [];
+      _loanAccounts = widget.initialAccountsData!['loans'] ?? [];
+      _shareAccounts = widget.initialAccountsData!['shares'] ?? [];
+      _isLoading = false;
+      _hasError = false;
+    } else {
+      _loadAccounts();
+    }
     _scrollController.addListener(_onScroll);
   }
 
@@ -306,28 +319,31 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: CooperativeAccountCard(
-        isOverview: false,
-        accountType: type,
-        title: acc['scheme'] ?? name,
-        balance: balance,
-        accountNo: accountNo,
-        interestRate: acc['interest_rate'],
-        shareCount: acc['share_count'],
-        maturityDate: acc['maturity_date'],
-        showBalance: true,
-        isDarkMode: isDarkMode,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AccountSingleDetailsPage(
-                account: Map<String, dynamic>.from(acc),
-                accountType: type,
+      child: SizedBox(
+        height: 190,
+        child: CooperativeAccountCard(
+          isOverview: false,
+          accountType: type,
+          title: acc['scheme'] ?? name,
+          balance: balance,
+          accountNo: accountNo,
+          interestRate: acc['interest_rate'],
+          shareCount: acc['share_count'],
+          maturityDate: acc['maturity_date'],
+          showBalance: true,
+          isDarkMode: isDarkMode,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AccountSingleDetailsPage(
+                  account: Map<String, dynamic>.from(acc),
+                  accountType: type,
+                ),
               ),
-            ),
-          ).then((_) => _loadAccounts()); // Refresh upon returning
-        },
+            ).then((_) => _loadAccounts()); // Refresh upon returning
+          },
+        ),
       ),
     );
   }
@@ -454,10 +470,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             ),
           ),
           const SizedBox(height: 40),
-          // "Go Back & Try Again" action button
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              setState(() {
+                _isLoading = true;
+                _hasError = false;
+              });
+              _loadAccounts();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
@@ -471,10 +490,10 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.arrow_back_rounded, size: 16),
+                const Icon(Icons.refresh_rounded, size: 16),
                 const SizedBox(width: 8),
                 Text(
-                  'Go Back & Try Again'.tr,
+                  'Try Again'.tr,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
