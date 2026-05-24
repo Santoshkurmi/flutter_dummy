@@ -4,11 +4,13 @@ import '../../widgets/cooperative_account_card.dart';
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
   final String accountType; // savings, loans, shares
+  final String? heroTag;
 
   const AccountSingleDetailsPage({
     super.key,
     required this.account,
     required this.accountType,
+    this.heroTag,
   });
 
   @override
@@ -231,6 +233,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> {
                 showBalance: true,
                 isDarkMode: isDarkMode,
                 showArrow: false,
+                heroTag: widget.heroTag,
               ),
             ),
 

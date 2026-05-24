@@ -701,6 +701,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
             builder: (_) => AccountSingleDetailsPage(
               account: Map<String, dynamic>.from(cardData['raw']),
               accountType: type,
+              heroTag: 'card_${cardData['accNo']}',
             ),
           ),
         );
@@ -721,6 +722,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       showBalance: widget.showBalance,
       isDarkMode: widget.isDarkMode,
       onTap: onTapArrow,
+      heroTag: isOverview ? null : 'card_${cardData['accNo']}',
     );
   }
 

@@ -16,6 +16,7 @@ class CooperativeAccountCard extends StatelessWidget {
   final bool isDarkMode;
   final bool showArrow;
   final VoidCallback? onTap;
+  final String? heroTag;
 
   const CooperativeAccountCard({
     super.key,
@@ -33,6 +34,7 @@ class CooperativeAccountCard extends StatelessWidget {
     required this.isDarkMode,
     this.showArrow = true,
     this.onTap,
+    this.heroTag,
   });
 
   @override
@@ -93,7 +95,7 @@ class CooperativeAccountCard extends StatelessWidget {
       }
     }
 
-    return GestureDetector(
+    final cardWidget = GestureDetector(
       onTap: onTap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -439,5 +441,16 @@ class CooperativeAccountCard extends StatelessWidget {
       ),
     ),
   );
+
+  if (heroTag != null) {
+    return Hero(
+      tag: heroTag!,
+      child: Material(
+        type: MaterialType.transparency,
+        child: cardWidget,
+      ),
+    );
+  }
+  return cardWidget;
 }
 }
