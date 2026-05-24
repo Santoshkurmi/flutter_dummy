@@ -209,13 +209,12 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               mainAxisSpacing: 10,
               childAspectRatio: 0.9,
               children: [
-                _buildActionGridButton('Deposit', Icons.add_circle_outline_rounded, const Color(0xFF3B82F6), isDarkMode),
-                _buildActionGridButton('Payment', Icons.send_rounded, const Color(0xFF10B981), isDarkMode),
-                _buildActionGridButton('Statement', Icons.download_rounded, const Color(0xFF8B5CF6), isDarkMode),
+                _buildActionGridButton('Deposit', Icons.add_circle_outline_rounded, isDarkMode),
+                _buildActionGridButton('Payment', Icons.send_rounded, isDarkMode),
+                _buildActionGridButton('Statement', Icons.download_rounded, isDarkMode),
                 _buildActionGridButton(
                   'Daybook',
                   Icons.receipt_long_rounded,
-                  const Color(0xFFF59E0B),
                   isDarkMode,
                   onTap: () {
                     Navigator.push(
@@ -275,7 +274,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     );
   }
 
-  Widget _buildActionGridButton(String label, IconData icon, Color color, bool isDarkMode, {VoidCallback? onTap}) {
+  Widget _buildActionGridButton(String label, IconData icon, bool isDarkMode, {VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap ?? () => _handleQuickAction(label),
       borderRadius: BorderRadius.circular(20),
@@ -293,10 +292,17 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFDBEAFE),
+                ),
               ),
-              child: Icon(icon, color: color, size: 20),
+              child: Icon(
+                icon,
+                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                size: 20,
+              ),
             ),
             const SizedBox(height: 8),
             Text(

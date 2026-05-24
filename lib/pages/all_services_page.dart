@@ -40,27 +40,37 @@ class AllServicesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final allActions = [
-      {'icon': Icons.send_rounded, 'label': 'Send Money', 'color': const Color(0xFF3B82F6)},
-      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive', 'color': const Color(0xFF10B981)},
-      {'icon': Icons.receipt_long_rounded, 'label': 'Statement', 'color': const Color(0xFFEC4899)},
-      {'icon': Icons.savings_rounded, 'label': 'Deposit', 'color': const Color(0xFFF97316)},
-      {'icon': Icons.menu_book_rounded, 'label': 'Ledger', 'color': const Color(0xFFD97706)},
-      {'icon': Icons.pie_chart_rounded, 'label': 'Share', 'color': const Color(0xFF6366F1)},
-      {'icon': Icons.business_center_rounded, 'label': 'Loan', 'color': const Color(0xFFF43F5E)},
-      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar', 'color': const Color(0xFFF57C00)},
-      {'icon': Icons.bolt_rounded, 'label': 'Utility', 'color': const Color(0xFFEAB308)},
-      {'icon': Icons.newspaper_rounded, 'label': 'Notice', 'color': const Color(0xFF0D9488)},
-      {'icon': Icons.calculate_rounded, 'label': 'Calculator', 'color': const Color(0xFF64748B)},
-      {'icon': Icons.app_registration_rounded, 'label': 'Self Register', 'color': const Color(0xFF06B6D4)},
-      {'icon': Icons.history_rounded, 'label': 'History', 'color': const Color(0xFF475569)},
-      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer', 'color': const Color(0xFF3B82F6)},
-      {'icon': Icons.trending_up_rounded, 'label': 'Growth', 'color': const Color(0xFF10B981)},
-      {'icon': Icons.shield_rounded, 'label': 'Security', 'color': const Color(0xFF2563EB)},
-      {'icon': Icons.card_giftcard_rounded, 'label': 'Rewards', 'color': const Color(0xFFE11D48)},
-      {'icon': Icons.public_rounded, 'label': 'Remittance', 'color': const Color(0xFF4F46E5)},
-      {'icon': Icons.qr_code_scanner_rounded, 'label': 'Scan QR', 'color': const Color(0xFF9333EA)},
-      {'icon': Icons.help_outline_rounded, 'label': 'Support', 'color': const Color(0xFF64748B)},
+      {'icon': Icons.send_rounded, 'label': 'Send Money'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive'},
+      {'icon': Icons.receipt_long_rounded, 'label': 'Statement'},
+      {'icon': Icons.savings_rounded, 'label': 'Deposit'},
+      {'icon': Icons.menu_book_rounded, 'label': 'Ledger'},
+      {'icon': Icons.pie_chart_rounded, 'label': 'Share'},
+      {'icon': Icons.business_center_rounded, 'label': 'Loan'},
+      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
+      {'icon': Icons.bolt_rounded, 'label': 'Utility'},
+      {'icon': Icons.newspaper_rounded, 'label': 'Notice'},
+      {'icon': Icons.calculate_rounded, 'label': 'Calculator'},
+      {'icon': Icons.app_registration_rounded, 'label': 'Self Register'},
+      {'icon': Icons.history_rounded, 'label': 'History'},
+      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer'},
+      {'icon': Icons.trending_up_rounded, 'label': 'Growth'},
+      {'icon': Icons.shield_rounded, 'label': 'Security'},
+      {'icon': Icons.card_giftcard_rounded, 'label': 'Rewards'},
+      {'icon': Icons.public_rounded, 'label': 'Remittance'},
+      {'icon': Icons.qr_code_scanner_rounded, 'label': 'Scan QR'},
+      {'icon': Icons.help_outline_rounded, 'label': 'Support'},
     ];
+
+    final Color containerColor = isDarkMode 
+        ? Colors.white.withValues(alpha: 0.05) 
+        : const Color(0xFFEFF6FF);
+    final Color borderColor = isDarkMode 
+        ? Colors.white.withValues(alpha: 0.08) 
+        : const Color(0xFFDBEAFE);
+    final Color iconColor = isDarkMode 
+        ? const Color(0xFF60A5FA) 
+        : const Color(0xFF2563EB);
 
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
@@ -109,11 +119,11 @@ class AllServicesPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: (act['color'] as Color).withValues(alpha: 0.12),
+                      color: containerColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: (act['color'] as Color).withValues(alpha: 0.2)),
+                      border: Border.all(color: borderColor),
                     ),
-                    child: Icon(act['icon'] as IconData, color: act['color'] as Color, size: 24),
+                    child: Icon(act['icon'] as IconData, color: iconColor, size: 24),
                   ),
                   const SizedBox(height: 8),
                   Text(

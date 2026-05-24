@@ -724,19 +724,30 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   Widget _buildQuickActions(BuildContext context) {
     final actions = [
-      {'icon': Icons.send_rounded, 'label': 'Send Money', 'color': const Color(0xFF3B82F6)},
-      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive', 'color': const Color(0xFF10B981)},
-      {'icon': Icons.receipt_long_rounded, 'label': 'Statement', 'color': const Color(0xFFEC4899)},
-      {'icon': Icons.savings_rounded, 'label': 'Deposit', 'color': const Color(0xFFF97316)},
-      {'icon': Icons.menu_book_rounded, 'label': 'Ledger', 'color': const Color(0xFFD97706)},
-      {'icon': Icons.pie_chart_rounded, 'label': 'Share', 'color': const Color(0xFF6366F1)},
-      {'icon': Icons.business_center_rounded, 'label': 'Loan', 'color': const Color(0xFFF43F5E)},
-      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar', 'color': const Color(0xFFF57C00)},
-      {'icon': Icons.bolt_rounded, 'label': 'Utility', 'color': const Color(0xFFEAB308)},
-      {'icon': Icons.newspaper_rounded, 'label': 'Notice', 'color': const Color(0xFF0D9488)},
-      {'icon': Icons.calculate_rounded, 'label': 'Calculator', 'color': const Color(0xFF64748B)},
-      {'icon': Icons.app_registration_rounded, 'label': 'Self Register', 'color': const Color(0xFF06B6D4)},
+      {'icon': Icons.send_rounded, 'label': 'Send Money'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive'},
+      {'icon': Icons.receipt_long_rounded, 'label': 'Statement'},
+      {'icon': Icons.savings_rounded, 'label': 'Deposit'},
+      {'icon': Icons.menu_book_rounded, 'label': 'Ledger'},
+      {'icon': Icons.pie_chart_rounded, 'label': 'Share'},
+      {'icon': Icons.business_center_rounded, 'label': 'Loan'},
+      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
+      {'icon': Icons.bolt_rounded, 'label': 'Utility'},
+      {'icon': Icons.newspaper_rounded, 'label': 'Notice'},
+      {'icon': Icons.calculate_rounded, 'label': 'Calculator'},
+      {'icon': Icons.app_registration_rounded, 'label': 'Self Register'},
     ];
+
+    final Color containerColor = widget.isDarkMode 
+        ? Colors.white.withValues(alpha: 0.05) 
+        : const Color(0xFFEFF6FF);
+    final Color borderColor = widget.isDarkMode 
+        ? Colors.white.withValues(alpha: 0.08) 
+        : const Color(0xFFDBEAFE);
+    final Color iconColor = widget.isDarkMode 
+        ? const Color(0xFF60A5FA) 
+        : const Color(0xFF2563EB);
+
     return GridView.count(
       crossAxisCount: 4,
       shrinkWrap: true,
@@ -755,11 +766,11 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (act['color'] as Color).withValues(alpha: 0.12),
+                  color: containerColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: (act['color'] as Color).withValues(alpha: 0.2)),
+                  border: Border.all(color: borderColor),
                 ),
-                child: Icon(act['icon'] as IconData, color: act['color'] as Color, size: 24),
+                child: Icon(act['icon'] as IconData, color: iconColor, size: 24),
               ),
               const SizedBox(height: 8),
               Text(
