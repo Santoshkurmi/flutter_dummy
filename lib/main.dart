@@ -4,10 +4,16 @@ import 'pages/onboarding_page.dart';
 import 'pages/status_check_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
-
+import 'package:refresh_rate/refresh_rate.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  try {
+    // Unlocks peak rate (90Hz / 120Hz / 144Hz) on supported Android and iOS devices
+     RefreshRate.enable();
+  } catch (e) {
+    debugPrint("Failed to set high refresh rate: $e");
+  }
   // Initialize Auth Store (persistences and initial loadings)
   final authStore = AuthStore();
   await authStore.init();
