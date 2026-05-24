@@ -91,100 +91,345 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _showApiUrlDialog(BuildContext context) {
-    final controller = TextEditingController(
-      text: AuthStore().customApiUrl ?? 'http://192.168.1.252:8000/api/mobile-banking/v1',
-    );
+    final String initialUrl = AuthStore().customApiUrl ?? 'http://192.168.1.253:8000/api/mobile-banking/v1';
+    
+    String initialScheme = 'http';
+    String initialHost = '192.168.1.253';
+    String initialPort = '8000';
+    String initialPath = '/api/mobile-banking/v1';
+
+    try {
+      final uri = Uri.parse(initialUrl);
+      if (uri.hasScheme) {
+        initialScheme = uri.scheme;
+      }
+      initialHost = uri.host;
+      if (uri.hasPort) {
+        initialPort = uri.port.toString();
+      } else {
+        initialPort = '';
+      }
+      initialPath = uri.path;
+    } catch (_) {
+      // Fallback defaults
+    }
+
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Row(
-            children: [
-              const Icon(Icons.developer_board_rounded, color: Color(0xFF2563EB)),
-              const SizedBox(width: 10),
-              const Text(
-                'Developer Gateway',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Enter a custom API URL gateway endpoint below to redirect all mobile banking services, or reset to use the default cooperative servers.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                  fontSize: 13,
-                  fontFamily: 'monospace',
-                ),
-                decoration: InputDecoration(
-                  labelText: 'API Base URL',
-                  labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  filled: true,
-                  fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+        String dialogScheme = initialScheme;
+        final hostController = TextEditingController(text: initialHost);
+        final portController = TextEditingController(text: initialPort);
+        final pathController = TextEditingController(text: initialPath);
+
+        String getAssembledUrl(String scheme, String host, String port, String path) {
+          final cleanHost = host.trim();
+          final cleanPort = port.trim();
+          var cleanPath = path.trim();
+          if (cleanPath.isNotEmpty && !cleanPath.startsWith('/')) {
+            cleanPath = '/$cleanPath';
+          }
+          if (cleanHost.isEmpty) return '';
+          final portPart = cleanPort.isNotEmpty ? ':$cleanPort' : '';
+          return '$scheme://$cleanHost$portPart$cleanPath';
+        }
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final assembledUrl = getAssembledUrl(
+              dialogScheme,
+              hostController.text,
+              portController.text,
+              pathController.text,
+            );
+
+            return Dialog(
+              backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Title
+                      Row(
+                        children: [
+                          const Icon(Icons.developer_board_rounded, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Developer Gateway',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Body/Description
+                      const Text(
+                        'Configure your API URL gateway endpoint below. Changes will persist across app restarts.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Protocol selection
+                      const Text(
+                        'Protocol',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  dialogScheme = 'http';
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: dialogScheme == 'http'
+                                      ? const Color(0xFF2563EB)
+                                      : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                                  border: Border.all(
+                                    color: dialogScheme == 'http'
+                                        ? const Color(0xFF2563EB)
+                                        : (isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'HTTP',
+                                    style: TextStyle(
+                                      color: dialogScheme == 'http' ? Colors.white : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  dialogScheme = 'https';
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: dialogScheme == 'https'
+                                      ? const Color(0xFF2563EB)
+                                      : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
+                                  border: Border.all(
+                                    color: dialogScheme == 'https'
+                                        ? const Color(0xFF2563EB)
+                                        : (isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'HTTPS',
+                                    style: TextStyle(
+                                      color: dialogScheme == 'https' ? Colors.white : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Host Input
+                      TextField(
+                        controller: hostController,
+                        onChanged: (_) => setState(() {}),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Host / IP Address',
+                          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                          hintText: 'e.g. 192.168.1.252',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                          filled: true,
+                          fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Port & Path Inputs
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              controller: portController,
+                              onChanged: (_) => setState(() {}),
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                fontSize: 13,
+                                fontFamily: 'monospace',
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Port',
+                                labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                hintText: '8000',
+                                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                filled: true,
+                                fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 4,
+                            child: TextField(
+                              controller: pathController,
+                              onChanged: (_) => setState(() {}),
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                fontSize: 13,
+                                fontFamily: 'monospace',
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'API Path',
+                                labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                hintText: '/api/mobile-banking/v1',
+                                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                filled: true,
+                                fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Live assembled URL preview (Multi-line / Wrapping)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Live Assembled API URL:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              assembledUrl.isNotEmpty ? assembledUrl : 'Invalid Host URL',
+                              softWrap: true,
+                              maxLines: null,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: assembledUrl.isNotEmpty
+                                    ? (isDarkMode ? Colors.greenAccent : const Color(0xFF16A34A))
+                                    : Colors.redAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              _pointerCount = 0;
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              await AuthStore().setCustomApiUrl(null);
+                              _pointerCount = 0;
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('API Gateway reset to cooperative default successfully!'),
+                                    backgroundColor: Color(0xFF10B981),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text('Reset', style: TextStyle(color: Color(0xFFEF4444))),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final url = assembledUrl;
+                              if (url.isNotEmpty) {
+                                await AuthStore().setCustomApiUrl(url);
+                                _pointerCount = 0;
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Custom API Gateway redirected to: $url'),
+                                      backgroundColor: const Color(0xFF2563EB),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text('Save Endpoint', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB))),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _pointerCount = 0;
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
-            ),
-            TextButton(
-              onPressed: () async {
-                await AuthStore().setCustomApiUrl(null);
-                _pointerCount = 0;
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('API Gateway reset to cooperative default successfully!'),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Reset', style: TextStyle(color: Color(0xFFEF4444))),
-            ),
-            TextButton(
-              onPressed: () async {
-                final url = controller.text.trim();
-                if (url.isNotEmpty) {
-                  await AuthStore().setCustomApiUrl(url);
-                  _pointerCount = 0;
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Custom API Gateway redirected to: $url'),
-                        backgroundColor: const Color(0xFF2563EB),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save Endpoint', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB))),
-            ),
-          ],
+            );
+          },
         );
       },
     );
