@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import 'daybook_ledger_page.dart';
 import '../widgets/cooperative_account_card.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
@@ -17,80 +15,7 @@ class AccountSingleDetailsPage extends StatefulWidget {
   State<AccountSingleDetailsPage> createState() => _AccountSingleDetailsPageState();
 }
 
-class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  bool _isLoadingLedger = false;
-  List<dynamic> _ledgerItems = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_handleTabChange);
-    _loadLedger();
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_handleTabChange);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _handleTabChange() {
-    if (_tabController.index == 1 && _ledgerItems.isEmpty) {
-      _loadLedger();
-    }
-  }
-
-  Future<void> _loadLedger() async {
-    setState(() {
-      _isLoadingLedger = true;
-    });
-
-    try {
-      final id = widget.account['id'] ?? 1;
-      final res = await ApiService().getAccountLedger(widget.accountType, id);
-      setState(() {
-        _ledgerItems = res['data'] ?? [];
-        _isLoadingLedger = false;
-      });
-    } catch (_) {
-      setState(() {
-        _isLoadingLedger = false;
-      });
-    }
-  }
-
-  List<Map<String, String>> _getMetrics() {
-    final acc = widget.account;
-    final isSaving = widget.accountType == 'savings';
-    final isLoan = widget.accountType == 'loans';
-
-    if (isSaving) {
-      return [
-        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.', 'desc': 'Quarterly capitalization' },
-        { 'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}', 'desc': 'Accumulated this quarter threshold' },
-        { 'label': 'Minimum Balance', 'value': 'Rs. ${_formatAmount(acc['min_balance'])}', 'desc': 'Required minimum balance threshold' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2081-02-15', 'desc': 'Active savings account setup date' },
-      ];
-    } else if (isLoan) {
-      return [
-        { 'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.', 'desc': 'Calculated monthly capitalization' },
-        { 'label': 'Accrued Interest Due', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}', 'desc': 'Pending current capitalization cycle' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2080-11-10', 'desc': 'Loan approval execution date' },
-        { 'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? '2085-11-10', 'desc': 'Loan final maturity schedule' },
-      ];
-    } else {
-      // shares
-      return [
-        { 'label': 'Share Capital Value', 'value': 'Rs. ${_formatAmount(acc['balance'])}', 'desc': 'Total capitalized share investment value' },
-        { 'label': 'Total Share Units', 'value': '${acc['share_count'] ?? '100'} Units', 'desc': 'NPR 100.00 face value per share unit' },
-        { 'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2079-05-18', 'desc': 'Active member shareholding setup date' },
-        { 'label': 'Member Status', 'value': 'Active Shareholder', 'desc': 'Bright Cooperative Member core status' },
-      ];
-    }
-  }
+class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> {
 
   void _handleQuickAction(String title) {
     showDialog(
@@ -110,6 +35,19 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           ],
         );
       },
+    );
+  }
+
+  void _showNotImplementedSnackBar(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature feature is not implemented yet.'),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1E293B) 
+            : const Color(0xFF0F172A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 
@@ -135,16 +73,123 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final scheme = (acc['scheme'] ?? widget.accountType.toUpperCase()).toString().toUpperCase();
 
-    Color accentColor = const Color(0xFF2563EB); // savings blue
-    Color cardBg = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    Color accentBarColor = const Color(0xFF2563EB);
+    final isSavings = widget.accountType == 'savings';
+    final isLoan = widget.accountType == 'loans';
+    final isShare = widget.accountType == 'shares';
 
+    Color accentColor = const Color(0xFF2563EB); // savings blue
     if (widget.accountType == 'loans') {
       accentColor = const Color(0xFFEF4444);
-      accentBarColor = const Color(0xFFEF4444);
     } else if (widget.accountType == 'shares') {
       accentColor = const Color(0xFF10B981);
-      accentBarColor = const Color(0xFF10B981);
+    }
+
+    IconData getIconForLabel(String label) {
+      switch (label) {
+        case 'Interest Rate':
+          return Icons.percent_rounded;
+        case 'Accrued Interest':
+        case 'Accrued Interest Due':
+        case 'Due Interest':
+          return Icons.payments_rounded;
+        case 'Minimum Balance':
+          return Icons.wallet_rounded;
+        case 'Opened Date (BS)':
+          return Icons.calendar_today_rounded;
+        case 'Maturity Date':
+        case 'Maturity Date (BS)':
+          return Icons.event_busy_rounded;
+        case 'Interest Posting Date':
+          return Icons.event_repeat_rounded;
+        case 'Principal Fine':
+        case 'Interest Fine':
+          return Icons.gavel_rounded;
+        case 'Matured Principal':
+          return Icons.account_balance_rounded;
+        case 'Share Capital Value':
+          return Icons.monetization_on_rounded;
+        case 'Total Share Units':
+          return Icons.grid_view_rounded;
+        case 'Member Status':
+          return Icons.verified_user_rounded;
+        default:
+          return Icons.info_outline_rounded;
+      }
+    }
+
+    // Build actions list dynamically based on account type
+    final actions = <Map<String, dynamic>>[];
+
+    if (!isLoan) {
+      actions.add({
+        'label': 'Deposit',
+        'icon': Icons.add_circle_outline_rounded,
+        'onTap': () => _showNotImplementedSnackBar('Deposit'),
+      });
+    }
+
+    if (!isShare) {
+      actions.add({
+        'label': 'Payment',
+        'icon': Icons.send_rounded,
+        'onTap': () => _showNotImplementedSnackBar('Payment'),
+      });
+    }
+
+    actions.add({
+      'label': 'Statement',
+      'icon': Icons.download_rounded,
+      'onTap': () => _handleQuickAction('Statement'),
+    });
+
+    if (isSavings || isLoan) {
+      actions.add({
+        'label': 'Rate Logs',
+        'icon': Icons.history_rounded,
+        'onTap': () => _showNotImplementedSnackBar('Interest Rate Change Logs'),
+      });
+    }
+
+    if (isLoan) {
+      actions.add({
+        'label': 'Schedules',
+        'icon': Icons.calendar_month_rounded,
+        'onTap': () => _showNotImplementedSnackBar('Schedules'),
+      });
+    }
+
+    // Build details list dynamically based on account type
+    final List<Map<String, String>> detailsList = [];
+    if (isSavings) {
+      detailsList.addAll([
+        {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.'},
+        {'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
+        {'label': 'Minimum Balance', 'value': 'Rs. ${_formatAmount(acc['min_balance'])}'},
+        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2081-02-15'},
+        {'label': 'Maturity Date', 'value': 'N/A'},
+        {'label': 'Interest Posting Date', 'value': 'Quarterly Capitalization'},
+      ]);
+    } else if (isLoan) {
+      detailsList.addAll([
+        {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.'},
+        {'label': 'Accrued Interest Due', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
+        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2080-11-10'},
+        {'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? '2085-11-10'},
+        {'label': 'Principal Fine', 'value': 'Rs. ${_formatAmount(acc['principal_fine'] ?? 0.0)}'},
+        {'label': 'Interest Fine', 'value': 'Rs. ${_formatAmount(acc['interest_fine'] ?? 0.0)}'},
+        {'label': 'Matured Principal', 'value': 'Rs. ${_formatAmount(acc['matured_principal'] ?? 0.0)}'},
+        {'label': 'Due Interest', 'value': 'Rs. ${_formatAmount(acc['due_interest'] ?? 0.0)}'},
+        {'label': 'Interest Posting Date', 'value': 'Monthly Capitalization'},
+      ]);
+    } else { // shares
+      detailsList.addAll([
+        {'label': 'Share Capital Value', 'value': 'Rs. ${_formatAmount(acc['balance'])}'},
+        {'label': 'Total Share Units', 'value': '${acc['share_count'] ?? '100'} Units'},
+        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2079-05-18'},
+        {'label': 'Member Status', 'value': 'Active Shareholder'},
+        {'label': 'Maturity Date', 'value': 'N/A'},
+        {'label': 'Interest Posting Date', 'value': 'Annual Dividend Cycle'},
+      ]);
     }
 
     return Scaffold(
@@ -208,63 +253,103 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               childAspectRatio: 0.9,
-              children: [
-                _buildActionGridButton('Deposit', Icons.add_circle_outline_rounded, isDarkMode),
-                _buildActionGridButton('Payment', Icons.send_rounded, isDarkMode),
-                _buildActionGridButton('Statement', Icons.download_rounded, isDarkMode),
-                _buildActionGridButton(
-                  'Daybook',
-                  Icons.receipt_long_rounded,
+              children: actions.map((act) {
+                return _buildActionGridButton(
+                  act['label'] as String,
+                  act['icon'] as IconData,
                   isDarkMode,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DaybookLedgerPage(
-                          account: acc,
-                          accountType: widget.accountType,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                  onTap: act['onTap'] as VoidCallback,
+                );
+              }).toList(),
             ),
 
             const SizedBox(height: 28),
 
-            // Tabs Header
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-                  ),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorColor: const Color(0xFF2563EB),
-                labelColor: const Color(0xFF2563EB),
-                unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                tabs: const [
-                  Tab(text: 'Account Metrics'),
-                  Tab(text: 'Daybook Ledger'),
-                ],
+            // Detailed Card
+            Text(
+              'Account Information'.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+                color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
               ),
             ),
-
-            // Tab Views Container (using direct height constraints or inner lists)
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 380,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildMetricsView(isDarkMode),
-                  _buildLedgerTab(isDarkMode),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  )
                 ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Column(
+                children: List.generate(detailsList.length, (index) {
+                  final detail = detailsList[index];
+                  final isLast = index == detailsList.length - 1;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                getIconForLabel(detail['label']!),
+                                color: isDarkMode ? accentColor.withValues(alpha: 0.8) : accentColor,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                detail['label']!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Flexible(
+                              child: Text(
+                                detail['value']!,
+                                textAlign: TextAlign.end,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!isLast)
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFEFF6FF),
+                        ),
+                    ],
+                  );
+                }),
               ),
             ),
             const SizedBox(height: 24),
@@ -276,255 +361,40 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
   Widget _buildActionGridButton(String label, IconData icon, bool isDarkMode, {VoidCallback? onTap}) {
     return InkWell(
-      onTap: onTap ?? () => _handleQuickAction(label),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFDBEAFE),
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              size: 24,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFDBEAFE),
-                ),
-              ),
-              child: Icon(
-                icon,
-                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                size: 20,
-              ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildMetricsView(bool isDarkMode) {
-    final metrics = _getMetrics();
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.15,
-      ),
-      itemCount: metrics.length,
-      itemBuilder: (context, idx) {
-        final metric = metrics[idx];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                metric['label']!.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF64748B),
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                metric['value']!,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                metric['desc']!,
-                style: const TextStyle(
-                  fontSize: 9,
-                  color: Color(0xFF64748B),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLedgerTab(bool isDarkMode) {
-    return Column(
-      children: [
-        // Quick BS Daybook statement filter link
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DaybookLedgerPage(
-                    account: widget.account,
-                    accountType: widget.accountType,
-                  ),
-                ),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.04),
-              side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF2563EB), size: 16),
-            label: const Text(
-              'Filter BS Daybook Statement',
-              style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w900, fontSize: 12),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // List
-        Expanded(
-          child: _isLoadingLedger
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
-                  ),
-                )
-              : _ledgerItems.isEmpty
-                  ? Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0), style: BorderStyle.none),
-                        ),
-                        child: const Text(
-                          'No transactions found for this account.',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _ledgerItems.length,
-                      itemBuilder: (context, index) {
-                        final tx = _ledgerItems[index];
-                        final isCredit = tx['type'] == 'credit' || tx['type'] == 'CR';
-                        final amount = _formatAmount(tx['amount']);
-                        final amountStr = '${isCredit ? "+" : "-"} Rs. $amount';
-                        final balance = _formatAmount(tx['balance']);
-                        final desc = tx['description'] ?? tx['desc'] ?? 'Transaction';
-                        final dateStr = tx['nepaliDate'] ?? tx['date'] ?? '';
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: isCredit
-                                          ? const Color(0xFF10B981).withValues(alpha: 0.08)
-                                          : const Color(0xFFEF4444).withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                                      color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                                      size: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        desc,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        dateStr,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    amountStr,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isCredit ? const Color(0xFF10B981) : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Bal: Rs. $balance',
-                                    style: const TextStyle(
-                                      fontSize: 9,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-        ),
-      ],
     );
   }
 }
