@@ -1,10 +1,15 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../services/translation_service.dart';
+import '../../widgets/cooperative_qr_card.dart';
 
 class QRTab extends StatefulWidget {
   final bool isDarkMode;
@@ -28,6 +33,14 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   bool _cameraError = false;
   String _cameraErrorMessage = '';
   bool _isActive = false;
+
+  // Custom QR Mode
+  bool _customQrMode = false;
+  String _customQrLabel = 'Cooperative Payment QR';
+  final GlobalKey _customQrBoundaryKey = GlobalKey();
+  bool _isSavingCustom = false;
+  TextEditingController? _customLabelController;
+
 
   late AnimationController _overlayAnimationController;
   List<Offset>? _scannedCorners;
@@ -115,6 +128,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     _overlayAnimationController.dispose();
     _controller?.dispose();
     _controller = null;
+    _customLabelController?.dispose();
     super.dispose();
   }
 
@@ -123,6 +137,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
 
+    // Single-scan mode (default)
     final barcode = barcodes.first;
     final value = barcode.rawValue ?? '';
     if (value.isEmpty) return;
@@ -154,6 +169,10 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
       _isScanning = false;
       _scannedCorners = null;
       _scannedFrameSize = null;
+      if (_customQrMode) {
+        _customQrLabel = '';
+        _customLabelController = TextEditingController(text: _customQrLabel);
+      }
     });
 
     _controller?.stop();
@@ -223,6 +242,8 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   }
 
   void _resetScanner() {
+    _customLabelController?.dispose();
+    _customLabelController = null;
     setState(() {
       _hasResult = false;
       _scannedValue = null;
@@ -326,6 +347,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     final isDark = widget.isDarkMode;
 
     if (_hasResult && _scannedValue != null) {
+      if (_customQrMode) {
+        return _buildCustomQrResultView(isDark);
+      }
       return _buildResultView(isDark);
     }
 
@@ -469,6 +493,17 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                       ),
                       Row(
                         children: [
+                          // Custom QR Mode toggle
+                          _buildActionButton(
+                            icon: _customQrMode ? Icons.auto_awesome_rounded : Icons.auto_awesome_outlined,
+                            onTap: () {
+                              setState(() {
+                                _customQrMode = !_customQrMode;
+                              });
+                            },
+                            color: _customQrMode ? const Color(0xFF10B981) : Colors.white,
+                          ),
+                          const SizedBox(width: 10),
                           // Torch toggle
                           _buildActionButton(
                             icon: _torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
@@ -502,9 +537,13 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Text(
-                      'Point camera at a QR code or barcode',
+                      _customQrMode
+                          ? 'Scan & Convert to Custom QR is active'.tr
+                          : 'Point camera at a QR code or barcode',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: _customQrMode
+                            ? const Color(0xFF10B981)
+                            : Colors.white.withValues(alpha: 0.9),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -803,6 +842,264 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
         ),
       ),
     );
+  }
+
+  Widget _buildCustomQrResultView(bool isDark) {
+    final value = _scannedValue ?? '';
+    final themeColor = const Color(0xFF10B981);
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+          onPressed: _resetScanner,
+        ),
+        title: Text(
+          'Custom QR Generated'.tr,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          children: [
+            // Custom QR Card Preview
+            Center(
+              child: CooperativeQrCard(
+                boundaryKey: _customQrBoundaryKey,
+                data: value,
+                label: _customQrLabel,
+                themeColor: themeColor,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Card details & Label editor
+            Text(
+              'QR DETAILS'.tr,
+              style: TextStyle(
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Description Label Input card
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                ),
+              ),
+              child: TextField(
+                controller: _customLabelController,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                onChanged: (val) {
+                  setState(() {
+                    _customQrLabel = val;
+                  });
+                },
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Text Below QR Code'.tr,
+                  labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  prefixIcon: const Icon(Icons.label_outline_rounded, color: Color(0xFF64748B)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Scanned payload card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.link_rounded, color: Color(0xFF64748B), size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SCANNED PAYLOAD'.tr,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF334155),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action Row: Download & Scan Again
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSavingCustom ? null : _downloadCustomQrCode,
+                      icon: _isSavingCustom
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded, size: 20),
+                      label: Text(
+                        _isSavingCustom ? 'Saving...'.tr : 'Download'.tr,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: themeColor.withValues(alpha: 0.5),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _resetScanner,
+                      icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                      label: Text(
+                        'Scan Again'.tr,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                        foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadCustomQrCode() async {
+    if (_isSavingCustom) return;
+    setState(() {
+      _isSavingCustom = true;
+    });
+
+    try {
+      final RenderRepaintBoundary boundary = _customQrBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      await Future.delayed(const Duration(milliseconds: 100));
+      final ui.Image image = await boundary.toImage(pixelRatio: 4.0); // 4x pixel density for extremely high quality
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw Exception('Failed to generate image bytes');
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      final tempDir = await getTemporaryDirectory();
+      final tempFilePath = '${tempDir.path}/custom_sahakari_qr_${DateTime.now().millisecondsSinceEpoch}.png';
+      final file = File(tempFilePath);
+      await file.writeAsBytes(pngBytes);
+
+      if (Platform.isAndroid) {
+        final hasAccess = await Gal.hasAccess();
+        if (!hasAccess) {
+          await Gal.requestAccess();
+        }
+      }
+
+      await Gal.putImage(tempFilePath);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Custom QR Code saved to gallery successfully!'.tr)),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save QR Code: ${e.toString()}'.tr),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingCustom = false;
+        });
+      }
+    }
   }
 
   List<Widget> _buildWifiDetails(String value, bool isDark) {

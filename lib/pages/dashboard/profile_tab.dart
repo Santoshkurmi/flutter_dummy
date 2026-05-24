@@ -5,6 +5,7 @@ import '../settings_page.dart';
 import '../register_member_page.dart';
 import '../nepali_calendar_page.dart';
 import '../about_us_page.dart';
+import '../qr_generator_page.dart';
 
 class ProfileTab extends StatelessWidget {
   final bool isDarkMode;
@@ -101,6 +102,7 @@ class ProfileTab extends StatelessWidget {
         const SizedBox(height: 12),
         _profileActionOption(context, Icons.settings_rounded, 'App Preferences'.tr, 'Configure alerts, daily limits and fingerprint setup', const SettingsPage()),
         _profileActionOption(context, Icons.app_registration_rounded, 'Self Registration'.tr, 'Become a member by filling self-registration wizard', const RegisterMemberPage()),
+        _profileActionOption(context, Icons.qr_code_2_rounded, 'QR Generator'.tr, 'Generate and download custom cooperative QR codes', QRGeneratorPage(isDarkMode: isDarkMode)),
         _profileActionOption(context, Icons.calendar_month_rounded, 'Nepali Calendar BS 2083'.tr, 'View Bikram Sambat dates, Nepalese holidays and board runs', const NepaliCalendarPage()),
         _profileActionOption(context, Icons.info_outline_rounded, 'About Developer'.tr, 'Technical details, architecture and specs by Bright Software', const AboutUsPage()),
         const SizedBox(height: 32),
