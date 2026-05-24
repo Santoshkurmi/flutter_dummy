@@ -275,6 +275,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               ),
               Row(
                 children: [
+
                   Container(
                     width: 36,
                     height: 36,
@@ -428,15 +429,36 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   double activeRatio = (1.0 - difference.abs().clamp(0.0, 1.0));
                   double width = 6.0 + (14.0 * activeRatio);
 
+                  // Color based on the card gradient
+                  final card = cardsList[index];
+                  Color cardAccentColor;
+                  if (card['isOverview'] == true) {
+                    cardAccentColor = const Color(0xFF2563EB); // Blue
+                  } else {
+                    final type = card['type'] as String?;
+                    if (type == 'savings') {
+                      cardAccentColor = const Color(0xFF6366F1); // Indigo
+                    } else if (type == 'shares') {
+                      cardAccentColor = const Color(0xFF10B981); // Emerald/Teal
+                    } else if (type == 'loans') {
+                      cardAccentColor = const Color(0xFFF43F5E); // Rose
+                    } else {
+                      cardAccentColor = const Color(0xFF2563EB);
+                    }
+                  }
+
+                  final inactiveColor = widget.isDarkMode
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.15);
+                  final dotColor = Color.lerp(inactiveColor, cardAccentColor, activeRatio) ?? cardAccentColor;
+
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     height: 6,
                     width: width,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(3),
-                      color: activeRatio > 0.05
-                          ? (widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
-                          : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.15)),
+                      color: dotColor,
                     ),
                   );
                 }),
