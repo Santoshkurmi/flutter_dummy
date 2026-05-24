@@ -74,6 +74,57 @@ void main() async {
   runApp(const BrightBankApp());
 }
 
+class AxisAwareScrollPhysics extends ScrollPhysics {
+  const AxisAwareScrollPhysics({
+    required this.verticalPhysics,
+    required this.horizontalPhysics,
+    super.parent,
+  });
+
+  final ScrollPhysics verticalPhysics;
+  final ScrollPhysics horizontalPhysics;
+
+  @override
+  AxisAwareScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return AxisAwareScrollPhysics(
+      verticalPhysics: verticalPhysics,
+      horizontalPhysics: horizontalPhysics,
+      parent: buildParent(ancestor),
+    );
+  }
+
+  ScrollPhysics _getPhysicsForAxis(Axis axis) {
+    return axis == Axis.vertical ? verticalPhysics : horizontalPhysics;
+  }
+
+  @override
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
+    return _getPhysicsForAxis(position.axis).applyPhysicsToUserOffset(position, offset);
+  }
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    return _getPhysicsForAxis(position.axis).applyBoundaryConditions(position, value);
+  }
+
+  @override
+  Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
+    return _getPhysicsForAxis(position.axis).createBallisticSimulation(position, velocity);
+  }
+}
+
+class BouncingScrollBehavior extends MaterialScrollBehavior {
+  const BouncingScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return AxisAwareScrollPhysics(
+      verticalPhysics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      horizontalPhysics: super.getScrollPhysics(context),
+    );
+  }
+}
+
 class BrightBankApp extends StatelessWidget {
   const BrightBankApp({super.key});
 
@@ -86,6 +137,7 @@ class BrightBankApp extends StatelessWidget {
         return MaterialApp(
           title: 'Bright Sahakari',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const BouncingScrollBehavior(),
           theme: ThemeData(
             useMaterial3: true,
             brightness: isDark ? Brightness.dark : Brightness.light,

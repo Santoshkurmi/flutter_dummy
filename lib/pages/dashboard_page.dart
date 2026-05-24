@@ -27,11 +27,14 @@ class _DashboardPageState extends State<DashboardPage> {
   bool get _isDarkMode => AuthStore().isDarkMode;
 
   final GlobalKey<QRTabState> _qrKey = GlobalKey<QRTabState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
-    _loadSummary();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshIndicatorKey.currentState?.show();
+    });
     AuthStore().addListener(_onStateChange);
   }
 
@@ -46,6 +49,11 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadSummary() async {
+    if (mounted) {
+      setState(() {
+        _isLoadingSummary = true;
+      });
+    }
     try {
       final summaryRes = await ApiService().getDashboardSummary();
       Map<String, dynamic>? accountsRes;
@@ -54,19 +62,23 @@ class _DashboardPageState extends State<DashboardPage> {
       } catch (_) {
         // Fallback: ignore accounts loading error so overview still displays
       }
-      setState(() {
-        _summaryData = summaryRes['data'];
-        _accountsData = accountsRes?['data'];
-        _isLoadingSummary = false;
-        _hasError = false;
-      });
+      if (mounted) {
+        setState(() {
+          _summaryData = summaryRes['data'];
+          _accountsData = accountsRes?['data'];
+          _isLoadingSummary = false;
+          _hasError = false;
+        });
+      }
     } catch (_) {
-      setState(() {
-        _summaryData = null;
-        _accountsData = null;
-        _isLoadingSummary = false;
-        _hasError = true;
-      });
+      if (mounted) {
+        setState(() {
+          _summaryData = null;
+          _accountsData = null;
+          _isLoadingSummary = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -192,6 +204,7 @@ class _DashboardPageState extends State<DashboardPage> {
           index: _currentIndex,
           children: [
             HomeTab(
+              refreshIndicatorKey: _refreshIndicatorKey,
               summaryData: _summaryData,
               accountsData: _accountsData,
               showBalance: _showBalance,

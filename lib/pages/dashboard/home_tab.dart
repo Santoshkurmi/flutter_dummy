@@ -9,6 +9,7 @@ import '../all_services_page.dart';
 import '../../widgets/cooperative_account_card.dart';
 
 class HomeTab extends StatefulWidget {
+  final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
   final Map<String, dynamic>? summaryData;
   final Map<String, dynamic>? accountsData;
   final bool showBalance;
@@ -23,6 +24,7 @@ class HomeTab extends StatefulWidget {
 
   const HomeTab({
     super.key,
+    this.refreshIndicatorKey,
     required this.summaryData,
     required this.accountsData,
     required this.showBalance,
@@ -302,6 +304,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     }
 
     return RefreshIndicator(
+      key: widget.refreshIndicatorKey,
       onRefresh: widget.onRefresh,
       color: const Color(0xFF2563EB),
       backgroundColor: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
