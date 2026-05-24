@@ -12,6 +12,7 @@ import 'select_cooperative_page.dart';
 import 'biometric_setup_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class LoginPage extends StatefulWidget {
   final String mobileNumber;
@@ -42,6 +43,12 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _requestPermissionsAndWarmUp() async {
     try {
+      // 1. Request native OS-level notification permission using permission_handler
+      await Permission.notification.request();
+    } catch (_) {}
+
+    try {
+      // 2. Warm up and request FCM notification permission
       final messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(
         alert: true,
@@ -55,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (_) {}
 
     try {
+      // 3. Location permission
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (serviceEnabled) {
         LocationPermission permission = await Geolocator.checkPermission();

@@ -6,8 +6,17 @@ import 'pages/status_check_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
 import 'package:refresh_rate/refresh_rate.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Initialize Firebase Services
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
   
   try {
     // Unlocks peak rate (90Hz / 120Hz / 144Hz) on supported Android and iOS devices
