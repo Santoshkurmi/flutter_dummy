@@ -7,6 +7,42 @@ import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
 import 'package:refresh_rate/refresh_rate.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'store/notification_store.dart';
+import 'dart:convert';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final notification = message.notification;
+  if (notification != null) {
+    final title = notification.title ?? 'Alert';
+    final body = notification.body ?? '';
+    
+    final prefs = await SharedPreferences.getInstance();
+    final listStr = prefs.getString('local_notifications') ?? '[]';
+    List<dynamic> list = [];
+    try {
+      list = jsonDecode(listStr);
+    } catch (_) {}
+    
+    final newItem = {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'title': title,
+      'body': body,
+      'timestamp': DateTime.now().toIso8601String(),
+      'isRead': false,
+    };
+    
+    list.insert(0, newItem);
+    if (list.length > 50) {
+      list = list.sublist(0, 50);
+    }
+    
+    await prefs.setString('local_notifications', jsonEncode(list));
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +50,8 @@ void main() async {
   try {
     // Initialize Firebase Services
     await Firebase.initializeApp();
+    // Setup background message handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
     debugPrint("Firebase initialization failed: $e");
   }
@@ -24,6 +62,11 @@ void main() async {
   } catch (e) {
     debugPrint("Failed to set high refresh rate: $e");
   }
+
+  // Initialize Notification Store
+  final notificationStore = NotificationStore();
+  await notificationStore.init();
+
   // Initialize Auth Store (persistences and initial loadings)
   final authStore = AuthStore();
   await authStore.init();

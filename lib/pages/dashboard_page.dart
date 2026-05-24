@@ -8,6 +8,7 @@ import 'dashboard/qr_tab.dart';
 import 'dashboard/notifications_tab.dart';
 import 'dashboard/profile_tab.dart';
 import 'login_page.dart';
+import '../store/notification_store.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -243,7 +244,23 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: 'Scan QR'.tr,
               ),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.notifications_rounded),
+                icon: AnimatedBuilder(
+                  animation: NotificationStore(),
+                  builder: (context, _) {
+                    final count = NotificationStore().unreadCount;
+                    if (count > 0) {
+                      return Badge(
+                        label: Text(
+                          count.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                        backgroundColor: const Color(0xFFEF4444),
+                        child: const Icon(Icons.notifications_rounded),
+                      );
+                    }
+                    return const Icon(Icons.notifications_rounded);
+                  },
+                ),
                 label: 'Alerts'.tr,
               ),
               BottomNavigationBarItem(
