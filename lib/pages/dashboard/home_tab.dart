@@ -48,6 +48,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   bool _isAnimating = false;
   bool _isDismissal = false;
   int _dismissDirection = 0;
+  bool _isDraggingCard = false;
+  Offset? _startPointerPos;
+  double _dragStartOffset = 0.0;
+  bool _isPointerDragging = false;
+  DateTime? _touchStartTime;
+  DateTime? _lastHorizontalSwipeTime;
+  late ScrollController _scrollController;
 
   int get _totalCardsCount {
     int count = 1; // Overview card
@@ -62,9 +69,10 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _swipeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 150),
     )..addListener(() {
         setState(() {
           _dragOffset = Tween<double>(
@@ -97,6 +105,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _swipeController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -120,6 +129,56 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     
     _isAnimating = true;
     _swipeController.forward(from: 0.0);
+  }
+
+  void _completeAnimationInstantly() {
+    if (!_isAnimating) return;
+    _swipeController.stop();
+    if (_isDismissal) {
+      int total = _totalCardsCount;
+      _currentPageIndex = (_currentPageIndex + _dismissDirection) % total;
+      if (_currentPageIndex < 0) {
+        _currentPageIndex += total;
+      }
+    }
+    _dragOffset = 0.0;
+    _isAnimating = false;
+  }
+
+  void _handleDragEnd(double primaryVelocity) {
+    final bool didSwipe = _isDraggingCard;
+    
+    setState(() {
+      _isPointerDragging = false;
+      _isDraggingCard = false;
+    });
+    
+    if (_isAnimating) return;
+    
+    final velocity = primaryVelocity.abs();
+    
+    if (_dragOffset.abs() > 80.0 || (didSwipe && velocity > 400.0)) {
+      _animateDismiss(_dragOffset > 0 ? -1 : 1);
+      _lastHorizontalSwipeTime = DateTime.now();
+    } else {
+      _animateSnapBack();
+      if (didSwipe) {
+        _lastHorizontalSwipeTime = DateTime.now();
+      }
+    }
+    
+    _startPointerPos = null;
+  }
+
+  void _handleDragCancel() {
+    setState(() {
+      _isPointerDragging = false;
+      _isDraggingCard = false;
+    });
+    if (!_isAnimating) {
+      _animateSnapBack();
+    }
+    _startPointerPos = null;
   }
 
   double get _currentPage {
@@ -246,6 +305,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       color: const Color(0xFF2563EB),
       backgroundColor: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
       child: ListView(
+        controller: _scrollController,
+        physics: _isDraggingCard ? const NeverScrollableScrollPhysics() : null,
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         children: [
           const SizedBox(height: 35),
@@ -374,44 +435,62 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                           final Matrix4 topMatrix = Matrix4.identity()
                             ..translateByDouble(_dragOffset, 0.0, 0.0, 1.0);
 
-                          return GestureDetector(
-                            onHorizontalDragUpdate: (details) {
-                              if (_isAnimating) return;
-                              setState(() {
-                                _dragOffset += details.primaryDelta ?? 0.0;
-                              });
-                            },
-                            onHorizontalDragEnd: (details) {
-                              if (_isAnimating) return;
-                              final velocity = details.primaryVelocity ?? 0.0;
-                              if (_dragOffset.abs() > 100.0 || velocity.abs() > 300.0) {
-                                _animateDismiss(_dragOffset > 0 ? -1 : 1);
-                              } else {
-                                _animateSnapBack();
+                          return Listener(
+                            onPointerDown: (event) {
+                              if (_isAnimating) {
+                                setState(() {
+                                  _completeAnimationInstantly();
+                                });
                               }
                             },
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                // Bottom Card (Next Card expanding scale underneath)
-                                Positioned.fill(
-                                  child: Transform(
-                                    transform: bottomMatrix,
-                                    alignment: Alignment.center,
-                                    child: IgnorePointer(
-                                      child: _buildCardItem(context, cardsList[nextPageIndex]),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onHorizontalDragStart: (details) {
+                                setState(() {
+                                  _isDraggingCard = true;
+                                });
+                                _startPointerPos = details.globalPosition;
+                                _dragStartOffset = _dragOffset;
+                                _touchStartTime = DateTime.now();
+                                _isPointerDragging = true;
+                              },
+                              onHorizontalDragUpdate: (details) {
+                                if (_isPointerDragging && _startPointerPos != null) {
+                                  final delta = details.globalPosition - _startPointerPos!;
+                                  setState(() {
+                                    _dragOffset = _dragStartOffset + delta.dx;
+                                  });
+                                }
+                              },
+                              onHorizontalDragEnd: (details) {
+                                _handleDragEnd(details.primaryVelocity ?? 0.0);
+                              },
+                              onHorizontalDragCancel: () {
+                                _handleDragCancel();
+                              },
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Bottom Card (Next Card expanding scale underneath)
+                                  Positioned.fill(
+                                    child: Transform(
+                                      transform: bottomMatrix,
+                                      alignment: Alignment.center,
+                                      child: IgnorePointer(
+                                        child: _buildCardItem(context, cardsList[nextPageIndex]),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                // Top Card (Active Card sliding horizontally - ALWAYS on top)
-                                Positioned.fill(
-                                  child: Transform(
-                                    transform: topMatrix,
-                                    alignment: Alignment.center,
-                                    child: _buildCardItem(context, cardsList[_currentPageIndex]),
+                                  // Top Card (Active Card sliding horizontally - ALWAYS on top)
+                                  Positioned.fill(
+                                    child: Transform(
+                                      transform: topMatrix,
+                                      alignment: Alignment.center,
+                                      child: _buildCardItem(context, cardsList[_currentPageIndex]),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -664,7 +743,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       }
     }
 
-    final VoidCallback onTapArrow = () {
+    void onTapArrow() {
       if (isOverview) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
       } else {
@@ -678,7 +757,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
       }
-    };
+    }
 
     return GestureDetector(
       onTap: onTapArrow,
