@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../account_details_page.dart';
+import '../account_single_details_page.dart';
 import '../nepali_calendar_page.dart';
 import '../register_member_page.dart';
 import '../all_services_page.dart';
 
 class HomeTab extends StatefulWidget {
   final Map<String, dynamic>? summaryData;
+  final Map<String, dynamic>? accountsData;
   final bool showBalance;
   final bool isDarkMode;
   final bool isLoadingSummary;
@@ -21,6 +23,7 @@ class HomeTab extends StatefulWidget {
   const HomeTab({
     super.key,
     required this.summaryData,
+    required this.accountsData,
     required this.showBalance,
     required this.isDarkMode,
     required this.isLoadingSummary,
@@ -36,7 +39,96 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
+  int _currentPageIndex = 0;
+  double _dragOffset = 0.0;
+  late AnimationController _swipeController;
+  double _animationStartOffset = 0.0;
+  double _animationTargetOffset = 0.0;
+  bool _isAnimating = false;
+  bool _isDismissal = false;
+  int _dismissDirection = 0;
+
+  int get _totalCardsCount {
+    int count = 1; // Overview card
+    if (widget.accountsData != null) {
+      count += (widget.accountsData!['savings'] as List? ?? []).length;
+      count += (widget.accountsData!['shares'] as List? ?? []).length;
+      count += (widget.accountsData!['loans'] as List? ?? []).length;
+    }
+    return count;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _swipeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        setState(() {
+          _dragOffset = Tween<double>(
+            begin: _animationStartOffset,
+            end: _animationTargetOffset,
+          ).evaluate(_swipeController);
+        });
+      })..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          if (_isDismissal) {
+            setState(() {
+              int total = _totalCardsCount;
+              _currentPageIndex = (_currentPageIndex + _dismissDirection) % total;
+              if (_currentPageIndex < 0) {
+                _currentPageIndex += total;
+              }
+              _dragOffset = 0.0;
+              _isAnimating = false;
+            });
+          } else {
+            setState(() {
+              _dragOffset = 0.0;
+              _isAnimating = false;
+            });
+          }
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _swipeController.dispose();
+    super.dispose();
+  }
+
+  void _animateDismiss(int direction) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double pageWidth = screenWidth - 40.0;
+    
+    _isDismissal = true;
+    _dismissDirection = direction; // 1 for left swipe (next card), -1 for right swipe (prev card)
+    _animationStartOffset = _dragOffset;
+    _animationTargetOffset = direction == 1 ? -pageWidth : pageWidth;
+    
+    _isAnimating = true;
+    _swipeController.forward(from: 0.0);
+  }
+
+  void _animateSnapBack() {
+    _isDismissal = false;
+    _animationStartOffset = _dragOffset;
+    _animationTargetOffset = 0.0;
+    
+    _isAnimating = true;
+    _swipeController.forward(from: 0.0);
+  }
+
+  double get _currentPage {
+    if (!mounted) return 0.0;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double pageWidth = screenWidth - 40.0;
+    double progress = (pageWidth > 0) ? (_dragOffset / pageWidth) : 0.0;
+    return _currentPageIndex - progress;
+  }
 
   String _formatAmount(dynamic amt) {
     if (amt == null) return '0.00';
@@ -85,6 +177,69 @@ class _HomeTabState extends State<HomeTab> {
     final shareBalance = 'Rs. $shareVal';
     final loanBalance = 'Rs. $loanVal';
     final recentTransactions = widget.summaryData?['recent_transactions'] as List?;
+
+    final List<Map<String, dynamic>> cardsList = [];
+
+    // Card 1: Overview
+    cardsList.add({
+      'isOverview': true,
+      'title': 'Bright Savings Account'.tr,
+      'balance': savingsBalance,
+      'savingsBalance': savingsBalance,
+      'loanBalance': loanBalance,
+      'shareBalance': shareBalance,
+    });
+
+    if (widget.accountsData != null) {
+      final savingsList = widget.accountsData!['savings'] as List? ?? [];
+      final sharesList = widget.accountsData!['shares'] as List? ?? [];
+      final loansList = widget.accountsData!['loans'] as List? ?? [];
+
+      for (var acc in savingsList) {
+        cardsList.add({
+          'isOverview': false,
+          'type': 'savings',
+          'scheme': acc['scheme'] ?? 'Savings Account',
+          'title': acc['name'] ?? 'Savings Account',
+          'accNo': acc['accNo'] ?? 'N/A',
+          'balance': 'Rs. ${_formatAmount(acc['balance'])}',
+          'interest_rate': acc['interest_rate'],
+          'accrued_interest': acc['accrued_interest'],
+          'raw': acc,
+        });
+      }
+
+      for (var acc in sharesList) {
+        cardsList.add({
+          'isOverview': false,
+          'type': 'shares',
+          'scheme': 'Member Shares',
+          'title': acc['name'] ?? 'Share Account',
+          'accNo': acc['accNo'] ?? 'N/A',
+          'balance': 'Rs. ${_formatAmount(acc['balance'])}',
+          'share_count': acc['share_count'],
+          'raw': acc,
+        });
+      }
+
+      for (var acc in loansList) {
+        cardsList.add({
+          'isOverview': false,
+          'type': 'loans',
+          'scheme': acc['scheme'] ?? 'Loan Account',
+          'title': acc['name'] ?? 'Loan Account',
+          'accNo': acc['accNo'] ?? 'N/A',
+          'balance': 'Rs. ${_formatAmount(acc['balance'])}',
+          'interest_rate': acc['interest_rate'],
+          'maturity_date': acc['maturity_date'],
+          'raw': acc,
+        });
+      }
+    }
+
+    if (_currentPageIndex >= cardsList.length) {
+      _currentPageIndex = 0;
+    }
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -194,216 +349,100 @@ class _HomeTabState extends State<HomeTab> {
           else ...[
             const SizedBox(height: 20),
 
-            GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: widget.isDarkMode
-                      ? const LinearGradient(
-                          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: widget.isDarkMode
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.15),
-                              ),
-                              child: const Icon(
-                                Icons.stars_rounded,
-                                color: Color(0xFFFFA825),
-                                size: 16,
-                              ),
+            // Render Swipable Stack (Gentle Slide Stack with correct Z-order layering)
+            SizedBox(
+              height: 190,
+              child: ClipRRect(
+                clipBehavior: Clip.none,
+                child: cardsList.length <= 1
+                    ? _buildCardItem(context, cardsList.first)
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          double pageWidth = constraints.maxWidth;
+                          
+                          int nextPageIndex = _dragOffset < 0
+                              ? (_currentPageIndex + 1) % cardsList.length
+                              : (_currentPageIndex - 1 + cardsList.length) % cardsList.length;
+
+                          double progress = (pageWidth > 0) ? (_dragOffset.abs() / pageWidth).clamp(0.0, 1.0) : 0.0;
+                          double scale = 0.95 + progress * 0.05;
+
+                          final Matrix4 bottomMatrix = Matrix4.identity()
+                            ..scaleByDouble(scale, scale, 1.0, 1.0);
+
+                          final Matrix4 topMatrix = Matrix4.identity()
+                            ..translateByDouble(_dragOffset, 0.0, 0.0, 1.0);
+
+                          return GestureDetector(
+                            onHorizontalDragUpdate: (details) {
+                              if (_isAnimating) return;
+                              setState(() {
+                                _dragOffset += details.primaryDelta ?? 0.0;
+                              });
+                            },
+                            onHorizontalDragEnd: (details) {
+                              if (_isAnimating) return;
+                              final velocity = details.primaryVelocity ?? 0.0;
+                              if (_dragOffset.abs() > 100.0 || velocity.abs() > 300.0) {
+                                _animateDismiss(_dragOffset > 0 ? -1 : 1);
+                              } else {
+                                _animateSnapBack();
+                              }
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Bottom Card (Next Card expanding scale underneath)
+                                Positioned.fill(
+                                  child: Transform(
+                                    transform: bottomMatrix,
+                                    alignment: Alignment.center,
+                                    child: IgnorePointer(
+                                      child: _buildCardItem(context, cardsList[nextPageIndex]),
+                                    ),
+                                  ),
+                                ),
+                                // Top Card (Active Card sliding horizontally - ALWAYS on top)
+                                Positioned.fill(
+                                  child: Transform(
+                                    transform: topMatrix,
+                                    alignment: Alignment.center,
+                                    child: _buildCardItem(context, cardsList[_currentPageIndex]),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Bright Savings Account'.tr,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'TOTAL ACCOUNT BALANCE'.tr,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: widget.isDarkMode ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              widget.showBalance ? savingsBalance : '••••••••',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.business_center_rounded,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'LOAN BALANCE'.tr,
-                                      style: TextStyle(
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 1),
-                                    Text(
-                                      widget.showBalance ? loanBalance : '••••',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'SHARE CAPITAL'.tr,
-                                      style: TextStyle(
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 1),
-                                    Text(
-                                      widget.showBalance ? shareBalance : '••••',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.pie_chart_rounded,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          );
+                        },
+                      ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            
+            // Dots indicator
+            if (cardsList.length > 1) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(cardsList.length, (index) {
+                  double difference = index - _currentPage;
+                  double activeRatio = (1.0 - difference.abs().clamp(0.0, 1.0));
+                  double width = 6.0 + (14.0 * activeRatio);
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    height: 6,
+                    width: width,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: activeRatio > 0.05
+                          ? (widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                          : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.15)),
+                    ),
+                  );
+                }),
+              ),
+            ],
+            const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -539,6 +578,393 @@ class _HomeTabState extends State<HomeTab> {
                     ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildCardItem(BuildContext context, Map<String, dynamic> cardData) {
+    final isOverview = cardData['isOverview'] as bool;
+    final String type = cardData['type'] ?? 'overview';
+
+    // Gradients
+    LinearGradient gradient;
+    if (isOverview) {
+      gradient = widget.isDarkMode
+          ? const LinearGradient(colors: [Color(0xFF1E293B), Color(0xFF0F172A)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+          : const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+    } else {
+      switch (type) {
+        case 'savings':
+          gradient = widget.isDarkMode
+              ? const LinearGradient(colors: [Color(0xFF1E1B4B), Color(0xFF0F0E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          break;
+        case 'shares':
+          gradient = widget.isDarkMode
+              ? const LinearGradient(colors: [Color(0xFF064E3B), Color(0xFF022C22)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          break;
+        case 'loans':
+          gradient = widget.isDarkMode
+              ? const LinearGradient(colors: [Color(0xFF881337), Color(0xFF4C0519)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : const LinearGradient(colors: [Color(0xFFE11D48), Color(0xFFBE123C)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          break;
+        default:
+          gradient = widget.isDarkMode
+              ? const LinearGradient(colors: [Color(0xFF1E293B), Color(0xFF0F172A)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+      }
+    }
+
+    // Icon selection
+    IconData headerIcon;
+    Color iconColor;
+    if (isOverview) {
+      headerIcon = Icons.stars_rounded;
+      iconColor = const Color(0xFFFFA825);
+    } else {
+      switch (type) {
+        case 'savings':
+          headerIcon = Icons.account_balance_wallet_rounded;
+          iconColor = const Color(0xFF60A5FA);
+          break;
+        case 'shares':
+          headerIcon = Icons.pie_chart_rounded;
+          iconColor = const Color(0xFF34D399);
+          break;
+        case 'loans':
+          headerIcon = Icons.business_center_rounded;
+          iconColor = const Color(0xFFF87171);
+          break;
+        default:
+          headerIcon = Icons.stars_rounded;
+          iconColor = const Color(0xFFFFA825);
+      }
+    }
+
+    final VoidCallback onTapArrow = () {
+      if (isOverview) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AccountSingleDetailsPage(
+              account: cardData['raw'],
+              accountType: type,
+            ),
+          ),
+        );
+      }
+    };
+
+    return GestureDetector(
+      onTap: onTapArrow,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                          child: Icon(
+                            headerIcon,
+                            color: iconColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            cardData['title'],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: widget.isDarkMode ? const Color(0xFFE2E8F0) : Colors.white.withValues(alpha: 0.95),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: onTapArrow,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              
+              // Balance Column
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isOverview ? 'TOTAL ACCOUNT BALANCE'.tr : 'AVAILABLE BALANCE'.tr,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.65),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.showBalance ? cardData['balance'] : '••••••••',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              
+              // Divider
+              Container(
+                height: 1,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+              const SizedBox(height: 6),
+              
+              // Bottom row
+              isOverview
+                  ? Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.business_center_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'LOAN BALANCE'.tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      widget.showBalance ? cardData['loanBalance'] : '••••',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'SHARE CAPITAL'.tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      widget.showBalance ? cardData['shareBalance'] : '••••',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.pie_chart_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.info_outline_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ACCOUNT NO.'.tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      cardData['accNo'],
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      (type == 'savings'
+                                              ? 'INTEREST RATE'
+                                              : type == 'shares'
+                                                  ? 'NO. OF SHARES'
+                                                  : 'MATURITY')
+                                          .tr,
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      type == 'savings'
+                                          ? '${cardData['interest_rate'] ?? 0}%'
+                                          : type == 'shares'
+                                              ? '${cardData['share_count'] ?? 0}'
+                                              : '${cardData['maturity_date'] ?? 'N/A'}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  type == 'savings'
+                                      ? Icons.trending_up_rounded
+                                      : type == 'shares'
+                                          ? Icons.pie_chart_outline_rounded
+                                          : Icons.event_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+            ],
+          ),
+        ),
       ),
     );
   }

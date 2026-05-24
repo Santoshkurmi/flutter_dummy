@@ -22,6 +22,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoadingSummary = true;
   bool _hasError = false;
   Map<String, dynamic>? _summaryData;
+  Map<String, dynamic>? _accountsData;
   bool get _isDarkMode => AuthStore().isDarkMode;
 
   final GlobalKey<QRTabState> _qrKey = GlobalKey<QRTabState>();
@@ -45,15 +46,23 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _loadSummary() async {
     try {
-      final res = await ApiService().getDashboardSummary();
+      final summaryRes = await ApiService().getDashboardSummary();
+      Map<String, dynamic>? accountsRes;
+      try {
+        accountsRes = await ApiService().getAccounts();
+      } catch (_) {
+        // Fallback: ignore accounts loading error so overview still displays
+      }
       setState(() {
-        _summaryData = res['data'];
+        _summaryData = summaryRes['data'];
+        _accountsData = accountsRes?['data'];
         _isLoadingSummary = false;
         _hasError = false;
       });
     } catch (_) {
       setState(() {
         _summaryData = null;
+        _accountsData = null;
         _isLoadingSummary = false;
         _hasError = true;
       });
@@ -176,6 +185,7 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             HomeTab(
               summaryData: _summaryData,
+              accountsData: _accountsData,
               showBalance: _showBalance,
               isDarkMode: _isDarkMode,
               isLoadingSummary: _isLoadingSummary,
