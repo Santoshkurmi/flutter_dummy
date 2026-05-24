@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/cooperative_account_card.dart';
+import '../../widgets/cooperative_account_card.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../services/translation_service.dart';
+import '../../services/api_service.dart';
+import '../../services/translation_service.dart';
 import 'account_single_details_page.dart';
-import '../widgets/cooperative_account_card.dart';
+import '../../widgets/cooperative_account_card.dart';
 
 class AccountDetailsPage extends StatefulWidget {
   const AccountDetailsPage({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'store/auth_store.dart';
-import 'pages/onboarding_page.dart';
-import 'pages/status_check_page.dart';
-import 'pages/login_page.dart';
-import 'pages/dashboard_page.dart';
+import 'pages/auth/onboarding_page.dart';
+import 'pages/auth/status_check_page.dart';
+import 'pages/auth/login_page.dart';
+import 'pages/dashboard/dashboard_page.dart';
 import 'package:refresh_rate/refresh_rate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

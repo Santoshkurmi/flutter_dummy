@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
-import '../account_details_page.dart';
-import '../account_single_details_page.dart';
-import '../nepali_calendar_page.dart';
-import '../register_member_page.dart';
-import '../all_services_page.dart';
+import '../accounts/account_details_page.dart';
+import '../accounts/account_single_details_page.dart';
+import '../services/nepali_calendar_page.dart';
+import '../auth/register_member_page.dart';
+import '../services/all_services_page.dart';
 import '../../widgets/cooperative_account_card.dart';
 
 class HomeTab extends StatefulWidget {

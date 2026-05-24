@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../store/auth_store.dart';
-import '../services/translation_service.dart';
+import '../../store/auth_store.dart';
+import '../../services/translation_service.dart';
 import 'select_cooperative_page.dart';
 
 class AppPreferencesSetupPage extends StatelessWidget {

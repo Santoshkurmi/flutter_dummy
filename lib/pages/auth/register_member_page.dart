@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class RegisterMemberPage extends StatefulWidget {
   const RegisterMemberPage({super.key});

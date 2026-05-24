@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
-import '../settings_page.dart';
-import '../register_member_page.dart';
-import '../nepali_calendar_page.dart';
-import '../about_us_page.dart';
-import '../qr_generator_page.dart';
+import '../settings/settings_page.dart';
+import '../auth/register_member_page.dart';
+import '../services/nepali_calendar_page.dart';
+import '../settings/about_us_page.dart';
+import '../services/qr_generator_page.dart';
 
 class ProfileTab extends StatelessWidget {
   final bool isDarkMode;

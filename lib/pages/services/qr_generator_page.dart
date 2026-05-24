@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:geolocator/geolocator.dart';
-import '../services/translation_service.dart';
-import '../widgets/cooperative_qr_card.dart';
+import '../../services/translation_service.dart';
+import '../../widgets/cooperative_qr_card.dart';
 
 class QRGeneratorPage extends StatefulWidget {
   final bool isDarkMode;

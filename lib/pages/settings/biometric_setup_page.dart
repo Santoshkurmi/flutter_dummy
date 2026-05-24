@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../services/biometric_signature_service.dart';
-import '../store/auth_store.dart';
-import 'dashboard_page.dart';
+import '../../services/api_service.dart';
+import '../../services/biometric_signature_service.dart';
+import '../../store/auth_store.dart';
+import '../dashboard/dashboard_page.dart';
 
 class BiometricSetupPage extends StatefulWidget {
   const BiometricSetupPage({super.key});

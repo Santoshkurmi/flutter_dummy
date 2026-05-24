@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../store/auth_store.dart';
-import 'dashboard_page.dart';
+import '../../services/api_service.dart';
+import '../../store/auth_store.dart';
+import '../dashboard/dashboard_page.dart';
 import 'status_check_page.dart';
 
 class DeviceLinkingPage extends StatefulWidget {

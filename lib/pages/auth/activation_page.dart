@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../store/auth_store.dart';
+import '../../services/api_service.dart';
+import '../../store/auth_store.dart';
 import 'login_page.dart';
 
 class ActivationPage extends StatefulWidget {

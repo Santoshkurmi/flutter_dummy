@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../services/translation_service.dart';
-import '../store/auth_store.dart';
-import 'dashboard/home_tab.dart';
-import 'dashboard/payments_tab.dart';
-import 'dashboard/qr_tab.dart';
-import 'dashboard/notifications_tab.dart';
-import 'dashboard/profile_tab.dart';
-import 'login_page.dart';
-import '../store/notification_store.dart';
+import '../../services/api_service.dart';
+import '../../services/translation_service.dart';
+import '../../store/auth_store.dart';
+import 'home_tab.dart';
+import 'payments_tab.dart';
+import 'qr_tab.dart';
+import 'notifications_tab.dart';
+import 'profile_tab.dart';
+import '../auth/login_page.dart';
+import '../../store/notification_store.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

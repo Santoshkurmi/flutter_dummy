@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../store/auth_store.dart';
-import '../services/translation_service.dart';
+import '../../store/auth_store.dart';
+import '../../services/translation_service.dart';
 import 'app_preferences_setup_page.dart';
 
 class OnboardingPage extends StatefulWidget {
