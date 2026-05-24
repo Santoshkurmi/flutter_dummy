@@ -241,6 +241,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           child: BottomNavigationBar(
+            key: ValueKey(_currentIndex),
             currentIndex: _currentIndex,
             onTap: _onTabChanged,
             type: BottomNavigationBarType.fixed,
