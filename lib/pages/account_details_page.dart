@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
 import 'account_single_details_page.dart';
+import '../widgets/cooperative_account_card.dart';
 
 class AccountDetailsPage extends StatefulWidget {
   const AccountDetailsPage({super.key});
@@ -228,146 +229,30 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                               final name = acc['name'] ?? 'Account';
                               final type = acc['type'] as String;
 
-                              // Style variables matching Capacitor
-                              Color barColor = const Color(0xFF2563EB); // blue for savings
-                              Color cardBg = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-                              Color accentColor = const Color(0xFF2563EB);
-
-                              if (type == 'loans') {
-                                barColor = const Color(0xFFEF4444); // red
-                                accentColor = const Color(0xFFEF4444);
-                              } else if (type == 'shares') {
-                                barColor = const Color(0xFF10B981); // green
-                                accentColor = const Color(0xFF10B981);
-                              }
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  color: cardBg,
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-                                  ),
-                                  boxShadow: isDarkMode
-                                      ? []
-                                      : [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.02),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          )
-                                        ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(24),
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => AccountSingleDetailsPage(
-                                            account: acc,
-                                            accountType: type,
-                                          ),
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: CooperativeAccountCard(
+                                  isOverview: false,
+                                  accountType: type,
+                                  title: acc['scheme'] ?? name,
+                                  balance: balance,
+                                  accountNo: accountNo,
+                                  interestRate: acc['interest_rate'],
+                                  shareCount: acc['share_count'],
+                                  maturityDate: acc['maturity_date'],
+                                  showBalance: true,
+                                  isDarkMode: isDarkMode,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AccountSingleDetailsPage(
+                                          account: acc,
+                                          accountType: type,
                                         ),
-                                      ).then((_) => _loadAccounts()); // Refresh upon returning
-                                    },
-                                    child: Stack(
-                                      children: [
-                                        // Left accent bar
-                                        Positioned(
-                                          left: 0,
-                                          top: 0,
-                                          bottom: 0,
-                                          width: 5,
-                                          child: Container(color: barColor),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      (acc['scheme'] ?? type.toUpperCase()).toString().toUpperCase(),
-                                                      style: TextStyle(
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.w900,
-                                                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
-                                                        letterSpacing: 1.5,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      name,
-                                                      style: TextStyle(
-                                                        fontSize: 15,
-                                                        fontWeight: FontWeight.w900,
-                                                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 12),
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                      decoration: BoxDecoration(
-                                                        color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white,
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        border: Border.all(
-                                                          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        accountNo,
-                                                        style: const TextStyle(
-                                                          fontSize: 11,
-                                                          fontWeight: FontWeight.bold,
-                                                          fontFamily: 'monospace',
-                                                          color: Color(0xFF64748B),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  const Text(
-                                                    'AVAILABLE BALANCE',
-                                                    style: TextStyle(
-                                                      fontSize: 8,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Color(0xFF64748B),
-                                                      letterSpacing: 1,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    balance,
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w900,
-                                                      color: accentColor,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.chevron_right_rounded,
-                                                color: Color(0xFF64748B),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
+                                    ).then((_) => _loadAccounts()); // Refresh upon returning
+                                  },
                                 ),
                               );
                             },
