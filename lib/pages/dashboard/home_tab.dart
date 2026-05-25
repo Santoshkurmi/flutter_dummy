@@ -697,17 +697,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       } else {
         final List<Map<String, dynamic>> swipable = [];
         if (widget.accountsData != null) {
-          final savingsList = widget.accountsData!['savings'] as List? ?? [];
-          final sharesList = widget.accountsData!['shares'] as List? ?? [];
-          final loansList = widget.accountsData!['loans'] as List? ?? [];
-          for (var acc in savingsList) {
-            swipable.add({'raw': acc, 'type': 'savings'});
-          }
-          for (var acc in sharesList) {
-            swipable.add({'raw': acc, 'type': 'shares'});
-          }
-          for (var acc in loansList) {
-            swipable.add({'raw': acc, 'type': 'loans'});
+          final list = widget.accountsData![type] as List? ?? [];
+          for (var acc in list) {
+            swipable.add({'raw': acc, 'type': type});
           }
         }
         

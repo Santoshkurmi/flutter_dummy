@@ -334,14 +334,16 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           isDarkMode: isDarkMode,
           onTap: () {
             final List<Map<String, dynamic>> swipable = [];
-            for (var a in _savingsAccounts) {
-              swipable.add({'raw': a, 'type': 'savings'});
+            List<dynamic> list = [];
+            if (type == 'savings') {
+              list = _savingsAccounts;
+            } else if (type == 'shares') {
+              list = _shareAccounts;
+            } else if (type == 'loans') {
+              list = _loanAccounts;
             }
-            for (var a in _shareAccounts) {
-              swipable.add({'raw': a, 'type': 'shares'});
-            }
-            for (var a in _loanAccounts) {
-              swipable.add({'raw': a, 'type': 'loans'});
+            for (var a in list) {
+              swipable.add({'raw': a, 'type': type});
             }
 
             final index = swipable.indexWhere((a) {
@@ -356,6 +358,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,
+                  heroTag: 'card_$accountNo',
                   swipableAccounts: swipable,
                   initialIndex: index >= 0 ? index : 0,
                 ),

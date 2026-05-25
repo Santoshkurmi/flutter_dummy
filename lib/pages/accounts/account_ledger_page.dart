@@ -643,7 +643,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                   child: ClipRRect(
                     clipBehavior: Clip.none,
                     child: _accountsList.length <= 1
-                        ? _buildCardItem(context, _accountsList.first)
+                        ? _buildCardItem(context, _accountsList.first, isTopCard: true)
                         : LayoutBuilder(
                             builder: (context, constraints) {
                               double pageWidth = constraints.maxWidth;
