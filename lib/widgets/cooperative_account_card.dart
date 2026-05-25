@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
+import 'flying_hero_interactor.dart';
 
 class CooperativeAccountCard extends StatelessWidget {
   final bool isOverview;
@@ -445,6 +446,33 @@ class CooperativeAccountCard extends StatelessWidget {
   if (heroTag != null) {
     return Hero(
       tag: heroTag!,
+      flightShuttleBuilder: (
+        BuildContext flightContext,
+        Animation<double> animation,
+        HeroFlightDirection flightDirection,
+        BuildContext fromHeroContext,
+        BuildContext toHeroContext,
+      ) {
+        final Widget shuttle;
+        if (toHeroContext.widget is Hero) {
+          shuttle = (toHeroContext.widget as Hero).child;
+        } else if (fromHeroContext.widget is Hero) {
+          shuttle = (fromHeroContext.widget as Hero).child;
+        } else {
+          shuttle = cardWidget;
+        }
+
+        final onTap = _findOnTapInWidget(toHeroContext.widget) ?? _findOnTapInWidget(fromHeroContext.widget);
+
+        if (onTap != null) {
+          return FlyingShuttleWrapper(
+            onTap: onTap,
+            child: shuttle,
+          );
+        }
+
+        return shuttle;
+      },
       child: Material(
         type: MaterialType.transparency,
         child: cardWidget,
@@ -454,3 +482,24 @@ class CooperativeAccountCard extends StatelessWidget {
   return cardWidget;
 }
 }
+
+VoidCallback? _findOnTapInWidget(Widget? widget) {
+  if (widget == null) return null;
+  if (widget is GestureDetector) {
+    return widget.onTap;
+  }
+  if (widget is InkWell) {
+    return widget.onTap;
+  }
+  if (widget is Hero) {
+    return _findOnTapInWidget(widget.child);
+  }
+  if (widget is Material) {
+    return _findOnTapInWidget(widget.child);
+  }
+  if (widget is AnimatedBuilder) {
+    return _findOnTapInWidget(widget.child);
+  }
+  return null;
+}
+

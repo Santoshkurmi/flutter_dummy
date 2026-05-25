@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'widgets/flying_hero_interactor.dart';
 import 'store/auth_store.dart';
 import 'pages/auth/onboarding_page.dart';
 import 'pages/auth/status_check_page.dart';
@@ -157,6 +158,15 @@ class BrightBankApp extends StatelessWidget {
             fontFamily: 'Roboto',
           ),
           home: const InitialRouter(),
+          builder: (context, child) {
+            return Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (event) {
+                FlyingHeroTracker.checkTap(event.position);
+              },
+              child: child!,
+            );
+          },
         );
       },
     );
