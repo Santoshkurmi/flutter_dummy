@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../accounts/account_details_page.dart';
+import '../accounts/combined_statement_page.dart';
 import '../accounts/account_single_details_page.dart';
 import '../services/nepali_calendar_page.dart';
 import '../auth/register_member_page.dart';
@@ -203,7 +204,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   }
 
   void _handleActionTap(BuildContext context, String label) {
-    if (label == 'Statement' || label == 'Savings' || label == 'Ledger') {
+    if (label == 'Statement') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const CombinedStatementPage()));
+    } else if (label == 'Savings' || label == 'Ledger') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));

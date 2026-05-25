@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/translation_service.dart';
 import '../accounts/account_details_page.dart';
+import '../accounts/combined_statement_page.dart';
 import 'nepali_calendar_page.dart';
 import '../auth/register_member_page.dart';
 
@@ -15,7 +16,9 @@ class AllServicesPage extends StatelessWidget {
   });
 
   void _handleActionTap(BuildContext context, String label) {
-    if (label == 'Statement' || label == 'Savings' || label == 'Ledger') {
+    if (label == 'Statement') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const CombinedStatementPage()));
+    } else if (label == 'Savings' || label == 'Ledger') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));

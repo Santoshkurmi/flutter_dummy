@@ -244,6 +244,14 @@ class ApiService {
     return await get('/accounts/$type/$id/ledger', params: params);
   }
 
+  Future<Map<String, dynamic>> getAllAccountsLedger({String? fromDate, String? toDate, String? preset}) async {
+    final Map<String, String> params = {};
+    if (fromDate != null) params['from_date'] = fromDate;
+    if (toDate != null) params['to_date'] = toDate;
+    if (preset != null) params['preset'] = preset;
+    return await get('/accounts/all-ledger', params: params);
+  }
+
   Future<List<Map<String, dynamic>>> fetchCooperatives() async {
     final List<String> firstNames = [
       "Bright", "Everest", "Lali Gurans", "Subha Laxmi", "Sajha", "Hamro", "Janakalyan", 

@@ -277,6 +277,9 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       });
     }
 
+    final accountNoForStatement = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
+    final String effectiveTagForStatement = widget.heroTag ?? 'ledger_$accountNoForStatement';
+
     actions.add({
       'label': 'Statement',
       'icon': Icons.download_rounded,
@@ -287,7 +290,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             builder: (_) => AccountLedgerPage(
               account: acc,
               accountType: accountType,
-              heroTag: widget.heroTag,
+              heroTag: effectiveTagForStatement,
               swipableAccounts: widget.swipableAccounts,
               initialIndex: _currentIndex,
             ),
@@ -645,6 +648,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
+    final String? effectiveTag = isTopCard ? (widget.heroTag ?? 'ledger_$accountNo') : null;
+
     return CooperativeAccountCard(
       isOverview: false,
       accountType: type,
@@ -657,7 +662,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       showBalance: true,
       isDarkMode: isDarkMode,
       showArrow: false,
-      heroTag: isTopCard ? widget.heroTag : null,
+      heroTag: effectiveTag,
       onTap: () {
         Navigator.push(
           context,
@@ -665,7 +670,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             builder: (_) => AccountLedgerPage(
               account: acc,
               accountType: type,
-              heroTag: isTopCard ? widget.heroTag : null,
+              heroTag: effectiveTag,
               swipableAccounts: widget.swipableAccounts,
               initialIndex: _currentIndex,
             ),

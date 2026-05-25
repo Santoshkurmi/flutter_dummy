@@ -374,7 +374,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,
-                  heroTag: 'card_$accountNo',
+                  heroTag: null,
                   swipableAccounts: swipable,
                   initialIndex: index >= 0 ? index : 0,
                 ),
