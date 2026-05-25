@@ -230,65 +230,72 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: _isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
-                width: 1,
+        bottomNavigationBar: Material(
+          color: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: _isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+                  width: 1,
+                ),
               ),
             ),
-          ),
-          child: BottomNavigationBar(
+            child: BottomNavigationBar(
             key: ValueKey(_currentIndex),
-            currentIndex: _currentIndex,
-            onTap: _onTabChanged,
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            selectedItemColor: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-            unselectedItemColor: const Color(0xFF64748B),
-            selectedFontSize: 11,
-            unselectedFontSize: 11,
-            elevation: 0,
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.home_rounded),
-                label: 'Home'.tr,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.payment_rounded),
-                label: 'Payments'.tr,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.qr_code_scanner_rounded),
-                label: 'Scan QR'.tr,
-              ),
-              BottomNavigationBarItem(
-                icon: AnimatedBuilder(
-                  animation: NotificationStore(),
-                  builder: (context, _) {
-                    final count = NotificationStore().unreadCount;
-                    if (count > 0) {
-                      return Badge(
-                        label: Text(
-                          count.toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                        backgroundColor: const Color(0xFFEF4444),
-                        child: const Icon(Icons.notifications_rounded),
-                      );
-                    }
-                    return const Icon(Icons.notifications_rounded);
-                  },
+              currentIndex: _currentIndex,
+              onTap: _onTabChanged,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              selectedItemColor: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              unselectedItemColor: const Color(0xFF64748B),
+              selectedFontSize: 11,
+              unselectedFontSize: 11,
+              elevation: 0,
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.home_rounded),
+                  label: 'Home'.tr,
+                  tooltip: '',
                 ),
-                label: 'Alerts'.tr,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.person_rounded),
-                label: 'Profile'.tr,
-              ),
-            ],
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.payment_rounded),
+                  label: 'Payments'.tr,
+                  tooltip: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: 'Scan QR'.tr,
+                  tooltip: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedBuilder(
+                    animation: NotificationStore(),
+                    builder: (context, _) {
+                      final count = NotificationStore().unreadCount;
+                      if (count > 0) {
+                        return Badge(
+                          label: Text(
+                            count.toString(),
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: const Color(0xFFEF4444),
+                          child: const Icon(Icons.notifications_rounded),
+                        );
+                      }
+                      return const Icon(Icons.notifications_rounded);
+                    },
+                  ),
+                  label: 'Alerts'.tr,
+                  tooltip: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.person_rounded),
+                  label: 'Profile'.tr,
+                  tooltip: '',
+                ),
+              ],
+            ),
           ),
         ),
       ),
