@@ -439,7 +439,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
-          // 1. Premium Gradient Background
+          // 1. Premium Gradient Background (Subtle / Light)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -449,20 +449,20 @@ class _LoginPageState extends State<LoginPage> {
                   colors: isDark
                       ? [
                           const Color(0xFF020617),
-                          const Color(0xFF0B132B),
-                          const Color(0xFF1C1A35),
+                          const Color(0xFF070B1E),
+                          const Color(0xFF020617),
                         ]
                       : [
                           const Color(0xFFF8FAFC),
-                          const Color(0xFFEEF2F6),
-                          const Color(0xFFE0E7FF),
+                          const Color(0xFFF1F5F9),
+                          const Color(0xFFF8FAFC),
                         ],
                 ),
               ),
             ),
           ),
           
-          // 2. Ambient Blurred Circles
+          // 2. Ambient Blurred Circles (Subtle Opacities)
           Positioned(
             top: -60,
             right: -60,
@@ -472,8 +472,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isDark
-                    ? const Color(0xFF4F46E5).withValues(alpha: 0.15)
-                    : const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    ? const Color(0xFF4F46E5).withValues(alpha: 0.05)
+                    : const Color(0xFF6366F1).withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -486,8 +486,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isDark
-                    ? const Color(0xFF06B6D4).withValues(alpha: 0.1)
-                    : const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                    ? const Color(0xFF06B6D4).withValues(alpha: 0.03)
+                    : const Color(0xFF38BDF8).withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -500,8 +500,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isDark
-                    ? const Color(0xFFD946EF).withValues(alpha: 0.08)
-                    : const Color(0xFFEC4899).withValues(alpha: 0.08),
+                    ? const Color(0xFFD946EF).withValues(alpha: 0.02)
+                    : const Color(0xFFEC4899).withValues(alpha: 0.02),
               ),
             ),
           ),
@@ -718,8 +718,10 @@ class _LoginPageState extends State<LoginPage> {
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(18),
                                         borderSide: BorderSide(
-                                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                          width: 2.0,
+                                          color: isDark
+                                              ? const Color(0xFF60A5FA).withValues(alpha: 0.6)
+                                              : const Color(0xFF2563EB).withValues(alpha: 0.6),
+                                          width: 1.2,
                                         ),
                                       ),
                                     ),
