@@ -249,7 +249,7 @@ class _ActivationPageState extends State<ActivationPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
@@ -264,7 +264,7 @@ class _ActivationPageState extends State<ActivationPage> {
               Navigator.pop(context);
             }
           },
-        ),
+        ) : null,
         title: Text(
           'Mobile Registration',
           style: TextStyle(

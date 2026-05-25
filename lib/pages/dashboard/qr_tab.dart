@@ -697,13 +697,13 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
             color: isDark ? Colors.white : const Color(0xFF1E293B),
           ),
           onPressed: _resetScanner,
-        ),
+        ) : null,
         title: Text(
           'Scan Result'.tr,
           style: TextStyle(
@@ -884,13 +884,13 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
             color: isDark ? Colors.white : const Color(0xFF1E293B),
           ),
           onPressed: _resetScanner,
-        ),
+        ) : null,
         title: Text(
           'Custom QR Generated'.tr,
           style: TextStyle(

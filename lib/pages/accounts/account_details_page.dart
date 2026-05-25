@@ -116,13 +116,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
           ),
           onPressed: () => Navigator.pop(context),
-        ),
+        ) : null,
         title: Text(
           'My Accounts',
           style: TextStyle(

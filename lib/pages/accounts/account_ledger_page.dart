@@ -112,10 +112,10 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
       appBar: AppBar(
         backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDarkMode ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
-        ),
+        ) : null,
         title: Text(
           widget.accountName,
           style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : const Color(0xFF1E293B), fontSize: 18),

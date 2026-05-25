@@ -284,13 +284,13 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
             color: isDark ? Colors.white : const Color(0xFF1E293B),
           ),
           onPressed: () => Navigator.pop(context),
-        ),
+        ) : null,
         title: Text(
           'QR Generator'.tr,
           style: TextStyle(
