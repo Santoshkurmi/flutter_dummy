@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
@@ -433,310 +434,447 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDarkMode;
     return Scaffold(
-      backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
+      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      body: Stack(
+        children: [
+          // 1. Premium Gradient Background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          const Color(0xFF020617),
+                          const Color(0xFF0B132B),
+                          const Color(0xFF1C1A35),
+                        ]
+                      : [
+                          const Color(0xFFF8FAFC),
+                          const Color(0xFFEEF2F6),
+                          const Color(0xFFE0E7FF),
+                        ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const SizedBox(height: 40),
-                            // Visual Logo of the selected Sahakari
-                            Builder(
-                              builder: (context) {
-                                final selectedSahakari = AuthStore().selectedCooperative;
-                                final String sahakariName = selectedSahakari?['name'] ?? '';
-                                final String? logoUrl = selectedSahakari?['logo_url'];
-                                final String? gradientClass = selectedSahakari?['gradient'];
-                                final gradient = _getGradient(gradientClass);
-                                final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
+              ),
+            ),
+          ),
+          
+          // 2. Ambient Blurred Circles
+          Positioned(
+            top: -60,
+            right: -60,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? const Color(0xFF4F46E5).withValues(alpha: 0.15)
+                    : const Color(0xFF6366F1).withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 40,
+            left: -80,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? const Color(0xFF06B6D4).withValues(alpha: 0.1)
+                    : const Color(0xFF38BDF8).withValues(alpha: 0.15),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 280,
+            right: -100,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? const Color(0xFFD946EF).withValues(alpha: 0.08)
+                    : const Color(0xFFEC4899).withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          
+          // 3. Blur layer
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 70.0, sigmaY: 70.0),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
 
-                                return Center(
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
+          // 4. Content Screen
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: Navigator.canPop(context)
+                ? AppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  )
+                : null,
+            body: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const SizedBox(height: 40),
+                                  // Visual Logo of the selected Sahakari
+                                  Builder(
+                                    builder: (context) {
+                                      final selectedSahakari = AuthStore().selectedCooperative;
+                                      final String sahakariName = selectedSahakari?['name'] ?? '';
+                                      final String? logoUrl = selectedSahakari?['logo_url'];
+                                      final String? gradientClass = selectedSahakari?['gradient'];
+                                      final gradient = _getGradient(gradientClass);
+                                      final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
+
+                                      return Center(
+                                        child: Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
+                                            color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                          ),
+                                          child: logoUrl != null && logoUrl.isNotEmpty
+                                              ? ClipRRect(
+                                                  borderRadius: BorderRadius.circular(40),
+                                                  child: Image.network(
+                                                    logoUrl,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Container(
+                                                        decoration: BoxDecoration(
+                                                          shape: BoxShape.circle,
+                                                          gradient: gradient,
+                                                        ),
+                                                        child: Center(
+                                                          child: Text(
+                                                            initialLetter,
+                                                            style: const TextStyle(
+                                                              fontSize: 32,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                )
+                                              : Center(
+                                                  child: Text(
+                                                    initialLetter,
+                                                    style: const TextStyle(
+                                                      fontSize: 32,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Builder(
+                                    builder: (context) {
+                                      final selectedSahakari = AuthStore().selectedCooperative;
+                                      final String sahakariName = selectedSahakari?['name'] ?? '';
+                                      return Column(
+                                        children: [
+                                          Text(
+                                            sahakariName.isNotEmpty ? sahakariName : 'Welcome Back',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w900,
+                                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          if (sahakariName.isNotEmpty) ...[
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              'Welcome Back',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: Text(
+                                      widget.mobileNumber,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 40),
+
+                                  // Password Input Field
+                                  Text(
+                                    'PASSWORD',
+                                    style: TextStyle(
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    keyboardType: TextInputType.visiblePassword,
+                                    obscureText: _obscurePassword,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                      fontSize: 16,
+                                    ),
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(
+                                        Icons.lock_outline_rounded,
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword = !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                      hintText: 'Enter Password'.tr,
+                                      hintStyle: TextStyle(
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                      ),
+                                      filled: true,
+                                      fillColor: isDark
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                        borderSide: BorderSide(
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : Colors.black.withValues(alpha: 0.08),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                        borderSide: BorderSide(
+                                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                          width: 2.0,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Primary Submit Button inside visual gradient wrapper
+                                  Container(
+                                    height: 56,
                                     decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
-                                      color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
-                                          blurRadius: 16,
-                                          offset: const Offset(0, 6),
+                                      borderRadius: BorderRadius.circular(18),
+                                      gradient: (_isLoading || _passwordController.text.trim().isEmpty)
+                                          ? null
+                                          : LinearGradient(
+                                              colors: [
+                                                isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB),
+                                                isDark ? const Color(0xFF1D4ED8) : const Color(0xFF1D4ED8),
+                                              ],
+                                            ),
+                                      color: (_isLoading || _passwordController.text.trim().isEmpty)
+                                          ? (isDark
+                                              ? Colors.white.withValues(alpha: 0.05)
+                                              : Colors.black.withValues(alpha: 0.05))
+                                          : null,
+                                      boxShadow: (_isLoading || _passwordController.text.trim().isEmpty)
+                                          ? []
+                                          : [
+                                              BoxShadow(
+                                                color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.3 : 0.2),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed: (_isLoading || _passwordController.text.trim().isEmpty) ? null : _submitPassword,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        disabledBackgroundColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
+                                      ),
+                                      child: _isLoading
+                                          ? const SizedBox(
+                                              height: 24,
+                                              width: 24,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.5,
+                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                              ),
+                                            )
+                                          : Text(
+                                              'Secure Login'.tr,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: (_isLoading || _passwordController.text.trim().isEmpty)
+                                                    ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+                                                    : Colors.white,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Quick Biometric login trigger
+                                  if (_canAuthenticate) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(
+                                            _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
+                                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                            size: 50,
+                                          ),
+                                          onPressed: _authenticateBiometrics,
                                         ),
                                       ],
                                     ),
-                                    child: logoUrl != null && logoUrl.isNotEmpty
-                                        ? ClipRRect(
-                                            borderRadius: BorderRadius.circular(40),
-                                            child: Image.network(
-                                              logoUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                return Container(
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    gradient: gradient,
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      initialLetter,
-                                                      style: const TextStyle(
-                                                        fontSize: 32,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          )
-                                        : Center(
-                                            child: Text(
-                                              initialLetter,
-                                              style: const TextStyle(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 24),
-                            Builder(
-                              builder: (context) {
-                                final selectedSahakari = AuthStore().selectedCooperative;
-                                final String sahakariName = selectedSahakari?['name'] ?? '';
-                                return Column(
-                                  children: [
-                                    Text(
-                                      sahakariName.isNotEmpty ? sahakariName : 'Welcome Back',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w900,
-                                        color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    if (sahakariName.isNotEmpty) ...[
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Welcome Back',
+                                    Center(
+                                      child: Text(
+                                        _isFaceId ? 'Tap to Login with Face ID'.tr : 'Tap to Login with Fingerprint'.tr,
                                         style: TextStyle(
-                                          fontSize: 15,
-                                          color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
-                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
                                         ),
                                       ),
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: Text(
-                                widget.mobileNumber,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-
-                             // Password Input Field
-                             Text(
-                               'PASSWORD',
-                               style: TextStyle(
-                                 color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                 fontSize: 11,
-                                 fontWeight: FontWeight.w600,
-                                 letterSpacing: 1.5,
-                               ),
-                             ),
-                             const SizedBox(height: 8),
-                             Container(
-                               decoration: BoxDecoration(
-                                 color: _isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-                                 borderRadius: BorderRadius.circular(16),
-                                 border: Border.all(
-                                   color: _isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                                 ),
-                                 boxShadow: _isDarkMode
-                                     ? []
-                                     : [
-                                         BoxShadow(
-                                           color: Colors.black.withValues(alpha: 0.02),
-                                           blurRadius: 8,
-                                           offset: const Offset(0, 3),
-                                         )
-                                       ],
-                               ),
-                               child: TextFormField(
-                                 controller: _passwordController,
-                                 keyboardType: TextInputType.visiblePassword,
-                                 obscureText: _obscurePassword,
-                                 style: TextStyle(color: _isDarkMode ? Colors.white : const Color(0xFF1E293B), fontSize: 16),
-                                 decoration: InputDecoration(
-                                   prefixIcon: Icon(Icons.lock_outline_rounded, color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                                   suffixIcon: IconButton(
-                                     icon: Icon(
-                                       _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                       color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                                     ),
-                                     onPressed: () {
-                                       setState(() {
-                                         _obscurePassword = !_obscurePassword;
-                                       });
-                                     },
-                                   ),
-                                   hintText: 'Enter Password'.tr,
-                                   hintStyle: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                                   border: InputBorder.none,
-                                   contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                 ),
-                               ),
-                             ),
-                             const SizedBox(height: 24),
-
-                             // Primary Submit Button
-                             ElevatedButton(
-                               onPressed: (_isLoading || _passwordController.text.trim().isEmpty) ? null : _submitPassword,
-                               style: ElevatedButton.styleFrom(
-                                 backgroundColor: const Color(0xFF2563EB),
-                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                 shape: RoundedRectangleBorder(
-                                   borderRadius: BorderRadius.circular(16),
-                                 ),
-                               ),
-                               child: _isLoading
-                                   ? const SizedBox(
-                                       height: 24,
-                                       width: 24,
-                                       child: CircularProgressIndicator(
-                                         strokeWidth: 2.5,
-                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                       ),
-                                     )
-                                   : const Text(
-                                       'Secure Login',
-                                       style: TextStyle(
-                                         fontSize: 16,
-                                         fontWeight: FontWeight.bold,
-                                         color: Colors.white,
-                                       ),
-                                     ),
-                             ),
-                            const SizedBox(height: 24),
-
-                            // Quick Biometric login trigger
-                            if (_canAuthenticate) ...[
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
-                                      color: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                      size: 50,
                                     ),
-                                    onPressed: _authenticateBiometrics,
-                                  ),
+                                    const SizedBox(height: 30),
+                                  ],
                                 ],
                               ),
-                              Center(
-                                child: Text(
-                                  _isFaceId ? 'Tap to Login with Face ID'.tr : 'Tap to Login with Fingerprint'.tr,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 30),
-                            ],
-                          ],
-                        ),
 
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Login with another phone number
-                            Center(
-                              child: TextButton(
-                                onPressed: () async {
-                                  final store = AuthStore();
-                                  await store.setRegisteredMobile(null);
-                                  await store.setMobile(null);
-                                  await store.setBiometricEnabled(false);
-                                  await store.setNeverAskBiometric(false);
-                                  await store.clearAuth();
-                                  
-                                  if (!mounted) return;
-                                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const SelectCooperativePage()),
-                                  );
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const StatusCheckPage()),
-                                  );
-                                },
-                                child: Text(
-                                  'Login with another phone number',
-                                  style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569)),
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Login with another phone number
+                                  Center(
+                                    child: TextButton(
+                                      onPressed: () async {
+                                        final store = AuthStore();
+                                        await store.setRegisteredMobile(null);
+                                        await store.setMobile(null);
+                                        await store.setBiometricEnabled(false);
+                                        await store.setNeverAskBiometric(false);
+                                        await store.clearAuth();
+                                        
+                                        if (!mounted) return;
+                                        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const SelectCooperativePage()),
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const StatusCheckPage()),
+                                        );
+                                      },
+                                      child: Text(
+                                        'Login with another phone number',
+                                        style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  // Switch cooperative option
+                                  Center(
+                                    child: TextButton(
+                                      onPressed: () {
+                                        AuthStore().clearAll();
+                                        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                      },
+                                      child: Text(
+                                        'Switch Cooperative Bank',
+                                        style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            // Switch cooperative option
-                            Center(
-                              child: TextButton(
-                                onPressed: () {
-                                  AuthStore().clearAll();
-                                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                                },
-                                child: Text(
-                                  'Switch Cooperative Bank',
-                                  style: TextStyle(color: _isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }
               ),
-            );
-          }
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

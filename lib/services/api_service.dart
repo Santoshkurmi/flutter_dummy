@@ -243,7 +243,6 @@ class ApiService {
     return await get('/accounts/$type/$id/ledger', params: params);
   }
 
-  // Fetch cooperatives mock database mapping to IP 192.168.1.252
   Future<List<Map<String, dynamic>>> fetchCooperatives() async {
     final List<String> firstNames = [
       "Bright", "Everest", "Lali Gurans", "Subha Laxmi", "Sajha", "Hamro", "Janakalyan", 
@@ -286,7 +285,7 @@ class ApiService {
       'name': "Bright Saving & Credit Co-operative Ltd.",
       'address': "New Baneshwor, Kathmandu",
       'gradient': "bg-blue-600",
-      'url': "http://192.168.1.252:3000" // Converted from 253 to 252!
+      'url': defaultBaseUrl
     });
 
     for (int i = 2; i <= 150; i++) {
@@ -300,7 +299,7 @@ class ApiService {
         'name': name,
         'address': address,
         'gradient': gradient,
-        'url': "http://192.168.1.252:3000" // Converted from 253 to 252!
+        'url': defaultBaseUrl
       });
     }
 

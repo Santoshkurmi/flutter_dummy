@@ -228,19 +228,19 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           // 4. Content Screen
           Scaffold(
             backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: Navigator.canPop(context)
-                  ? IconButton(
+            appBar: Navigator.canPop(context)
+                ? AppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
                       icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         color: isDark ? Colors.white : const Color(0xFF1E293B),
                       ),
                       onPressed: () => Navigator.pop(context),
-                    )
-                  : null,
-            ),
+                    ),
+                  )
+                : null,
             body: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {

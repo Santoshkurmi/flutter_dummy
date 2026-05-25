@@ -267,7 +267,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         decoration: InputDecoration(
                           labelText: 'Host / IP Address',
                           labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                          hintText: 'e.g. 192.168.1.252',
+                          hintText: 'e.g. 192.168.1.253',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                           filled: true,
                           fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
