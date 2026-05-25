@@ -50,6 +50,8 @@ dependencies:
   gal: ^2.3.2
   flutter_displaymode: ^0.7.0
   refresh_rate: ^1.0.0
+  pdf: ^3.12.0
+  printing: ^5.13.1
 
 dev_dependencies:
   flutter_test:

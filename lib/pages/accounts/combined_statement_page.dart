@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import '../../store/auth_store.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
+import 'transaction_receipt_page.dart';
+
 
 class DateMaskTextInputFormatter extends TextInputFormatter {
   @override
@@ -427,6 +433,174 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     );
   }
 
+  Future<void> _exportToPdf(bool isDarkMode) async {
+    final pdf = pw.Document();
+    final profile = AuthStore().profile;
+    final coop = AuthStore().selectedCooperative;
+    final coopName = coop?['name'] ?? 'Bright Saving & Credit Co-operative';
+    final coopAddress = coop?['address'] ?? 'Kathmandu, Nepal';
+    final memberName = profile?['member_name'] ?? 'Sahakari User';
+    final memberNo = profile?['member_no'] ?? profile?['member_code'] ?? 'M-783921';
+    final mobile = profile?['mobile'] ?? AuthStore().mobile ?? '98XXXXXXXX';
+
+    String filterDesc = 'All Transaction History';
+    if (_selectedPreset != null) {
+      if (_selectedPreset == '7_days') filterDesc = 'Last 7 Days';
+      if (_selectedPreset == '15_days') filterDesc = 'Last 15 Days';
+      if (_selectedPreset == '1_month') filterDesc = 'Last Month';
+    } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
+      filterDesc = 'Date Range: $_fromDateVal to $_toDateVal';
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) {
+          return [
+            // Header
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Text(
+                  coopName.toUpperCase(),
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  coopAddress,
+                  style: const pw.TextStyle(
+                    fontSize: 9,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 12),
+                pw.Text(
+                  'COMBINED TRANSACTION STATEMENT',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                    decoration: pw.TextDecoration.underline,
+                  ),
+                ),
+                pw.SizedBox(height: 16),
+              ],
+            ),
+
+            // Member Info Block
+            pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Member Name: $memberName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                      pw.Text('Membership No: $memberNo', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Mobile Number: $mobile', style: const pw.TextStyle(fontSize: 9)),
+                      pw.Text('Statement Type: Combined', style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Filter Criteria: $filterDesc', style: const pw.TextStyle(fontSize: 9)),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            // Table of items
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              columnWidths: {
+                0: const pw.FixedColumnWidth(25), // S.N.
+                1: const pw.FixedColumnWidth(65), // Date
+                2: const pw.FixedColumnWidth(80), // Account No
+                3: const pw.FixedColumnWidth(55), // Category
+                4: const pw.FlexColumnWidth(),    // Description
+                5: const pw.FixedColumnWidth(35), // CR/DR
+                6: const pw.FixedColumnWidth(75), // Amount
+              },
+              children: [
+                // Header row
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    _pdfCell('S.N.', isHeader: true),
+                    _pdfCell('Date (BS)', isHeader: true),
+                    _pdfCell('Account No', isHeader: true),
+                    _pdfCell('Category', isHeader: true),
+                    _pdfCell('Description', isHeader: true),
+                    _pdfCell('Type', isHeader: true),
+                    _pdfCell('Amount', isHeader: true, alignRight: true),
+                  ],
+                ),
+                // Data rows
+                ...List.generate(_ledgerItems.length, (index) {
+                  final tx = _ledgerItems[index];
+                  final String typeStr = (tx['type'] ?? '').toString().toUpperCase();
+                  final bool isCredit = typeStr == 'CR' || typeStr == 'CREDIT';
+                  final double amount = (tx['amount'] ?? 0.0).toDouble();
+                  
+                  final String desc = tx['desc'] ?? tx['description'] ?? 'Transaction';
+                  final String nepaliDate = tx['nepaliDate'] ?? tx['date'] ?? '';
+                  final String accountType = tx['accountType'] ?? 'savings';
+                  final String accountNo = tx['accountNo'] ?? 'N/A';
+
+                  return pw.TableRow(
+                    children: [
+                      _pdfCell('${index + 1}'),
+                      _pdfCell(nepaliDate),
+                      _pdfCell(accountNo),
+                      _pdfCell(accountType.toUpperCase()),
+                      _pdfCell(desc),
+                      _pdfCell(isCredit ? 'CR' : 'DR', textColor: isCredit ? PdfColors.green800 : PdfColors.red800),
+                      _pdfCell('Rs. ${_formatAmount(amount)}', alignRight: true),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) => pdf.save(),
+      name: 'combined_statement_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+  }
+
+  pw.Widget _pdfCell(String text, {bool isHeader = false, bool alignRight = false, PdfColor? textColor}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+      child: pw.Text(
+        text,
+        textAlign: alignRight ? pw.TextAlign.right : pw.TextAlign.left,
+        style: pw.TextStyle(
+          fontSize: 7.5,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+          color: textColor ?? PdfColors.black,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -455,6 +629,15 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             fontSize: 16,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.picture_as_pdf_rounded,
+              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+            ),
+            onPressed: () => _exportToPdf(isDarkMode),
+          ),
+        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -651,133 +834,147 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                 badgeText = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
               }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : Colors.black.withValues(alpha: 0.04),
-                  ),
-                  boxShadow: isDarkMode
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.015),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCredit
-                            ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                            : const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      ),
-                      child: Icon(
-                        isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                        color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                        size: 16,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransactionReceiptPage(
+                        transaction: Map<String, dynamic>.from(tx),
+                        accountType: accountType,
+                        accountNo: accountNo,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.black.withValues(alpha: 0.04),
+                    ),
+                    boxShadow: isDarkMode
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.015),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCredit
+                              ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                              : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        ),
+                        child: Icon(
+                          isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                          color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            desc,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              desc,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          
-                          // Account type tag and account number layout (using Wrap to prevent cropping on small screens)
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: badgeBg,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  typeLabel,
-                                  style: TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w900,
-                                    color: badgeText,
+                            const SizedBox(height: 6),
+                            
+                            // Account type tag and account number layout (using Wrap to prevent cropping on small screens)
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: badgeBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    typeLabel,
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: badgeText,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Text(
-                                accountNo,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                Text(
+                                  accountNo,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  ),
                                 ),
+                              ],
+                            ),
+                            
+                            const SizedBox(height: 6),
+                            Text(
+                              nepaliDate,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.6)
+                                    : const Color(0xFF475569),
+                              ),
+                            ),
+                            if (refNo.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Ref: $refNo',
+                                style: TextStyle(
+                                    fontSize: 9.5,
+                                    color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                    fontFamily: 'monospace',
+                                  ),
                               ),
                             ],
-                          ),
-                          
-                          const SizedBox(height: 6),
-                          Text(
-                            nepaliDate,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.6)
-                                  : const Color(0xFF475569),
-                            ),
-                          ),
-                          if (refNo.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Ref: $refNo',
-                              style: TextStyle(
-                                  fontSize: 9.5,
-                                  color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
-                                  fontFamily: 'monospace',
-                              ),
-                            ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            amountStr,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                              fontSize: 14.5,
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          amountStr,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                            fontSize: 14.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }).toList(),
