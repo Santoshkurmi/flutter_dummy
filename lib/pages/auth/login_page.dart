@@ -40,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.addListener(_onPasswordChanged);
     _checkBiometrics();
     _requestPermissionsAndWarmUp();
+    AuthStore().addListener(_onStoreChange);
   }
 
   Future<void> _requestPermissionsAndWarmUp() async {
@@ -78,7 +79,12 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _passwordController.removeListener(_onPasswordChanged);
     _passwordController.dispose();
+    AuthStore().removeListener(_onStoreChange);
     super.dispose();
+  }
+
+  void _onStoreChange() {
+    if (mounted) setState(() {});
   }
 
   void _onPasswordChanged() {

@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AuthStore extends ChangeNotifier {
+class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   static final AuthStore _instance = AuthStore._internal();
   factory AuthStore() => _instance;
-  AuthStore._internal();
+  AuthStore._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   String? _token;
   String? _mobile;
@@ -40,10 +43,20 @@ class AuthStore extends ChangeNotifier {
   String get themeMode => _themeMode;
 
   bool get isDarkMode {
+    if (kDebugMode && debugBrightnessOverride != null) {
+      return debugBrightnessOverride == Brightness.dark;
+    }
     if (_themeMode == 'system') {
       return ui.PlatformDispatcher.instance.platformBrightness == ui.Brightness.dark;
     }
     return _themeMode == 'dark';
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (_themeMode == 'system') {
+      notifyListeners();
+    }
   }
 
   bool get isAuthenticated => _token != null;

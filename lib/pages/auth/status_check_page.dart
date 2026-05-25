@@ -26,13 +26,19 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
   void initState() {
     super.initState();
     _mobileController.addListener(_onMobileChanged);
+    AuthStore().addListener(_onStoreChange);
   }
 
   @override
   void dispose() {
     _mobileController.removeListener(_onMobileChanged);
     _mobileController.dispose();
+    AuthStore().removeListener(_onStoreChange);
     super.dispose();
+  }
+
+  void _onStoreChange() {
+    if (mounted) setState(() {});
   }
 
   void _onMobileChanged() {
