@@ -127,6 +127,12 @@ class TranslationService {
     'Scan Result': 'स्क्यान परिणाम',
     'Scan Again': 'फेरि स्क्यान गर्नुहोस्',
     'Copy': 'कपी गर्नुहोस्',
+    'Platform Not Supported': 'प्लेटफर्म समर्थित छैन',
+    'QR Scanning is only available on iOS and Android devices. Please open this app on a supported mobile device to scan QR codes.': 'क्युआर स्क्यान आईओएस र एन्ड्रोइड उपकरणहरूमा मात्र उपलब्ध छ। क्युआर कोड स्क्यान गर्न कृपया यो एप समर्थित मोबाइल उपकरणमा खोल्नुहोस्।',
+    'DEVICE COMPATIBILITY': 'उपकरण अनुकूलता',
+    'Web & Desktop Platforms': 'वेब र डेस्कटप प्लेटफर्महरू',
+    'Supported': 'समर्थित',
+    'Not Supported': 'समर्थित छैन',
 
     // New member
     'New to Bright Sahakari?': 'ब्राइट सहकारीमा नयाँ?',

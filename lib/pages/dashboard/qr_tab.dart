@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -34,6 +35,8 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   String _cameraErrorMessage = '';
   bool _isActive = false;
 
+  bool get _isSupported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
   bool get hasResult => _hasResult;
   void resetScanner() => _resetScanner();
 
@@ -52,7 +55,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    if (_isSupported) {
+      WidgetsBinding.instance.addObserver(this);
+    }
     _overlayAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -63,6 +68,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
 
   /// Call this from outside when the tab becomes visible
   Future<void> startCamera() async {
+    if (!_isSupported) return;
     if (_isActive) return;
 
     if (mounted) {
@@ -110,6 +116,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
 
   /// Call this from outside when the tab becomes hidden
   void stopCamera() {
+    if (!_isSupported) return;
     if (!_isActive) return;
     
     if (_controller != null) {
@@ -132,6 +139,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isSupported) return;
     if (!_isActive || _controller == null) return;
     
     if (state == AppLifecycleState.paused) {
@@ -150,7 +158,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (_isSupported) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     _overlayAnimationController.dispose();
     _controller?.dispose();
     _controller = null;
@@ -370,6 +380,10 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDarkMode;
+
+    if (!_isSupported) {
+      return _buildUnsupportedPlatformView(isDark);
+    }
 
     if (_hasResult && _scannedValue != null) {
       final resultView = _customQrMode ? _buildCustomQrResultView(isDark) : _buildResultView(isDark);
@@ -1217,6 +1231,180 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUnsupportedPlatformView(bool isDark) {
+    final bgColor = isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC);
+    final cardBgColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06);
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [const Color(0xFF020617), const Color(0xFF0B1329)]
+                : [const Color(0xFFF8FAFC), const Color(0xFFEEF2F6)],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Glowing Icon Container
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                          : [Colors.white, const Color(0xFFE2E8F0)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.15 : 0.08),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                    border: Border.all(color: borderColor, width: 2),
+                  ),
+                  child: ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                    ).createShader(bounds),
+                    child: const Icon(
+                      Icons.no_photography_rounded,
+                      size: 64,
+                      color: Colors.white, // needed for ShaderMask to work
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // Title
+                Text(
+                  'Platform Not Supported'.tr,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Description
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'QR Scanning is only available on iOS and Android devices. Please open this app on a supported mobile device to scan QR codes.'.tr,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: subTextColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 36),
+
+                // Platform status card
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: borderColor),
+                    boxShadow: isDark
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            )
+                          ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DEVICE COMPATIBILITY'.tr,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: subTextColor,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPlatformStatusRow('Android', true, isDark),
+                      const SizedBox(height: 12),
+                      _buildPlatformStatusRow('iOS', true, isDark),
+                      const SizedBox(height: 12),
+                      _buildPlatformStatusRow('Web & Desktop Platforms', false, isDark),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlatformStatusRow(String platform, bool isSupported, bool isDark) {
+    final statusColor = isSupported ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final statusBgColor = statusColor.withValues(alpha: isDark ? 0.12 : 0.08);
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: statusBgColor,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isSupported ? Icons.check_rounded : Icons.close_rounded,
+            size: 14,
+            color: statusColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          platform,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          isSupported ? 'Supported'.tr : 'Not Supported'.tr,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: statusColor,
+          ),
+        ),
+      ],
     );
   }
 }
