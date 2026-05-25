@@ -6,10 +6,12 @@ import '../../widgets/cooperative_account_card.dart';
 
 class AccountDetailsPage extends StatefulWidget {
   final Map<String, dynamic>? initialAccountsData;
+  final bool isTab;
 
   const AccountDetailsPage({
     super.key,
     this.initialAccountsData,
+    this.isTab = false,
   });
 
   @override
@@ -39,6 +41,20 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
       _loadAccounts();
     }
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountDetailsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialAccountsData != oldWidget.initialAccountsData && widget.initialAccountsData != null) {
+      setState(() {
+        _savingsAccounts = widget.initialAccountsData!['savings'] ?? [];
+        _loanAccounts = widget.initialAccountsData!['loans'] ?? [];
+        _shareAccounts = widget.initialAccountsData!['shares'] ?? [];
+        _isLoading = false;
+        _hasError = false;
+      });
+    }
   }
 
   @override
@@ -116,7 +132,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context) ? IconButton(
+        leading: (!widget.isTab && Navigator.canPop(context)) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),

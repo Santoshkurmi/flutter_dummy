@@ -203,16 +203,14 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   }
 
   void _handleActionTap(BuildContext context, String label) {
-    if (label == 'Statement' || label == 'Savings') {
+    if (label == 'Statement' || label == 'Savings' || label == 'Ledger') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
-    } else if (label == 'Ledger') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Self Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
-      widget.onTabChange(1); // Payments Tab
+      widget.onTabChange(1); // Accounts Tab
     } else if (label == 'Scan QR' || label == 'QR Scan') {
       widget.onTabChange(2); // Scan QR Tab
     } else {

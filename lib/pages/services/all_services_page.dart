@@ -15,16 +15,14 @@ class AllServicesPage extends StatelessWidget {
   });
 
   void _handleActionTap(BuildContext context, String label) {
-    if (label == 'Statement' || label == 'Savings') {
+    if (label == 'Statement' || label == 'Savings' || label == 'Ledger') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
-    } else if (label == 'Ledger') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsPage()));
     } else if (label == 'Self Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
-      onTabChange(1); // Payments Tab
+      onTabChange(1); // Accounts Tab
     } else if (label == 'Scan QR' || label == 'QR Scan') {
       onTabChange(2); // Scan QR Tab
     } else {
@@ -105,7 +103,11 @@ class AllServicesPage extends StatelessWidget {
             return InkWell(
               onTap: () {
                 final label = act['label'] as String;
-                if (label == 'Utility' || label == 'Payment' || label == 'Send Money' || label == 'Scan QR' || label == 'QR Scan') {
+                 if (label == 'Utility' ||
+                    label == 'Payment' ||
+                    label == 'Send Money' ||
+                    label == 'Scan QR' ||
+                    label == 'QR Scan') {
                   Navigator.pop(context);
                   _handleActionTap(context, label);
                 } else {

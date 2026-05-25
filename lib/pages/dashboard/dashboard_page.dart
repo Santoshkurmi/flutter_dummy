@@ -3,7 +3,7 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'home_tab.dart';
-import 'payments_tab.dart';
+import '../accounts/account_details_page.dart';
 import 'qr_tab.dart';
 import 'notifications_tab.dart';
 import 'profile_tab.dart';
@@ -221,7 +221,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 });
               },
             ),
-            PaymentsTab(isDarkMode: _isDarkMode),
+            AccountDetailsPage(
+              initialAccountsData: _accountsData,
+              isTab: true,
+            ),
             QRTab(key: _qrKey, isDarkMode: _isDarkMode),
             NotificationsTab(isDarkMode: _isDarkMode),
             ProfileTab(
@@ -258,8 +261,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   tooltip: '',
                 ),
                 BottomNavigationBarItem(
-                  icon: const Icon(Icons.payment_rounded),
-                  label: 'Payments'.tr,
+                  icon: const Icon(Icons.account_balance_wallet_rounded),
+                  label: 'Accounts'.tr,
                   tooltip: '',
                 ),
                 BottomNavigationBarItem(
