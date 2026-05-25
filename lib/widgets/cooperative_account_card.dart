@@ -464,9 +464,10 @@ class CooperativeAccountCard extends StatelessWidget {
 
         final onTap = _findOnTapInWidget(toHeroContext.widget) ?? _findOnTapInWidget(fromHeroContext.widget);
 
-        if (onTap != null) {
+        if (onTap != null && flightDirection == HeroFlightDirection.push) {
           return FlyingShuttleWrapper(
             onTap: onTap,
+            pageContext: toHeroContext,
             child: shuttle,
           );
         }

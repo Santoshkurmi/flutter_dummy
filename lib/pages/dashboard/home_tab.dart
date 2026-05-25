@@ -695,6 +695,28 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       if (isOverview) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
       } else {
+        final List<Map<String, dynamic>> swipable = [];
+        if (widget.accountsData != null) {
+          final savingsList = widget.accountsData!['savings'] as List? ?? [];
+          final sharesList = widget.accountsData!['shares'] as List? ?? [];
+          final loansList = widget.accountsData!['loans'] as List? ?? [];
+          for (var acc in savingsList) {
+            swipable.add({'raw': acc, 'type': 'savings'});
+          }
+          for (var acc in sharesList) {
+            swipable.add({'raw': acc, 'type': 'shares'});
+          }
+          for (var acc in loansList) {
+            swipable.add({'raw': acc, 'type': 'loans'});
+          }
+        }
+        
+        final index = swipable.indexWhere((a) {
+          final raw = a['raw'] as Map;
+          final aNo = raw['accNo'] ?? raw['account_no'];
+          return aNo == cardData['accNo'];
+        });
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -702,6 +724,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               account: Map<String, dynamic>.from(cardData['raw']),
               accountType: type,
               heroTag: 'card_${cardData['accNo']}',
+              swipableAccounts: swipable,
+              initialIndex: index >= 0 ? index : 0,
             ),
           ),
         );

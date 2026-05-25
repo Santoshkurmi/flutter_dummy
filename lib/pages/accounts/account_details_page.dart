@@ -333,12 +333,31 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           showBalance: true,
           isDarkMode: isDarkMode,
           onTap: () {
+            final List<Map<String, dynamic>> swipable = [];
+            for (var a in _savingsAccounts) {
+              swipable.add({'raw': a, 'type': 'savings'});
+            }
+            for (var a in _shareAccounts) {
+              swipable.add({'raw': a, 'type': 'shares'});
+            }
+            for (var a in _loanAccounts) {
+              swipable.add({'raw': a, 'type': 'loans'});
+            }
+
+            final index = swipable.indexWhere((a) {
+              final raw = a['raw'] as Map;
+              final aNo = raw['accNo'] ?? raw['account_no'];
+              return aNo == accountNo;
+            });
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,
+                  swipableAccounts: swipable,
+                  initialIndex: index >= 0 ? index : 0,
                 ),
               ),
             ).then((_) => _loadAccounts()); // Refresh upon returning

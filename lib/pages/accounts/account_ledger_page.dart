@@ -40,19 +40,23 @@ class AccountLedgerPage extends StatefulWidget {
   final Map<String, dynamic> account;
   final String accountType;
   final String? heroTag;
+  final List<Map<String, dynamic>>? swipableAccounts;
+  final int? initialIndex;
 
   const AccountLedgerPage({
     super.key,
     required this.account,
     required this.accountType,
     this.heroTag,
+    this.swipableAccounts,
+    this.initialIndex,
   });
 
   @override
   State<AccountLedgerPage> createState() => _AccountLedgerPageState();
 }
 
-class _AccountLedgerPageState extends State<AccountLedgerPage> {
+class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   bool _hasError = false;
   List<dynamic> _ledgerItems = [];
@@ -63,11 +67,151 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
   
   // Active Preset: '7_days', '15_days', '1_month', or null
   String? _selectedPreset;
+
+  late int _currentIndex;
+  late List<Map<String, dynamic>> _accountsList;
+  late String _activeType;
+  late Map<String, dynamic> _activeAccount;
+
+  // Custom swipe logic state (matching HomeTab)
+  double _dragOffset = 0.0;
+  late AnimationController _swipeController;
+  double _animationStartOffset = 0.0;
+  double _animationTargetOffset = 0.0;
+  bool _isAnimating = false;
+  bool _isDismissal = false;
+  int _dismissDirection = 0;
+  bool _isDraggingCard = false;
+  Offset? _startPointerPos;
+  double _dragStartOffset = 0.0;
+  bool _isPointerDragging = false;
   
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex ?? 0;
+    _accountsList = widget.swipableAccounts ?? [
+      {'raw': widget.account, 'type': widget.accountType}
+    ];
+    _activeAccount = _accountsList[_currentIndex]['raw'];
+    _activeType = _accountsList[_currentIndex]['type'];
+
+    _swipeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    )..addListener(() {
+        setState(() {
+          _dragOffset = Tween<double>(
+            begin: _animationStartOffset,
+            end: _animationTargetOffset,
+          ).evaluate(_swipeController);
+        });
+      })..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          if (_isDismissal) {
+            setState(() {
+              int total = _accountsList.length;
+              _currentIndex = (_currentIndex + _dismissDirection) % total;
+              if (_currentIndex < 0) {
+                _currentIndex += total;
+              }
+              _activeAccount = _accountsList[_currentIndex]['raw'];
+              _activeType = _accountsList[_currentIndex]['type'];
+              _dragOffset = 0.0;
+              _isAnimating = false;
+            });
+            _loadLedger(); // Reload statement data for new card selection
+          } else {
+            setState(() {
+              _dragOffset = 0.0;
+              _isAnimating = false;
+            });
+          }
+        }
+      });
+
     _loadLedger();
+  }
+
+  @override
+  void dispose() {
+    _swipeController.dispose();
+    super.dispose();
+  }
+
+  void _animateDismiss(int direction) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double pageWidth = screenWidth - 40.0;
+    
+    _isDismissal = true;
+    _dismissDirection = direction;
+    _animationStartOffset = _dragOffset;
+    _animationTargetOffset = direction == 1 ? -pageWidth : pageWidth;
+    
+    _isAnimating = true;
+    _swipeController.forward(from: 0.0);
+  }
+
+  void _animateSnapBack() {
+    _isDismissal = false;
+    _animationStartOffset = _dragOffset;
+    _animationTargetOffset = 0.0;
+    
+    _isAnimating = true;
+    _swipeController.forward(from: 0.0);
+  }
+
+  void _completeAnimationInstantly() {
+    if (!_isAnimating) return;
+    _swipeController.stop();
+    if (_isDismissal) {
+      int total = _accountsList.length;
+      _currentIndex = (_currentIndex + _dismissDirection) % total;
+      if (_currentIndex < 0) {
+        _currentIndex += total;
+      }
+    }
+    _dragOffset = 0.0;
+    _isAnimating = false;
+  }
+
+  void _handleDragEnd(double primaryVelocity) {
+    final bool didSwipe = _isDraggingCard;
+    
+    setState(() {
+      _isPointerDragging = false;
+      _isDraggingCard = false;
+    });
+    
+    if (_isAnimating) return;
+    
+    final velocity = primaryVelocity.abs();
+    
+    if (_dragOffset.abs() > 80.0 || (didSwipe && velocity > 400.0)) {
+      _animateDismiss(_dragOffset > 0 ? -1 : 1);
+    } else {
+      _animateSnapBack();
+    }
+    _startPointerPos = null;
+  }
+
+  void _handleDragCancel() {
+    setState(() {
+      _isPointerDragging = false;
+      _isDraggingCard = false;
+    });
+    if (!_isAnimating) {
+      _animateSnapBack();
+    }
+    _startPointerPos = null;
+  }
+
+  double get _currentPage {
+    if (!mounted) return 0.0;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double pageWidth = screenWidth - 40.0;
+    double progress = (pageWidth > 0) ? (_dragOffset / pageWidth) : 0.0;
+    return _currentIndex - progress;
   }
 
   bool _isValidDate(String dateStr) {
@@ -89,8 +233,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
 
     try {
       final res = await ApiService().getAccountLedger(
-        widget.accountType,
-        widget.account['id'] ?? 0,
+        _activeType,
+        _activeAccount['id'] ?? 0,
         fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
         toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
         preset: _selectedPreset,
@@ -142,7 +286,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
   }
 
   Color _getAccentColor() {
-    switch (widget.accountType) {
+    switch (_activeType) {
       case 'loans':
         return const Color(0xFFEF4444);
       case 'shares':
@@ -277,7 +421,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(14),
                               ),
                             ),
                             child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -457,13 +601,6 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = _getAccentColor();
-    final acc = widget.account;
-    
-    final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
-    final balanceStr = 'Rs. ${_formatAmount(rawBalance)}';
-    final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
-    final scheme = (acc['scheme'] ?? widget.accountType.toUpperCase()).toString().toUpperCase();
-
     final bool isFilteredAtAll = _selectedPreset != null || _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
 
     return Scaffold(
@@ -496,28 +633,137 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
           backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
           child: ListView(
             padding: const EdgeInsets.only(bottom: 24),
+            physics: _isDraggingCard ? const NeverScrollableScrollPhysics() : null,
             children: [
-              // Account Card Header
+              // Account Card Header (Swipe Deck)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                 child: SizedBox(
                   height: 190,
-                  child: CooperativeAccountCard(
-                    isOverview: false,
-                    accountType: widget.accountType,
-                    title: scheme,
-                    balance: balanceStr,
-                    accountNo: accountNo,
-                    interestRate: acc['interest_rate'],
-                    shareCount: acc['share_count'],
-                    maturityDate: acc['maturity_date'],
-                    showBalance: true,
-                    isDarkMode: isDarkMode,
-                    showArrow: false,
-                    heroTag: widget.heroTag,
+                  child: ClipRRect(
+                    clipBehavior: Clip.none,
+                    child: _accountsList.length <= 1
+                        ? _buildCardItem(context, _accountsList.first)
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              double pageWidth = constraints.maxWidth;
+                              
+                              int nextPageIndex = _dragOffset < 0
+                                  ? (_currentIndex + 1) % _accountsList.length
+                                  : (_currentIndex - 1 + _accountsList.length) % _accountsList.length;
+
+                              double progress = (pageWidth > 0) ? (_dragOffset.abs() / pageWidth).clamp(0.0, 1.0) : 0.0;
+                              double scale = 0.95 + progress * 0.05;
+
+                              final Matrix4 bottomMatrix = Matrix4.identity()
+                                ..scaleByDouble(scale, scale, 1.0, 1.0);
+
+                              final Matrix4 topMatrix = Matrix4.identity()
+                                ..translateByDouble(_dragOffset, 0.0, 0.0, 1.0);
+
+                              return Listener(
+                                onPointerDown: (event) {
+                                  if (_isAnimating) {
+                                    setState(() {
+                                      _completeAnimationInstantly();
+                                    });
+                                  }
+                                },
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onHorizontalDragStart: (details) {
+                                    setState(() {
+                                      _isDraggingCard = true;
+                                    });
+                                    _startPointerPos = details.globalPosition;
+                                    _dragStartOffset = _dragOffset;
+                                    _isPointerDragging = true;
+                                  },
+                                  onHorizontalDragUpdate: (details) {
+                                    if (_isPointerDragging && _startPointerPos != null) {
+                                      final delta = details.globalPosition - _startPointerPos!;
+                                      setState(() {
+                                        _dragOffset = _dragStartOffset + delta.dx;
+                                      });
+                                    }
+                                  },
+                                  onHorizontalDragEnd: (details) {
+                                    _handleDragEnd(details.primaryVelocity ?? 0.0);
+                                  },
+                                  onHorizontalDragCancel: () {
+                                    _handleDragCancel();
+                                  },
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      // Bottom Card
+                                      Positioned.fill(
+                                        child: Transform(
+                                          transform: bottomMatrix,
+                                          alignment: Alignment.center,
+                                          child: IgnorePointer(
+                                            child: _buildCardItem(context, _accountsList[nextPageIndex]),
+                                          ),
+                                        ),
+                                      ),
+                                      // Top Card
+                                      Positioned.fill(
+                                        child: Transform(
+                                          transform: topMatrix,
+                                          alignment: Alignment.center,
+                                          child: _buildCardItem(context, _accountsList[_currentIndex], isTopCard: true),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ),
               ),
+
+              // Dots indicator
+              if (_accountsList.length > 1) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_accountsList.length, (index) {
+                    double difference = index - _currentPage;
+                    double activeRatio = (1.0 - difference.abs().clamp(0.0, 1.0));
+                    double width = 6.0 + (14.0 * activeRatio);
+
+                    final card = _accountsList[index];
+                    final type = card['type'] as String?;
+                    Color cardAccentColor;
+                    if (type == 'savings') {
+                      cardAccentColor = const Color(0xFF6366F1);
+                    } else if (type == 'shares') {
+                      cardAccentColor = const Color(0xFF10B981);
+                    } else if (type == 'loans') {
+                      cardAccentColor = const Color(0xFFF43F5E);
+                    } else {
+                      cardAccentColor = const Color(0xFF2563EB);
+                    }
+
+                    final inactiveColor = isDarkMode
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.15);
+                    final dotColor = Color.lerp(inactiveColor, cardAccentColor, activeRatio) ?? cardAccentColor;
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      height: 6,
+                      width: width,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: dotColor,
+                      ),
+                    );
+                  }),
+                ),
+              ],
               
               const SizedBox(height: 16),
 
@@ -574,6 +820,32 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCardItem(BuildContext context, Map<String, dynamic> cardData, {bool isTopCard = false}) {
+    final acc = cardData['raw'];
+    final type = cardData['type'];
+    final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
+    final balance = 'Rs. ${_formatAmount(rawBalance)}';
+    final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
+    final scheme = (acc['scheme'] ?? type.toUpperCase()).toString().toUpperCase();
+
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return CooperativeAccountCard(
+      isOverview: false,
+      accountType: type,
+      title: scheme,
+      balance: balance,
+      accountNo: accountNo,
+      interestRate: acc['interest_rate'],
+      shareCount: acc['share_count'],
+      maturityDate: acc['maturity_date'],
+      showBalance: true,
+      isDarkMode: isDarkMode,
+      showArrow: false,
+      heroTag: isTopCard ? widget.heroTag : null,
     );
   }
 
@@ -684,7 +956,6 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
               
               final String desc = tx['desc'] ?? tx['description'] ?? 'Transaction';
               final String nepaliDate = tx['nepaliDate'] ?? tx['date'] ?? '';
-              final String englishDate = tx['englishDate'] ?? '';
               final String refNo = tx['refNo'] ?? tx['reference_number'] ?? '';
 
               return Container(

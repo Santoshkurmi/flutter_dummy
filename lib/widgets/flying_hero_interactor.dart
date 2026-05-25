@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class FlyingHero {
-  final BuildContext context;
+  final BuildContext shuttleContext;
+  final BuildContext pageContext;
   final VoidCallback onTap;
 
   FlyingHero({
-    required this.context,
+    required this.shuttleContext,
+    required this.pageContext,
     required this.onTap,
   });
 }
@@ -14,12 +16,16 @@ class FlyingHeroTracker {
   static final List<FlyingHero> _activeHeroes = [];
   static DateTime? _lastTriggerTime;
 
-  static void register(BuildContext context, VoidCallback onTap) {
-    _activeHeroes.add(FlyingHero(context: context, onTap: onTap));
+  static void register(BuildContext shuttleContext, BuildContext pageContext, VoidCallback onTap) {
+    _activeHeroes.add(FlyingHero(
+      shuttleContext: shuttleContext,
+      pageContext: pageContext,
+      onTap: onTap,
+    ));
   }
 
-  static void unregister(BuildContext context) {
-    _activeHeroes.removeWhere((h) => h.context == context);
+  static void unregister(BuildContext shuttleContext) {
+    _activeHeroes.removeWhere((h) => h.shuttleContext == shuttleContext);
   }
 
   static bool checkTap(Offset globalPosition) {
@@ -29,8 +35,8 @@ class FlyingHeroTracker {
     }
 
     for (final hero in List.from(_activeHeroes)) {
-      if (hero.context.mounted) {
-        final renderBox = hero.context.findRenderObject() as RenderBox?;
+      if (hero.shuttleContext.mounted && hero.pageContext.mounted) {
+        final renderBox = hero.shuttleContext.findRenderObject() as RenderBox?;
         if (renderBox != null && renderBox.hasSize) {
           final position = renderBox.localToGlobal(Offset.zero);
           final size = renderBox.size;
@@ -51,11 +57,13 @@ class FlyingHeroTracker {
 class FlyingShuttleWrapper extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
+  final BuildContext pageContext;
 
   const FlyingShuttleWrapper({
     super.key,
     required this.child,
     required this.onTap,
+    required this.pageContext,
   });
 
   @override
@@ -66,7 +74,7 @@ class _FlyingShuttleWrapperState extends State<FlyingShuttleWrapper> {
   @override
   void initState() {
     super.initState();
-    FlyingHeroTracker.register(context, widget.onTap);
+    FlyingHeroTracker.register(context, widget.pageContext, widget.onTap);
   }
 
   @override
