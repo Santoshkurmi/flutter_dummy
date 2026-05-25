@@ -28,8 +28,7 @@ class ApiService {
     return 'flutter_device_unique_12345';
   }
 
-  // Primary backend URL mapping to IP 192.168.1.252 instead of 253
-  static const String defaultBaseUrl = 'http://192.168.1.252:8000/api/mobile-banking/v1';
+  static const String defaultBaseUrl = 'http://192.168.1.253:8000/api/mobile-banking/v1';
 
   String get _baseUrl {
     final custom = AuthStore().customApiUrl;
