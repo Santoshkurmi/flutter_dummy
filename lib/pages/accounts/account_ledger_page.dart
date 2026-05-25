@@ -740,36 +740,15 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Text(
-                                nepaliDate,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                              if (englishDate.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  width: 3,
-                                  height: 3,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  englishDate,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ],
-                            ],
+                          Text(
+                            nepaliDate,
+                            style: TextStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.7)
+                                  : const Color(0xFF1E293B),
+                            ),
                           ),
                           if (refNo.isNotEmpty) ...[
                             const SizedBox(height: 4),
