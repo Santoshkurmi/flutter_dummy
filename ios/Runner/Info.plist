@@ -66,5 +66,21 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to scan QR codes for quick payments and transfers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to let you upload member signatures and profile documents.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need permission to save transaction receipts and transaction statements to your photos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need location access to locate nearby branches and cooperative centers for secure banking sessions.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need continuous location access to verify branch proximity and prevent fraud.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>We need Face ID access to log you into your mobile banking account quickly and securely.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
