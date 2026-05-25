@@ -6,10 +6,8 @@ import '../../services/biometric_signature_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import '../dashboard/dashboard_page.dart';
-import 'status_check_page.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
-import 'select_cooperative_page.dart';
 import '../settings/biometric_setup_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
@@ -523,28 +521,16 @@ class _LoginPageState extends State<LoginPage> {
           // 4. Content Screen
           Scaffold(
             backgroundColor: Colors.transparent,
-            appBar: Navigator.canPop(context)
-                ? AppBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    leading: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      ),
-                      onPressed: () => Navigator.pop(context),
+            appBar: null,
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                  )
-                : null,
-            body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
+                    child: SafeArea(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                         child: Form(
@@ -840,14 +826,6 @@ class _LoginPageState extends State<LoginPage> {
                                         
                                         if (!mounted) return;
                                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => const SelectCooperativePage()),
-                                        );
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => const StatusCheckPage()),
-                                        );
                                       },
                                       child: Text(
                                         'Login with another phone number',
@@ -877,9 +855,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                  );
-                }
-              ),
+                  ),
+                );
+              }
             ),
           ),
         ],

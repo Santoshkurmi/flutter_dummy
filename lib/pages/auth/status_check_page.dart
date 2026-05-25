@@ -66,11 +66,12 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
       switch (responseCode) {
         case 1: // RESP_SUCCESS (Authenticated / Password required)
-          Navigator.push(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
               builder: (_) => LoginPage(mobileNumber: mobile),
             ),
+            (route) => false,
           );
           break;
         case 2: // RESP_ACTIVATION_REQUIRED (Mobile service active but app registration required)
@@ -234,28 +235,16 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           // 4. Content Screen
           Scaffold(
             backgroundColor: Colors.transparent,
-            appBar: Navigator.canPop(context)
-                ? AppBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    leading: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      ),
-                      onPressed: () => Navigator.pop(context),
+            appBar: null,
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                  )
-                : null,
-            body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
+                    child: SafeArea(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                         child: Form(
@@ -552,9 +541,9 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                         ),
                       ),
                     ),
-                  );
-                }
-              ),
+                  ),
+                );
+              }
             ),
           ),
         ],

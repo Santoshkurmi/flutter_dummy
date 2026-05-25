@@ -200,11 +200,12 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                 onTap: () async {
                                   await AuthStore().setSelectedCooperative(coop);
                                   if (mounted) {
-                                    Navigator.push(
+                                    Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => const StatusCheckPage(),
                                       ),
+                                      (route) => false,
                                     );
                                   }
                                 },
