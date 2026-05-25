@@ -236,10 +236,11 @@ class ApiService {
     return await get('/accounts');
   }
 
-  Future<Map<String, dynamic>> getAccountLedger(String type, int id, {String? fromDate, String? toDate}) async {
+  Future<Map<String, dynamic>> getAccountLedger(String type, int id, {String? fromDate, String? toDate, String? preset}) async {
     final Map<String, String> params = {};
     if (fromDate != null) params['from_date'] = fromDate;
     if (toDate != null) params['to_date'] = toDate;
+    if (preset != null) params['preset'] = preset;
     return await get('/accounts/$type/$id/ledger', params: params);
   }
 

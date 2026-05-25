@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/cooperative_account_card.dart';
+import 'account_ledger_page.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -141,7 +142,18 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> {
     actions.add({
       'label': 'Statement',
       'icon': Icons.download_rounded,
-      'onTap': () => _handleQuickAction('Statement'),
+      'onTap': () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AccountLedgerPage(
+              account: acc,
+              accountType: widget.accountType,
+              heroTag: widget.heroTag,
+            ),
+          ),
+        );
+      },
     });
 
     if (isSavings || isLoan) {
@@ -234,6 +246,18 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> {
                 isDarkMode: isDarkMode,
                 showArrow: false,
                 heroTag: widget.heroTag,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AccountLedgerPage(
+                        account: acc,
+                        accountType: widget.accountType,
+                        heroTag: widget.heroTag,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
 
