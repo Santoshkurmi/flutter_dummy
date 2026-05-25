@@ -555,56 +555,68 @@ class _LoginPageState extends State<LoginPage> {
 
                                       return Center(
                                         child: Container(
-                                          width: 80,
-                                          height: 80,
+                                          width: 86,
+                                          height: 86,
+                                          padding: const EdgeInsets.all(3),
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
-                                            color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
-                                                blurRadius: 16,
-                                                offset: const Offset(0, 6),
-                                              ),
-                                            ],
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? Colors.white.withValues(alpha: 0.1)
+                                                  : Colors.black.withValues(alpha: 0.05),
+                                              width: 1.5,
+                                            ),
                                           ),
-                                          child: logoUrl != null && logoUrl.isNotEmpty
-                                              ? ClipRRect(
-                                                  borderRadius: BorderRadius.circular(40),
-                                                  child: Image.network(
-                                                    logoUrl,
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Container(
-                                                        decoration: BoxDecoration(
-                                                          shape: BoxShape.circle,
-                                                          gradient: gradient,
-                                                        ),
-                                                        child: Center(
-                                                          child: Text(
-                                                            initialLetter,
-                                                            style: const TextStyle(
-                                                              fontSize: 32,
-                                                              fontWeight: FontWeight.bold,
-                                                              color: Colors.white,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
+                                              color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
+                                                  blurRadius: 16,
+                                                  offset: const Offset(0, 6),
+                                                ),
+                                              ],
+                                            ),
+                                            child: logoUrl != null && logoUrl.isNotEmpty
+                                                ? ClipRRect(
+                                                    borderRadius: BorderRadius.circular(40),
+                                                    child: Image.network(
+                                                      logoUrl,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        return Container(
+                                                          decoration: BoxDecoration(
+                                                            shape: BoxShape.circle,
+                                                            gradient: gradient,
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              initialLetter,
+                                                              style: const TextStyle(
+                                                                fontSize: 32,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.white,
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                )
-                                              : Center(
-                                                  child: Text(
-                                                    initialLetter,
-                                                    style: const TextStyle(
-                                                      fontSize: 32,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white,
+                                                        );
+                                                      },
+                                                    ),
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                      initialLetter,
+                                                      style: const TextStyle(
+                                                        fontSize: 32,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
+                                          ),
                                         ),
                                       );
                                     },
@@ -652,7 +664,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 40),
+                                  const SizedBox(height: 20),
 
                                   // Password Input Field
                                   Text(

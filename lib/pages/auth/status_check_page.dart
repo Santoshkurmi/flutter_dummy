@@ -22,6 +22,29 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
   bool get _isDarkMode => AuthStore().isDarkMode;
 
+  LinearGradient _getGradient(String? gradientClass) {
+    switch (gradientClass) {
+      case 'bg-blue-600':
+        return const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]);
+      case 'bg-emerald-600':
+        return const LinearGradient(colors: [Color(0xFF059669), Color(0xFF047857)]);
+      case 'bg-purple-600':
+        return const LinearGradient(colors: [Color(0xFF9333EA), Color(0xFF7E22CE)]);
+      case 'bg-rose-600':
+        return const LinearGradient(colors: [Color(0xFFE11D48), Color(0xFFBE123C)]);
+      case 'bg-cyan-600':
+        return const LinearGradient(colors: [Color(0xFF0891B2), Color(0xFF0E7490)]);
+      case 'bg-amber-600':
+        return const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]);
+      case 'bg-indigo-600':
+        return const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF4338CA)]);
+      case 'bg-teal-600':
+        return const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)]);
+      default:
+        return const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -256,85 +279,123 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const SizedBox(height: 10),
-                                  
-                                  // Phone Verification Security Icon
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(
-                                      height: 64,
-                                      width: 64,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: isDark
-                                              ? [
-                                                  const Color(0xFF3B82F6).withValues(alpha: 0.2),
-                                                  const Color(0xFF1E1B4B).withValues(alpha: 0.4),
-                                                ]
-                                              : [
-                                                  const Color(0xFFDBEAFE),
-                                                  const Color(0xFFEFF6FF),
-                                                ],
-                                        ),
-                                        border: Border.all(
-                                          color: isDark
-                                              ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
-                                              : const Color(0xFFBFDBFE),
-                                          width: 1.5,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.15 : 0.08),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 4),
+                                  const SizedBox(height: 20),
+                                  // Centered Cooperative Logo with premium design
+                                  Builder(
+                                    builder: (context) {
+                                      final selectedSahakari = AuthStore().selectedCooperative;
+                                      final String sahakariName = selectedSahakari?['name'] ?? 'Bright Sahakari';
+                                      final String? logoUrl = selectedSahakari?['logo_url'];
+                                      final String? gradientClass = selectedSahakari?['gradient'];
+                                      final gradient = _getGradient(gradientClass);
+                                      final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
+
+                                      return Center(
+                                        child: Container(
+                                          width: 86,
+                                          height: 86,
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? Colors.white.withValues(alpha: 0.1)
+                                                  : Colors.black.withValues(alpha: 0.05),
+                                              width: 1.5,
+                                            ),
                                           ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        Icons.phonelink_lock_rounded,
-                                        size: 30,
-                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-                                      ),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
+                                              color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
+                                                  blurRadius: 16,
+                                                  offset: const Offset(0, 6),
+                                                ),
+                                              ],
+                                            ),
+                                            child: logoUrl != null && logoUrl.isNotEmpty
+                                                ? ClipRRect(
+                                                    borderRadius: BorderRadius.circular(40),
+                                                    child: Image.network(
+                                                      logoUrl,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        return Container(
+                                                          decoration: BoxDecoration(
+                                                            shape: BoxShape.circle,
+                                                            gradient: gradient,
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              initialLetter,
+                                                              style: const TextStyle(
+                                                                fontSize: 32,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                      initialLetter,
+                                                      style: const TextStyle(
+                                                        fontSize: 32,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 20),
+                                  
+                                  // Centered Cooperative Name (Improved size and styling)
+                                  Text(
+                                    coopName,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w900,
+                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                      letterSpacing: -0.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 28),
+                                  const SizedBox(height: 6),
                                   
-                                  // Cooperative Name
+                                  // Subtitle (Enter Mobile Number, reduced size)
                                   Text(
-                                    coopName.toUpperCase(),
+                                    'Enter Mobile Number'.tr,
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.5,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
                                       color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   
-                                  // Main Title
-                                  Text(
-                                    'Enter Mobile Number'.tr,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w800,
-                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  
-                                  // Description
+                                  // Description (Centered)
                                   Text(
                                     'We will check your registration status and guide you to the next step.'.tr,
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: 15,
+                                      fontSize: 14,
                                       height: 1.4,
                                       color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                     ),
                                   ),
-                                  const SizedBox(height: 40),
+                                  const SizedBox(height: 20),
                                   
                                   // TextFormField with native borders (no wrapper Container needed)
                                   TextFormField(
