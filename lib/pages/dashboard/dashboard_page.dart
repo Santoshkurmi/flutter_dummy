@@ -5,10 +5,9 @@ import '../../store/auth_store.dart';
 import 'home_tab.dart';
 import '../accounts/account_details_page.dart';
 import 'qr_tab.dart';
-import 'notifications_tab.dart';
+import 'notice_tab.dart';
 import 'profile_tab.dart';
 import '../auth/login_page.dart';
-import '../../store/notification_store.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -226,7 +225,7 @@ class _DashboardPageState extends State<DashboardPage> {
               isTab: true,
             ),
             QRTab(key: _qrKey, isDarkMode: _isDarkMode),
-            NotificationsTab(isDarkMode: _isDarkMode),
+            NoticeTab(isDarkMode: _isDarkMode),
             ProfileTab(
               isDarkMode: _isDarkMode,
               onLogout: _logout,
@@ -271,24 +270,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   tooltip: '',
                 ),
                 BottomNavigationBarItem(
-                  icon: AnimatedBuilder(
-                    animation: NotificationStore(),
-                    builder: (context, _) {
-                      final count = NotificationStore().unreadCount;
-                      if (count > 0) {
-                        return Badge(
-                          label: Text(
-                            count.toString(),
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                          backgroundColor: const Color(0xFFEF4444),
-                          child: const Icon(Icons.notifications_rounded),
-                        );
-                      }
-                      return const Icon(Icons.notifications_rounded);
-                    },
-                  ),
-                  label: 'Alerts'.tr,
+                  icon: const Icon(Icons.campaign_rounded),
+                  label: 'Notice'.tr,
                   tooltip: '',
                 ),
                 BottomNavigationBarItem(

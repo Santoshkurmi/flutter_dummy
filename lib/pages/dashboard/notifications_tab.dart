@@ -90,7 +90,15 @@ class _NotificationsTabState extends State<NotificationsTab> {
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         actions: [
           AnimatedBuilder(
             animation: NotificationStore(),

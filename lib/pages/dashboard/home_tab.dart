@@ -8,6 +8,8 @@ import '../services/nepali_calendar_page.dart';
 import '../auth/register_member_page.dart';
 import '../services/all_services_page.dart';
 import '../../widgets/cooperative_account_card.dart';
+import '../../store/notification_store.dart';
+import 'notifications_tab.dart';
 
 class HomeTab extends StatefulWidget {
   final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
@@ -386,26 +388,54 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: widget.isDarkMode ? const Color(0xFF1C1017) : const Color(0xFFFEF2F2),
-                      border: Border.all(
-                        color: widget.isDarkMode ? const Color(0xFF3B1A1A) : const Color(0xFFFEE2E2),
-                      ),
-                    ),
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(
-                        Icons.power_settings_new_rounded,
-                        color: Color(0xFFEF4444),
-                        size: 16,
-                      ),
-                      onPressed: widget.onLogout,
-                    ),
+                  AnimatedBuilder(
+                    animation: NotificationStore(),
+                    builder: (context, _) {
+                      final count = NotificationStore().unreadCount;
+                      return Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                          border: Border.all(
+                            color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                          ),
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: count > 0
+                              ? Badge(
+                                  label: Text(
+                                    count.toString(),
+                                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  child: Icon(
+                                    Icons.notifications_rounded,
+                                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                    size: 18,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.notifications_rounded,
+                                  color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                  size: 18,
+                                ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NotificationsTab(
+                                  isDarkMode: widget.isDarkMode,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
