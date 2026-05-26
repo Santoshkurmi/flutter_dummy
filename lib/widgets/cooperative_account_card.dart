@@ -383,11 +383,9 @@ class CooperativeAccountCard extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          (accountType == 'savings'
+                                          (accountType == 'savings' || accountType == 'loans'
                                                   ? 'INTEREST RATE'
-                                                  : accountType == 'shares'
-                                                      ? 'NO. OF SHARES'
-                                                      : 'MATURITY')
+                                                  : 'NO. OF SHARES')
                                               .tr,
                                           style: TextStyle(
                                             fontSize: 8,
@@ -398,11 +396,9 @@ class CooperativeAccountCard extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 1),
                                         Text(
-                                          accountType == 'savings'
+                                          accountType == 'savings' || accountType == 'loans'
                                               ? '${interestRate ?? 0}%'
-                                              : accountType == 'shares'
-                                                  ? '${shareCount ?? 0}'
-                                                  : '${maturityDate ?? 'N/A'}',
+                                              : '${shareCount ?? 0}',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w900,
@@ -420,11 +416,9 @@ class CooperativeAccountCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Icon(
-                                      accountType == 'savings'
+                                      accountType == 'savings' || accountType == 'loans'
                                           ? Icons.trending_up_rounded
-                                          : accountType == 'shares'
-                                              ? Icons.pie_chart_outline_rounded
-                                              : Icons.event_rounded,
+                                          : Icons.pie_chart_outline_rounded,
                                       color: Colors.white,
                                       size: 12,
                                     ),

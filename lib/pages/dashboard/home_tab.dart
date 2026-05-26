@@ -600,6 +600,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       builder: (_) => AllServicesPage(
                         isDarkMode: widget.isDarkMode,
                         onTabChange: widget.onTabChange,
+                        accountsData: widget.accountsData,
                       ),
                     ),
                   );
