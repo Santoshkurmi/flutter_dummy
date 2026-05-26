@@ -1020,22 +1020,25 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
     final balance = 'Rs. ${_formatAmount(rawBalance)}';
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
-    final scheme = (acc['scheme'] ?? type.toUpperCase()).toString().toUpperCase();
+    final title = acc['name'] ?? 'Account';
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return CooperativeAccountCard(
       isOverview: false,
       accountType: type,
-      title: scheme,
+      title: title,
       balance: balance,
       accountNo: accountNo,
       interestRate: acc['interest_rate'],
       shareCount: acc['share_count'],
       maturityDate: acc['maturity_date'],
-      showBalance: true,
+      showBalance: AuthStore().showBalance,
       isDarkMode: isDarkMode,
-      showArrow: false,
+      showArrow: true,
+      onTap: () {
+        // Already on statement page, tap arrow/card does nothing
+      },
       heroTag: isTopCard ? widget.heroTag : null,
     );
   }
