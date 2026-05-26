@@ -162,7 +162,10 @@ class BrightBankApp extends StatelessWidget {
             return Listener(
               behavior: HitTestBehavior.translucent,
               onPointerDown: (event) {
-                FlyingHeroTracker.checkTap(event.position);
+                FlyingHeroTracker.handlePointerDown(event.position);
+              },
+              onPointerUp: (event) {
+                FlyingHeroTracker.handlePointerUp(event.position);
               },
               child: child!,
             );

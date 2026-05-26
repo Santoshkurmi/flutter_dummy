@@ -15,6 +15,7 @@ class FlyingHero {
 class FlyingHeroTracker {
   static final List<FlyingHero> _activeHeroes = [];
   static DateTime? _lastTriggerTime;
+  static Offset? _pointerDownPosition;
 
   static void register(BuildContext shuttleContext, BuildContext pageContext, VoidCallback onTap) {
     _activeHeroes.add(FlyingHero(
@@ -26,6 +27,24 @@ class FlyingHeroTracker {
 
   static void unregister(BuildContext shuttleContext) {
     _activeHeroes.removeWhere((h) => h.shuttleContext == shuttleContext);
+  }
+
+  static void handlePointerDown(Offset position) {
+    _pointerDownPosition = position;
+  }
+
+  static bool handlePointerUp(Offset position) {
+    final downPos = _pointerDownPosition;
+    _pointerDownPosition = null;
+    if (downPos == null) return false;
+
+    // A standard click requires the pointer release to be close to the initial touch down
+    final distance = (position - downPos).distance;
+    if (distance > 15.0) {
+      return false; // User dragged or scrolled, not a click
+    }
+
+    return checkTap(position);
   }
 
   static bool checkTap(Offset globalPosition) {
