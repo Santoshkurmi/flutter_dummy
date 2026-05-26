@@ -47,6 +47,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
   @override
   void initState() {
     super.initState();
+    _mobileController.text = AuthStore().mobile ?? AuthStore().registeredMobile ?? '';
     _mobileController.addListener(_onMobileChanged);
     AuthStore().addListener(_onStoreChange);
   }
@@ -88,6 +89,8 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
       switch (responseCode) {
         case 1: // RESP_SUCCESS (Authenticated / Password required)
+          await AuthStore().setRegisteredMobile(mobile);
+          if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(

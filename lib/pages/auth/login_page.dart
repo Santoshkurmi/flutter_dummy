@@ -181,6 +181,7 @@ class _LoginPageState extends State<LoginPage> {
         if (token != null) {
           await AuthStore().setToken(token);
           await AuthStore().setMobile(widget.mobileNumber);
+          await AuthStore().setRegisteredMobile(widget.mobileNumber);
           
           final profileRes = await ApiService().getProfile();
           if (profileRes['data'] != null) {
@@ -234,7 +235,6 @@ class _LoginPageState extends State<LoginPage> {
         );
         break;
       case 6: // RESP_AWAITING_APPROVAL
-        await clearCredentials();
         if (!mounted) return;
         final resubmit = await showDialog<bool>(
           context: context,

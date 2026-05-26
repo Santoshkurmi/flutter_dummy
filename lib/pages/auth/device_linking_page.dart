@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
-import '../dashboard/dashboard_page.dart';
 import 'status_check_page.dart';
+import 'login_page.dart';
 
 class DeviceLinkingPage extends StatefulWidget {
   final String mobileNumber;
@@ -192,40 +192,35 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
       };
 
       final res = await ApiService().submitDeviceLink(payload);
-      final responseCode = res['response_code'];
+      final responseCodeRaw = res['response_code'];
+      final int responseCode = responseCodeRaw is int
+          ? responseCodeRaw
+          : int.tryParse(responseCodeRaw?.toString() ?? '0') ?? 0;
 
-      if (responseCode == 1 || responseCode == 4) { // Success or auto login
-        final data = res['data'];
-        if (data != null && data['token'] != null) {
-          // Dynamic Session Autologin inside AuthStore
-          final store = AuthStore();
-          await store.setToken(data['token']);
-          await store.setMobile(widget.mobileNumber);
-          await store.setRegisteredMobile(widget.mobileNumber);
-          final profileRes = await ApiService().getProfile();
-          if (profileRes['data'] != null) {
-            await store.setProfile(profileRes['data']);
-          }
+      if (responseCode == 1) { // RESP_SUCCESS (Device linked successfully)
+        final store = AuthStore();
+        await store.setRegisteredMobile(widget.mobileNumber);
 
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Device synchronized successfully!'),
-              backgroundColor: Color(0xFF10B981),
-            ),
-          );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Device synchronized successfully!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
 
-          // Route immediately to main dashboard
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
-            (route) => false,
-          );
-        } else {
-          setState(() {
-            _step = 5; // Move to Admin pending sync approval screen
-          });
-        }
+        // Redirect to LoginPage instead of auto-login
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
+          ),
+          (route) => false,
+        );
+      } else if (responseCode == 4) { // RESP_DEVICE_CHANGE_APPROVAL (Awaiting Admin)
+        setState(() {
+          _step = 5; // Move to Admin pending sync approval screen
+        });
       } else {
         setState(() {
           _errorMessage = res['message'] ?? 'Device synchronization submission failed.';

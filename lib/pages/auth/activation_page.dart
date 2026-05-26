@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import 'login_page.dart';
+import 'status_check_page.dart';
 
 class ActivationPage extends StatefulWidget {
   final String mobileNumber;
@@ -213,24 +214,39 @@ class _ActivationPageState extends State<ActivationPage> {
 
       if (!mounted) return;
 
-      // Successfully activated, store registeredMobile in global store!
-      await AuthStore().setRegisteredMobile(widget.mobileNumber);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(res['message'] ?? 'Activation request submitted successfully!'),
-          backgroundColor: const Color(0xFF10B981),
-        ),
-      );
+      final responseCodeRaw = res['response_code'];
+      final int responseCode = responseCodeRaw is int
+          ? responseCodeRaw
+          : int.tryParse(responseCodeRaw?.toString() ?? '0') ?? 0;
 
-      // Successfully activated, direct to LoginPage and clear history
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
-        ),
-        (route) => false,
-      );
+      if (responseCode == 1) { // RESP_SUCCESS (Auto-Approved)
+        await AuthStore().setRegisteredMobile(widget.mobileNumber);
+        
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message'] ?? 'Activation request submitted successfully!'),
+            backgroundColor: const Color(0xFF10B981),
+          ),
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
+          ),
+          (route) => false,
+        );
+      } else if (responseCode == 7) { // RESP_REGISTRATION_SUBMITTED (Awaiting Admin)
+        setState(() {
+          _step = 6;
+          _errorMessage = '';
+        });
+      } else {
+        setState(() {
+          _errorMessage = res['message'] ?? 'Activation request submission failed.';
+        });
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -249,7 +265,7 @@ class _ActivationPageState extends State<ActivationPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context) ? IconButton(
+        leading: (Navigator.canPop(context) && _step < 6) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
@@ -279,7 +295,7 @@ class _ActivationPageState extends State<ActivationPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Dynamic Horizontal Multi-Step Progress Tracker Bar
-            _buildStepIndicator(isDarkMode),
+            if (_step < 6) _buildStepIndicator(isDarkMode),
             const SizedBox(height: 20),
 
             if (_errorMessage.isNotEmpty)
@@ -397,6 +413,8 @@ class _ActivationPageState extends State<ActivationPage> {
         return _buildStep4Pin(isDarkMode);
       case 5:
         return _buildStep5Otp(isDarkMode);
+      case 6:
+        return _buildStep6Complete(isDarkMode);
       default:
         return _buildStep1Identity(isDarkMode);
     }
@@ -920,6 +938,56 @@ class _ActivationPageState extends State<ActivationPage> {
           )
         ],
       ),
+    );
+  }
+
+  // STEP 6 WIDGET: Activation Request Initiated Pending Approval
+  Widget _buildStep6Complete(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 20),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF10B981).withValues(alpha: 0.08),
+            ),
+            child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 64),
+          ),
+        ),
+        const SizedBox(height: 28),
+        const Text(
+          'Registration Submitted',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Your mobile banking activation request has been submitted successfully. '
+            'An administrator will review and authorize your request within 24 hours.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B), height: 1.5),
+          ),
+        ),
+        const SizedBox(height: 48),
+
+        ElevatedButton(
+          onPressed: () {
+            // Navigate back to status check screen
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const StatusCheckPage()),
+              (route) => false,
+            );
+          },
+          style: _getPrimaryButtonStyle(),
+          child: const Text('Return to Home', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+        ),
+      ],
     );
   }
 
