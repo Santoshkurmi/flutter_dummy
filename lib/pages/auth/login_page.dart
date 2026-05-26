@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
@@ -443,7 +442,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
-          // 1. Premium Gradient Background (Subtle / Light)
+          // 1. Premium Gradient Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -453,72 +452,20 @@ class _LoginPageState extends State<LoginPage> {
                   colors: isDark
                       ? [
                           const Color(0xFF020617),
-                          const Color(0xFF070B1E),
+                          const Color(0xFF0B132B), // Premium dark blue-indigo accent
                           const Color(0xFF020617),
                         ]
                       : [
                           const Color(0xFFF8FAFC),
-                          const Color(0xFFF1F5F9),
+                          const Color(0xFFEEF2F6), // Premium light grey-blue accent
                           const Color(0xFFF8FAFC),
                         ],
                 ),
               ),
             ),
           ),
-          
-          // 2. Ambient Blurred Circles (Subtle Opacities)
-          Positioned(
-            top: -60,
-            right: -60,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? const Color(0xFF4F46E5).withValues(alpha: 0.05)
-                    : const Color(0xFF6366F1).withValues(alpha: 0.04),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 40,
-            left: -80,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? const Color(0xFF06B6D4).withValues(alpha: 0.03)
-                    : const Color(0xFF38BDF8).withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 280,
-            right: -100,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? const Color(0xFFD946EF).withValues(alpha: 0.02)
-                    : const Color(0xFFEC4899).withValues(alpha: 0.02),
-              ),
-            ),
-          ),
-          
-          // 3. Blur layer
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 70.0, sigmaY: 70.0),
-              child: Container(color: Colors.transparent),
-            ),
-          ),
 
-          // 4. Content Screen
+          // 2. Content Screen
           Scaffold(
             backgroundColor: Colors.transparent,
             appBar: null,
