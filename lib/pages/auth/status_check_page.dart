@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
@@ -351,6 +352,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                   TextFormField(
                                     controller: _mobileController,
                                     keyboardType: TextInputType.phone,
+                                    inputFormatters: [PhoneNumberFormatter()],
                                     style: TextStyle(
                                       color: isDark ? Colors.white : const Color(0xFF1E293B),
                                       fontSize: 18,
@@ -559,6 +561,24 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class PhoneNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    String formatted = digitsOnly;
+    if (digitsOnly.length > 10) {
+      formatted = digitsOnly.substring(digitsOnly.length - 10);
+    }
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

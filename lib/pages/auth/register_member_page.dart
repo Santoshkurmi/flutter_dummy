@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
+import '../../data/locations.dart';
 
 class RegisterMemberPage extends StatefulWidget {
   const RegisterMemberPage({super.key});
@@ -46,16 +47,16 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   final _panController = TextEditingController();
 
   // Step 4: Address Details
-  String _permProvince = 'Bagmati';
+  String _permProvince = 'Province No. 3';
   String _permDistrict = 'Kathmandu';
-  final _permMunController = TextEditingController();
+  String _permMunicipality = 'Kathmandu';
   final _permWardController = TextEditingController();
   final _permStreetController = TextEditingController();
   
   bool _tempSameAsPermanent = true;
-  String _tempProvince = 'Bagmati';
+  String _tempProvince = 'Province No. 3';
   String _tempDistrict = 'Kathmandu';
-  final _tempMunController = TextEditingController();
+  String _tempMunicipality = 'Kathmandu';
   final _tempWardController = TextEditingController();
   final _tempStreetController = TextEditingController();
 
@@ -67,6 +68,101 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   String? _profilePhoto;
   String? _citizenshipPhoto;
   String? _signaturePhoto;
+
+  // Additional user documents
+  final List<Map<String, String>> _additionalDocuments = [];
+
+  List<String> _getProvinceNames() {
+    return LocationData.provinces.map((p) => p['name'] as String).toList();
+  }
+
+  List<String> _getDistrictNamesForProvince(String provinceName) {
+    final province = LocationData.provinces.firstWhere(
+      (p) => p['name'] == provinceName,
+      orElse: () => <String, dynamic>{},
+    );
+    if (province.isEmpty) return [];
+    final provinceId = province['id'] as int;
+    return LocationData.districts
+        .where((d) => d['province_id'] == provinceId)
+        .map((d) => d['name'] as String)
+        .toList();
+  }
+
+  List<String> _getVdcNamesForDistrict(String districtName) {
+    final district = LocationData.districts.firstWhere(
+      (d) => d['name'] == districtName,
+      orElse: () => <String, dynamic>{},
+    );
+    if (district.isEmpty) return [];
+    final districtId = district['id'] as int;
+    return LocationData.vdcs
+        .where((v) => v['district_id'] == districtId)
+        .map((v) => v['name'] as String)
+        .toList();
+  }
+
+  void _onPermProvinceChanged(String val) {
+    setState(() {
+      _permProvince = val;
+      final districts = _getDistrictNamesForProvince(val);
+      if (districts.isNotEmpty) {
+        _permDistrict = districts.first;
+        final vdcs = _getVdcNamesForDistrict(_permDistrict);
+        if (vdcs.isNotEmpty) {
+          _permMunicipality = vdcs.first;
+        } else {
+          _permMunicipality = '';
+        }
+      } else {
+        _permDistrict = '';
+        _permMunicipality = '';
+      }
+    });
+  }
+
+  void _onPermDistrictChanged(String val) {
+    setState(() {
+      _permDistrict = val;
+      final vdcs = _getVdcNamesForDistrict(val);
+      if (vdcs.isNotEmpty) {
+        _permMunicipality = vdcs.first;
+      } else {
+        _permMunicipality = '';
+      }
+    });
+  }
+
+  void _onTempProvinceChanged(String val) {
+    setState(() {
+      _tempProvince = val;
+      final districts = _getDistrictNamesForProvince(val);
+      if (districts.isNotEmpty) {
+        _tempDistrict = districts.first;
+        final vdcs = _getVdcNamesForDistrict(_tempDistrict);
+        if (vdcs.isNotEmpty) {
+          _tempMunicipality = vdcs.first;
+        } else {
+          _tempMunicipality = '';
+        }
+      } else {
+        _tempDistrict = '';
+        _tempMunicipality = '';
+      }
+    });
+  }
+
+  void _onTempDistrictChanged(String val) {
+    setState(() {
+      _tempDistrict = val;
+      final vdcs = _getVdcNamesForDistrict(val);
+      if (vdcs.isNotEmpty) {
+        _tempMunicipality = vdcs.first;
+      } else {
+        _tempMunicipality = '';
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -104,14 +200,15 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     try {
       final devId = await ApiService.getDeviceId();
       final res = await ApiService().checkRegistrationsStatus(phoneNumbers, devId);
-      if (res['response_code'] == 0 && res['statuses'] != null) {
+      final resCode = res['response_code'];
+      if ((resCode == 1 || resCode == '1') && res['statuses'] != null) {
         final statuses = res['statuses'] as Map<String, dynamic>;
         
         setState(() {
           for (var app in _submittedApplications) {
             final phone = app['mobile'] as String;
             if (statuses.containsKey(phone)) {
-              app['status'] = statuses[phone]['status'] ?? 'Pending';
+              app['status'] = statuses[phone]['status'] ?? 'pending';
               app['status_message'] = statuses[phone]['message'] ?? 'Under review';
             }
           }
@@ -132,7 +229,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     try {
       final devId = await ApiService.getDeviceId();
       final res = await ApiService().deleteRegistrationApp(phone, devId);
-      if (res['response_code'] == 0) {
+      final resCode = res['response_code'];
+      if (resCode == 1 || resCode == '1') {
         setState(() {
           _submittedApplications.removeWhere((app) => app['mobile'] == phone);
         });
@@ -155,57 +253,77 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   }
 
   Future<void> _submitForm() async {
+    if (!_validateStep()) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     final formData = {
-      'title': _title,
-      'first_name': _firstNameController.text,
-      'middle_name': _middleNameController.text,
-      'last_name': _lastNameController.text,
-      'mobile': _mobileController.text,
-      'email': _emailController.text,
-      'dob': _dobController.text,
-      'gender': _gender,
-      'caste': _caste,
-      'father_name': _fatherNameController.text,
-      'grandfather_name': _grandfatherNameController.text,
-      'marital_status': _maritalStatus,
-      'spouse_name': _spouseNameController.text,
-      'blood_group': _bloodGroup,
-      'occupation': _occupation,
-      'citizenship_no': _citizenshipNoController.text,
-      'citizenship_district': _citizenshipDistrict,
-      'pan': _panController.text,
-      'perm_province': _permProvince,
-      'perm_district': _permDistrict,
-      'perm_mun': _permMunController.text,
-      'perm_ward': _permWardController.text,
-      'perm_street': _permStreetController.text,
-      'temp_same_as_permanent': _tempSameAsPermanent,
-      'temp_province': _tempSameAsPermanent ? _permProvince : _tempProvince,
-      'temp_district': _tempSameAsPermanent ? _permDistrict : _tempDistrict,
-      'temp_mun': _tempSameAsPermanent ? _permMunController.text : _tempMunController.text,
-      'temp_ward': _tempSameAsPermanent ? _permWardController.text : _tempWardController.text,
-      'temp_street': _tempSameAsPermanent ? _permStreetController.text : _tempStreetController.text,
-      'nominee_name': _nomineeNameController.text,
-      'nominee_relation': _nomineeRelationController.text,
-      'profile_photo': _profilePhoto ?? 'mock_profile.png',
-      'citizenship_photo': _citizenshipPhoto ?? 'mock_citizenship.png',
-      'signature_photo': _signaturePhoto ?? 'mock_signature.png',
+      'personal': {
+        'first_name': _firstNameController.text.trim(),
+        'middle_name': _middleNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'mobile_number': _mobileController.text.trim(),
+        'email': _emailController.text.trim(),
+        'date_of_birth': _dobController.text.trim(),
+        'gender': _gender,
+      },
+      'family': {
+        'caste_group': _caste,
+        'father_name': _fatherNameController.text.trim(),
+        'grandfather_name': _grandfatherNameController.text.trim(),
+        'marital_status': _maritalStatus,
+        'spouse_name': _maritalStatus == 'Married' ? _spouseNameController.text.trim() : null,
+        'blood_group': _bloodGroup,
+        'occupation': _occupation,
+      },
+      'identity': {
+        'citizenship_number': _citizenshipNoController.text.trim(),
+        'citizenship_district': _citizenshipDistrict,
+        'pan': _panController.text.trim(),
+      },
+      'address': {
+        'perm_province': _permProvince,
+        'perm_district': _permDistrict,
+        'perm_municipality': _permMunicipality,
+        'perm_ward': _permWardController.text.trim(),
+        'perm_street': _permStreetController.text.trim(),
+        'same_as_permanent': _tempSameAsPermanent,
+        'temp_province': _tempSameAsPermanent ? _permProvince : _tempProvince,
+        'temp_district': _tempSameAsPermanent ? _permDistrict : _tempDistrict,
+        'temp_municipality': _tempSameAsPermanent ? _permMunicipality : _tempMunicipality,
+        'temp_ward': _tempSameAsPermanent ? _permWardController.text.trim() : _tempWardController.text.trim(),
+        'temp_street': _tempSameAsPermanent ? _permStreetController.text.trim() : _tempStreetController.text.trim(),
+      },
+      'nominee': {
+        'name': _nomineeNameController.text.trim().isEmpty ? null : _nomineeNameController.text.trim(),
+        'relation': _nomineeRelationController.text.trim().isEmpty ? null : _nomineeRelationController.text.trim(),
+      },
+      'documents': {
+        'profile_photo': _profilePhoto ?? 'mock_profile.png',
+        'citizenship_photo': _citizenshipPhoto ?? 'mock_citizenship.png',
+        'signature_photo': _signaturePhoto ?? 'mock_signature.png',
+        'additional': _additionalDocuments.map((doc) => {
+          'title': doc['title']!,
+          'file': doc['file']!,
+        }).toList(),
+      },
     };
 
     try {
       final devId = await ApiService.getDeviceId();
       final res = await ApiService().registerMember(formData, devId);
-      if (res['response_code'] == 0) {
+      final resCode = res['response_code'];
+      if (resCode == 1 || resCode == '1') {
         // Success
         final newApp = {
           'name': '${_firstNameController.text} ${_lastNameController.text}',
           'mobile': _mobileController.text,
           'date': DateTime.now().toString().split(' ')[0],
-          'status': 'Pending',
+          'status': 'pending',
           'status_message': 'Under review by bank staff',
         };
 
@@ -253,20 +371,27 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     _spouseNameController.clear();
     _citizenshipNoController.clear();
     _panController.clear();
-    _permMunController.clear();
+    _permProvince = 'Province No. 3';
+    _permDistrict = 'Kathmandu';
+    _permMunicipality = 'Kathmandu';
     _permWardController.clear();
     _permStreetController.clear();
-    _tempMunController.clear();
+    _tempProvince = 'Province No. 3';
+    _tempDistrict = 'Kathmandu';
+    _tempMunicipality = 'Kathmandu';
     _tempWardController.clear();
     _tempStreetController.clear();
+    _tempSameAsPermanent = true;
     _nomineeNameController.clear();
     _nomineeRelationController.clear();
     _profilePhoto = null;
     _citizenshipPhoto = null;
     _signaturePhoto = null;
+    _additionalDocuments.clear();
   }
 
   void _nextStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_validateStep()) {
       if (_currentStep < 6) {
         setState(() {
@@ -282,6 +407,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   }
 
   void _prevStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_currentStep > 1) {
       setState(() {
         _currentStep--;
@@ -294,19 +420,109 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     }
   }
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Exit Registration?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          content: Text(
+            'All entered data will be lost. Are you sure you want to exit?',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Exit',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<void> _handleBackNavigation() async {
+    if (_showForm) {
+      if (_currentStep > 1) {
+        _prevStep();
+      } else {
+        final exitConfirmed = await _showExitConfirmationDialog();
+        if (exitConfirmed) {
+          setState(() {
+            _showForm = false;
+            _currentStep = 1;
+          });
+        }
+      }
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   bool _validateStep() {
     if (_currentStep == 1) {
       if (_firstNameController.text.trim().isEmpty ||
           _lastNameController.text.trim().isEmpty ||
           _mobileController.text.trim().isEmpty ||
+          _emailController.text.trim().isEmpty ||
           _dobController.text.trim().isEmpty) {
         _showErrorSnackBar('Please fill in all required personal details.');
         return false;
       }
+      final mobileText = _mobileController.text.trim();
+      if (mobileText.length != 10) {
+        _showErrorSnackBar('Mobile number must be exactly 10 digits.');
+        return false;
+      }
+      final dobText = _dobController.text.trim();
+      final dobRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+      if (!dobRegex.hasMatch(dobText)) {
+        _showErrorSnackBar('Date of Birth must be in YYYY-MM-DD format.');
+        return false;
+      }
+      final emailText = _emailController.text.trim();
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(emailText)) {
+        _showErrorSnackBar('Please enter a valid email address.');
+        return false;
+      }
     } else if (_currentStep == 2) {
       if (_fatherNameController.text.trim().isEmpty ||
-          _grandfatherNameController.text.trim().isEmpty) {
-        _showErrorSnackBar('Family lineage detail fields are required.');
+          _grandfatherNameController.text.trim().isEmpty ||
+          (_maritalStatus == 'Married' && _spouseNameController.text.trim().isEmpty)) {
+        _showErrorSnackBar('Please fill in all required family details.');
         return false;
       }
     } else if (_currentStep == 3) {
@@ -315,17 +531,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         return false;
       }
     } else if (_currentStep == 4) {
-      if (_permMunController.text.trim().isEmpty ||
-          _permWardController.text.trim().isEmpty ||
-          (!_tempSameAsPermanent &&
-              (_tempMunController.text.trim().isEmpty || _tempWardController.text.trim().isEmpty))) {
-        _showErrorSnackBar('Address fields (Municipality & Ward) are required.');
-        return false;
-      }
-    } else if (_currentStep == 5) {
-      if (_nomineeNameController.text.trim().isEmpty ||
-          _nomineeRelationController.text.trim().isEmpty) {
-        _showErrorSnackBar('Nominee fields are required.');
+      if (_permWardController.text.trim().isEmpty ||
+          (!_tempSameAsPermanent && _tempWardController.text.trim().isEmpty)) {
+        _showErrorSnackBar('Address fields (Ward) are required.');
         return false;
       }
     } else if (_currentStep == 6) {
@@ -347,46 +555,81 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Navigator.canPop(context) ? IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-          ),
-          onPressed: () {
-            if (_showForm) {
-              setState(() {
-                _showForm = false;
-                _currentStep = 1;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ) : null,
-        title: Text(
-          _showForm ? 'Membership Application' : 'Self Registration',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-            fontSize: 20,
+    return PopScope(
+      canPop: !_showForm,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          _handleBackNavigation();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Navigator.canPop(context) ? IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            ),
+            onPressed: _handleBackNavigation,
+          ) : null,
+          title: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              _showForm ? 'Membership Application' : 'Self Registration',
+              key: ValueKey(_showForm),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                fontSize: 20,
+              ),
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                switchInCurve: Curves.easeInOut,
+                switchOutCurve: Curves.easeInOut,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.05, 0.0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _showForm
+                    ? KeyedSubtree(
+                        key: const ValueKey('form_wizard'),
+                        child: _buildFormWizard(isDarkMode),
+                      )
+                    : KeyedSubtree(
+                        key: const ValueKey('dashboard'),
+                        child: _buildDashboard(isDarkMode),
+                      ),
+              ),
+              if (_isLoading)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                      ),
+                    ),
+                  ),
                 ),
-              )
-            : _showForm
-                ? _buildFormWizard(isDarkMode)
-                : _buildDashboard(isDarkMode),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -448,10 +691,13 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF2563EB),
+                      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                      foregroundColor: isDarkMode ? Colors.white : const Color(0xFF2563EB),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
+                        side: isDarkMode 
+                            ? BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1)
+                            : BorderSide.none,
                       ),
                       elevation: 0,
                     ),
@@ -505,8 +751,8 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                       final name = app['name'] ?? 'Application';
                       final phone = app['mobile'] ?? 'N/A';
                       final date = app['date'] ?? '';
-                      final status = app['status'] ?? 'Pending';
-                      final isPending = status == 'Pending';
+                      final status = app['status'] ?? 'pending';
+                      final isPending = status.toString().toLowerCase() == 'pending';
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -732,9 +978,20 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             _buildTextField(label: 'First Name *', controller: _firstNameController),
             _buildTextField(label: 'Middle Name (Optional)', controller: _middleNameController),
             _buildTextField(label: 'Last Name *', controller: _lastNameController),
-            _buildTextField(label: 'Mobile Number *', controller: _mobileController, type: TextInputType.phone),
-            _buildTextField(label: 'Email Address', controller: _emailController, type: TextInputType.emailAddress),
-            _buildTextField(label: 'Date of Birth (YYYY-MM-DD) *', controller: _dobController, hint: 'e.g. 2045-05-12'),
+            _buildTextField(
+              label: 'Mobile Number *',
+              controller: _mobileController,
+              type: TextInputType.phone,
+              formatters: [PhoneNumberFormatter()],
+            ),
+            _buildTextField(label: 'Email Address *', controller: _emailController, type: TextInputType.emailAddress),
+            _buildTextField(
+              label: 'Date of Birth(BS) *',
+              controller: _dobController,
+              hint: '',
+              type: TextInputType.number,
+              formatters: [DateMaskTextInputFormatter()],
+            ),
             _buildDropdown(
               label: 'Gender',
               value: _gender,
@@ -763,7 +1020,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
               onChanged: (val) => setState(() => _maritalStatus = val!),
             ),
             if (_maritalStatus == 'Married')
-              _buildTextField(label: 'Spouse\'s Full Name', controller: _spouseNameController),
+              _buildTextField(label: 'Spouse\'s Full Name *', controller: _spouseNameController),
             _buildDropdown(
               label: 'Blood Group',
               value: _bloodGroup,
@@ -787,7 +1044,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             _buildDropdown(
               label: 'Citizenship Issue District *',
               value: _citizenshipDistrict,
-              items: const ['Kathmandu', 'Lalitpur', 'Bhaktapur', 'Kaski', 'Morang', 'Jhapa', 'Dang', 'Chitwan', 'Rupandehi'],
+              items: LocationData.districts.map((d) => d['name'] as String).toList(),
               onChanged: (val) => setState(() => _citizenshipDistrict = val!),
             ),
             _buildTextField(label: 'PAN Number (Optional)', controller: _panController),
@@ -801,16 +1058,21 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             _buildDropdown(
               label: 'Province *',
               value: _permProvince,
-              items: const ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'],
-              onChanged: (val) => setState(() => _permProvince = val!),
+              items: _getProvinceNames(),
+              onChanged: (val) => _onPermProvinceChanged(val!),
             ),
             _buildDropdown(
               label: 'District *',
               value: _permDistrict,
-              items: const ['Kathmandu', 'Lalitpur', 'Bhaktapur', 'Kaski', 'Morang', 'Jhapa', 'Dang', 'Chitwan', 'Rupandehi'],
-              onChanged: (val) => setState(() => _permDistrict = val!),
+              items: _getDistrictNamesForProvince(_permProvince),
+              onChanged: (val) => _onPermDistrictChanged(val!),
             ),
-            _buildTextField(label: 'Municipality / Rural Mun *', controller: _permMunController),
+            _buildDropdown(
+              label: 'Municipality / Rural Mun *',
+              value: _permMunicipality,
+              items: _getVdcNamesForDistrict(_permDistrict),
+              onChanged: (val) => setState(() => _permMunicipality = val!),
+            ),
             _buildTextField(label: 'Ward Number *', controller: _permWardController, type: TextInputType.number),
             _buildTextField(label: 'Tole / Street Name', controller: _permStreetController),
 
@@ -832,16 +1094,21 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
               _buildDropdown(
                 label: 'Province *',
                 value: _tempProvince,
-                items: const ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'],
-                onChanged: (val) => setState(() => _tempProvince = val!),
+                items: _getProvinceNames(),
+                onChanged: (val) => _onTempProvinceChanged(val!),
               ),
               _buildDropdown(
                 label: 'District *',
                 value: _tempDistrict,
-                items: const ['Kathmandu', 'Lalitpur', 'Bhaktapur', 'Kaski', 'Morang', 'Jhapa', 'Dang', 'Chitwan', 'Rupandehi'],
-                onChanged: (val) => setState(() => _tempDistrict = val!),
+                items: _getDistrictNamesForProvince(_tempProvince),
+                onChanged: (val) => _onTempDistrictChanged(val!),
               ),
-              _buildTextField(label: 'Municipality / Rural Mun *', controller: _tempMunController),
+              _buildDropdown(
+                label: 'Municipality / Rural Mun *',
+                value: _tempMunicipality,
+                items: _getVdcNamesForDistrict(_tempDistrict),
+                onChanged: (val) => setState(() => _tempMunicipality = val!),
+              ),
               _buildTextField(label: 'Ward Number *', controller: _tempWardController, type: TextInputType.number),
               _buildTextField(label: 'Tole / Street Name', controller: _tempStreetController),
             ],
@@ -851,9 +1118,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildStepTitle('Nominee Information'),
-            _buildTextField(label: 'Nominee Full Name *', controller: _nomineeNameController),
-            _buildTextField(label: 'Relation with Nominee *', controller: _nomineeRelationController),
+            _buildStepTitle('Nominee Information (Optional)'),
+            _buildTextField(label: 'Nominee Full Name', controller: _nomineeNameController),
+            _buildTextField(label: 'Relation with Nominee', controller: _nomineeRelationController),
           ],
         );
       default:
@@ -867,13 +1134,198 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             ),
             const SizedBox(height: 24),
             
-            _buildDocUploadCard('Applicant Profile Photo', _profilePhoto, (path) => setState(() => _profilePhoto = path), isDarkMode),
-            _buildDocUploadCard('Citizenship Certificate Scan', _citizenshipPhoto, (path) => setState(() => _citizenshipPhoto = path), isDarkMode),
-            _buildDocUploadCard('Signature Specimen Scan', _signaturePhoto, (path) => setState(() => _signaturePhoto = path), isDarkMode),
+            _buildDocUploadCard('Applicant Profile Photo *', _profilePhoto, (path) => setState(() => _profilePhoto = path), isDarkMode),
+            _buildDocUploadCard('Citizenship Certificate Scan *', _citizenshipPhoto, (path) => setState(() => _citizenshipPhoto = path), isDarkMode),
+            _buildDocUploadCard('Signature Specimen Scan *', _signaturePhoto, (path) => setState(() => _signaturePhoto = path), isDarkMode),
+
+            // Additional Documents list
+            if (_additionalDocuments.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Additional Documents'.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ..._additionalDocuments.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final doc = entry.value;
+                return _buildAdditionalDocCard(doc['title']!, doc['file']!, idx, isDarkMode);
+              }),
+            ],
+
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () => _showAddCustomDocDialog(isDarkMode),
+                icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+                label: const Text('Add Custom Document'),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: BorderSide(
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFCBD5E1),
+                  ),
+                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                  foregroundColor: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+            ),
           ],
         );
     }
   }
+
+  Widget _buildAdditionalDocCard(String title, String base64Str, int index, bool isDarkMode) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.visibility_rounded, color: Color(0xFF2563EB), size: 20),
+                    onPressed: () => _showImagePreviewDialog(base64Str),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _additionalDocuments.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.memory(
+              _base64ToBytes(base64Str),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 140,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddCustomDocDialog(bool isDarkMode) {
+    final titleController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Add Custom Document',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Lalpurja, Nominee Citizenship',
+                    hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                    filled: true,
+                    fillColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2563EB)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) {
+                          return;
+                        }
+                        Navigator.pop(context);
+                        _showImageSourceSheet((base64Str) {
+                          if (base64Str != null) {
+                            setState(() {
+                              _additionalDocuments.add({
+                                'title': title,
+                                'file': base64Str,
+                              });
+                            });
+                          }
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDarkMode ? Colors.white : const Color(0xFF2563EB),
+                        foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Select Image'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    }
 
   Widget _buildStepTitle(String title) {
     return Padding(
@@ -894,6 +1346,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     required TextEditingController controller,
     TextInputType type = TextInputType.text,
     String? hint,
+    List<TextInputFormatter>? formatters,
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -909,6 +1362,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           TextField(
             controller: controller,
             keyboardType: type,
+            inputFormatters: formatters,
             style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
             decoration: InputDecoration(
               hintText: hint,
@@ -951,6 +1405,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           const SizedBox(height: 6),
           InkWell(
             onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
               _showSearchableSelect(
                 title: label,
                 options: items,
@@ -993,6 +1448,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
   }
 
   void _showImageSourceSheet(ValueChanged<String?> onUploaded) {
+    FocusManager.instance.primaryFocus?.unfocus();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1059,7 +1515,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           ),
         );
       },
-    );
+    ).then((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
   }
 
   Widget _buildSourceTile({
@@ -1138,6 +1596,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
     required String currentValue,
     required ValueChanged<String> onSelected,
   }) {
+    FocusManager.instance.primaryFocus?.unfocus();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1150,7 +1609,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           onSelected: onSelected,
         );
       },
-    );
+    ).then((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
   }
 
   Widget _buildDocUploadCard(
@@ -1470,6 +1931,55 @@ class _SearchableSelectSheetState extends State<_SearchableSelectSheet> {
           SizedBox(height: keyboardHeight),
         ],
       ),
+    );
+  }
+}
+
+class DateMaskTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.length < oldValue.text.length) {
+      return newValue;
+    }
+    
+    var text = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (text.length > 8) {
+      text = text.substring(0, 8);
+    }
+    
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      if ((i == 3 && text.length > 4) || (i == 5 && text.length > 6)) {
+        buffer.write('-');
+      }
+    }
+    
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class PhoneNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    String formatted = digitsOnly;
+    if (digitsOnly.length > 10) {
+      formatted = digitsOnly.substring(digitsOnly.length - 10);
+    }
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
