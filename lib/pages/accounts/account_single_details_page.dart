@@ -644,7 +644,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
     final balance = 'Rs. ${_formatAmount(rawBalance)}';
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
-    final scheme = (acc['scheme'] ?? type.toUpperCase()).toString().toUpperCase();
+    final title = acc['name'] ?? 'Account';
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -653,7 +653,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     return CooperativeAccountCard(
       isOverview: false,
       accountType: type,
-      title: scheme,
+      title: title,
       balance: balance,
       accountNo: accountNo,
       interestRate: acc['interest_rate'],
@@ -661,7 +661,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       maturityDate: acc['maturity_date'],
       showBalance: true,
       isDarkMode: isDarkMode,
-      showArrow: false,
+      showArrow: true,
       heroTag: effectiveTag,
       onTap: () {
         Navigator.push(

@@ -340,7 +340,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         child: CooperativeAccountCard(
           isOverview: false,
           accountType: type,
-          title: acc['scheme'] ?? name,
+          title: name,
           balance: balance,
           accountNo: accountNo,
           interestRate: acc['interest_rate'],
