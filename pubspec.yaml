@@ -52,6 +52,8 @@ dependencies:
   refresh_rate: ^1.0.0
   pdf: ^3.12.0
   printing: ^5.13.1
+  downloadsfolder: ^1.2.0
+  open_filex: ^4.5.0
 
 dev_dependencies:
   flutter_test:

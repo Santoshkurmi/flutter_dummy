@@ -1,8 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:downloadsfolder/downloadsfolder.dart' hide context, Context;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../store/auth_store.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
@@ -433,7 +439,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     );
   }
 
-  Future<void> _exportToPdf(bool isDarkMode) async {
+  Future<pw.Document> _buildPdfDocument() async {
     final pdf = pw.Document();
     final profile = AuthStore().profile;
     final coop = AuthStore().selectedCooperative;
@@ -580,10 +586,102 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       ),
     );
 
+    return pdf;
+  }
+
+  Future<void> _printPdf(bool isDarkMode) async {
+    final pdf = await _buildPdfDocument();
     await Printing.layoutPdf(
       onLayout: (format) => pdf.save(),
       name: 'combined_statement_${DateTime.now().millisecondsSinceEpoch}.pdf',
     );
+  }
+
+  Future<void> _downloadPdf(bool isDarkMode) async {
+    try {
+      if (Platform.isAndroid) {
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        if (androidInfo.version.sdkInt < 29) {
+          final status = await Permission.storage.request();
+          if (!status.isGranted) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Storage permission is required to save PDF.'),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            return;
+          }
+        }
+      }
+
+      final pdf = await _buildPdfDocument();
+      final pdfBytes = await pdf.save();
+
+      final fileName = 'combined_statement_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsBytes(pdfBytes);
+
+      final bool? success = await copyFileIntoDownloadFolder(
+        tempFile.path,
+        fileName,
+      );
+
+      if (success == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved to Downloads: $fileName'),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'VIEW',
+              textColor: Colors.white,
+              onPressed: () async {
+                try {
+                  final openResult = await OpenFilex.open(tempFile.path);
+                  if (openResult.type != ResultType.done) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Could not open PDF: ${openResult.message}'),
+                        backgroundColor: Colors.redAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error opening PDF: $e'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        throw Exception('Could not copy file to downloads folder');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save PDF: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   pw.Widget _pdfCell(String text, {bool isHeader = false, bool alignRight = false, PdfColor? textColor}) {
@@ -635,7 +733,16 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               Icons.picture_as_pdf_rounded,
               color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
             ),
-            onPressed: () => _exportToPdf(isDarkMode),
+            tooltip: 'Download PDF',
+            onPressed: () => _downloadPdf(isDarkMode),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.print_rounded,
+              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+            ),
+            tooltip: 'Print',
+            onPressed: () => _printPdf(isDarkMode),
           ),
         ],
       ),
