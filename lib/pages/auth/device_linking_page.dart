@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import 'status_check_page.dart';
@@ -7,7 +8,8 @@ import 'login_page.dart';
 
 class DeviceLinkingPage extends StatefulWidget {
   final String mobileNumber;
-  const DeviceLinkingPage({super.key, required this.mobileNumber});
+  final bool directPasswordSetup;
+  const DeviceLinkingPage({super.key, required this.mobileNumber, this.directPasswordSetup = false});
 
   @override
   State<DeviceLinkingPage> createState() => _DeviceLinkingPageState();
@@ -43,6 +45,10 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     super.initState();
     // DOB Auto-formatter listener
     _dobController.addListener(_formatDobInput);
+    if (widget.directPasswordSetup) {
+      _step = 2; // Jump directly to Password Setup
+      _needsPasswordSetup = true;
+    }
   }
 
   @override
@@ -134,10 +140,74 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     });
   }
 
+  Future<void> _handleDirectResetSubmit() async {
+    if (!_step3FormKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final devId = await ApiService.getDeviceId();
+      final gps = await _getGpsCoordinates();
+      final payload = {
+        'mobile': widget.mobileNumber,
+        'password': _passwordController.text,
+        'transaction_pin': _pinController.text,
+        'device_id': devId,
+        'latitude': gps['latitude'],
+        'longitude': gps['longitude'],
+      };
+
+      final res = await ApiService().resetSetupCredentials(payload);
+      final responseCodeRaw = res['response_code'];
+      final int responseCode = responseCodeRaw is int
+          ? responseCodeRaw
+          : int.tryParse(responseCodeRaw?.toString() ?? '0') ?? 0;
+
+      if (responseCode == 1) {
+        final store = AuthStore();
+        await store.setRegisteredMobile(widget.mobileNumber);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Credentials updated successfully! Please login.'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
+          ),
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          _errorMessage = res['message'] ?? 'Credential update failed.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   // STEP 3: Pin Setup / Submit OTP Request
   Future<void> _handleStep3PinSubmit(bool withOtp) async {
     if (_needsPasswordSetup) {
       if (!_step3FormKey.currentState!.validate()) return;
+    }
+
+    if (widget.directPasswordSetup) {
+      await _handleDirectResetSubmit();
+      return;
     }
 
     setState(() {
@@ -170,6 +240,33 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
     }
   }
 
+  Future<Map<String, String>> _getGpsCoordinates() async {
+    String lat = '';
+    String lng = '';
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 4),
+          );
+          lat = position.latitude.toString();
+          lng = position.longitude.toString();
+        }
+      }
+    } catch (_) {}
+    return {
+      'latitude': lat,
+      'longitude': lng,
+    };
+  }
+
   // STEP 4: Final Submission with OTP Verification
   Future<void> _handleSubmitFinal(String otpCode) async {
     setState(() {
@@ -179,6 +276,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
     try {
       final devId = await ApiService.getDeviceId();
+      final gps = await _getGpsCoordinates();
       final payload = {
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
@@ -189,6 +287,8 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         'otp': otpCode.isNotEmpty ? otpCode : null,
         'device_id': devId,
         'device_name': Platform.isAndroid ? 'Android Device' : 'iOS Device',
+        'latitude': gps['latitude'],
+        'longitude': gps['longitude'],
       };
 
       final res = await ApiService().submitDeviceLink(payload);
@@ -251,14 +351,18 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           ),
           onPressed: () {
             if (_step > 1) {
-              setState(() {
-                if (_step == 3 && !_needsPasswordSetup) {
-                  _step = 1;
-                } else {
-                  _step--;
-                }
-                _errorMessage = '';
-              });
+              if (widget.directPasswordSetup && _step == 2) {
+                Navigator.pop(context);
+              } else {
+                setState(() {
+                  if (_step == 3 && !_needsPasswordSetup) {
+                    _step = 1;
+                  } else {
+                    _step--;
+                  }
+                  _errorMessage = '';
+                });
+              }
             } else {
               Navigator.pop(context);
             }
@@ -670,7 +774,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
               style: _getPrimaryButtonStyle(),
               child: _isLoading
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Submit Sync Request', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+                  : Text(widget.directPasswordSetup ? 'Update Credentials' : 'Submit Sync Request', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
             ),
           ],
         ],

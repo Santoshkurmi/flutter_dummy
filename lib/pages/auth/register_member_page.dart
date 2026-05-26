@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/api_service.dart';
 import '../../data/locations.dart';
 
@@ -261,7 +262,31 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
       _isLoading = true;
     });
 
+    // Capture GPS Coordinates
+    String lat = '';
+    String lng = '';
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 4),
+          );
+          lat = position.latitude.toString();
+          lng = position.longitude.toString();
+        }
+      }
+    } catch (_) {}
+
     final formData = {
+      'latitude': lat,
+      'longitude': lng,
       'personal': {
         'first_name': _firstNameController.text.trim(),
         'middle_name': _middleNameController.text.trim(),

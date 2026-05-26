@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import 'login_page.dart';
@@ -147,6 +148,33 @@ class _ActivationPageState extends State<ActivationPage> {
     });
   }
 
+  Future<Map<String, String>> _getGpsCoordinates() async {
+    String lat = '';
+    String lng = '';
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 4),
+          );
+          lat = position.latitude.toString();
+          lng = position.longitude.toString();
+        }
+      }
+    } catch (_) {}
+    return {
+      'latitude': lat,
+      'longitude': lng,
+    };
+  }
+
   // STEP 4: Submit & Request OTP
   Future<void> _handleStep4PinSubmit(bool withOtp) async {
     if (!_step4FormKey.currentState!.validate()) return;
@@ -159,12 +187,15 @@ class _ActivationPageState extends State<ActivationPage> {
     if (withOtp) {
       try {
         final devId = await ApiService.getDeviceId();
+        final gps = await _getGpsCoordinates();
         final res = await ApiService().activateSendOtp({
           'mobile': widget.mobileNumber,
           'membership_number': _membershipController.text.trim(),
           'full_name': _fullNameController.text.trim(),
           'date_of_birth_bs': _dobController.text.trim(),
           'device_id': devId,
+          'latitude': gps['latitude'],
+          'longitude': gps['longitude'],
         });
 
         final responseCode = res['response_code'];
@@ -199,6 +230,7 @@ class _ActivationPageState extends State<ActivationPage> {
 
     try {
       final devId = await ApiService.getDeviceId();
+      final gps = await _getGpsCoordinates();
       final res = await ApiService().activateSubmit({
         'mobile': widget.mobileNumber,
         'membership_number': _membershipController.text.trim(),
@@ -210,6 +242,8 @@ class _ActivationPageState extends State<ActivationPage> {
         'password': _passwordController.text,
         'transaction_pin': _pinController.text,
         'device_id': devId,
+        'latitude': gps['latitude'],
+        'longitude': gps['longitude'],
       });
 
       if (!mounted) return;

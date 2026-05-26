@@ -140,13 +140,20 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
             );
           }
           break;
-        case 9: // RESP_DEVICE_LINKING_REQUIRED (New device linking needed)
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DeviceLinkingPage(mobileNumber: mobile),
-            ),
-          );
+        case 9: // RESP_DEVICE_LINKING_REQUIRED (New device linking needed or password setup needed)
+          {
+            final needsPasswordSetup = res['needs_password_setup'] ?? false;
+            final needsDeviceLink = res['needs_device_link'] ?? true;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DeviceLinkingPage(
+                  mobileNumber: mobile,
+                  directPasswordSetup: !needsDeviceLink && needsPasswordSetup,
+                ),
+              ),
+            );
+          }
           break;
         default:
           ScaffoldMessenger.of(context).showSnackBar(

@@ -136,6 +136,7 @@ class BrightBankApp extends StatelessWidget {
       builder: (context, _) {
         final isDark = AuthStore().isDarkMode;
         return MaterialApp(
+          navigatorKey: AuthStore.navigatorKey,
           title: 'Bright Sahakari',
           debugShowCheckedModeBanner: false,
           scrollBehavior: const BouncingScrollBehavior(),

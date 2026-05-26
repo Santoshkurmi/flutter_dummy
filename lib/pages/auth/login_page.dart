@@ -270,13 +270,20 @@ class _LoginPageState extends State<LoginPage> {
       case 9: // RESP_DEVICE_LINKING_REQUIRED
         await clearCredentials();
         if (!mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DeviceLinkingPage(mobileNumber: widget.mobileNumber),
-          ),
-          (route) => false,
-        );
+        {
+          final needsPasswordSetup = res['needs_password_setup'] ?? false;
+          final needsDeviceLink = res['needs_device_link'] ?? true;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DeviceLinkingPage(
+                mobileNumber: widget.mobileNumber,
+                directPasswordSetup: !needsDeviceLink && needsPasswordSetup,
+              ),
+            ),
+            (route) => false,
+          );
+        }
         break;
       default:
         ScaffoldMessenger.of(context).showSnackBar(

@@ -11,6 +11,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
   }
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   String? _token;
   String? _mobile;
   String? _registeredMobile;
@@ -64,7 +66,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token');
+    // Keep token in-memory only (never load from persistence on startup)
+    _token = null;
     _mobile = prefs.getString('auth_mobile');
     _registeredMobile = prefs.getString('registeredMobile');
     _customApiUrl = prefs.getString('customApiUrl');
@@ -161,12 +164,6 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> setToken(String? token) async {
     _token = token;
-    final prefs = await SharedPreferences.getInstance();
-    if (token != null) {
-      await prefs.setString('auth_token', token);
-    } else {
-      await prefs.remove('auth_token');
-    }
     notifyListeners();
   }
 
