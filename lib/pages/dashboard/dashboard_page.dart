@@ -19,6 +19,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0;
+  bool _showBalance = false;
   bool _isLoadingSummary = true;
   bool _hasError = false;
   Map<String, dynamic>? _summaryData;
@@ -206,7 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
               refreshIndicatorKey: _refreshIndicatorKey,
               summaryData: _summaryData,
               accountsData: _accountsData,
-              showBalance: AuthStore().showBalance,
+              showBalance: _showBalance,
               isDarkMode: _isDarkMode,
               isLoadingSummary: _isLoadingSummary,
               hasError: _hasError,
@@ -215,7 +216,9 @@ class _DashboardPageState extends State<DashboardPage> {
               onLogout: _logout,
               onTabChange: _onTabChanged,
               onToggleBalanceVisibility: () {
-                AuthStore().setShowBalance(!AuthStore().showBalance);
+                setState(() {
+                  _showBalance = !_showBalance;
+                });
               },
             ),
             AccountDetailsPage(

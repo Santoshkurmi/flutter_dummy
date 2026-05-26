@@ -26,7 +26,6 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _smsAlertsEnabled = true;
   String _dailyLimit = '50000';
   String _themeMode = 'system'; // 'system', 'dark', 'light'
-  bool _showBalance = false;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -42,7 +41,6 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get smsAlertsEnabled => _smsAlertsEnabled;
   String get dailyLimit => _dailyLimit;
   String get themeMode => _themeMode;
-  bool get showBalance => _showBalance;
 
   bool get isDarkMode {
     if (kDebugMode && debugBrightnessOverride != null) {
@@ -92,7 +90,6 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
     _themeMode = prefs.getString('themeMode') ?? 'system';
     _language = prefs.getString('language') ?? 'en';
-    _showBalance = prefs.getBool('showBalance') ?? false;
 
     notifyListeners();
   }
@@ -108,13 +105,6 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _themeMode = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('themeMode', value);
-    notifyListeners();
-  }
-
-  Future<void> setShowBalance(bool value) async {
-    _showBalance = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('showBalance', value);
     notifyListeners();
   }
 

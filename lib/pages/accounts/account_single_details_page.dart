@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/cooperative_account_card.dart';
 import 'account_ledger_page.dart';
-import '../../store/auth_store.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -645,7 +644,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final double rawBalance = (acc['balance'] ?? 0.0).toDouble();
     final balance = 'Rs. ${_formatAmount(rawBalance)}';
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
-    final title = acc['name'] ?? 'Account';
+    final scheme = (acc['scheme'] ?? type.toUpperCase()).toString().toUpperCase();
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -654,15 +653,15 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     return CooperativeAccountCard(
       isOverview: false,
       accountType: type,
-      title: title,
+      title: scheme,
       balance: balance,
       accountNo: accountNo,
       interestRate: acc['interest_rate'],
       shareCount: acc['share_count'],
       maturityDate: acc['maturity_date'],
-      showBalance: AuthStore().showBalance,
+      showBalance: true,
       isDarkMode: isDarkMode,
-      showArrow: true,
+      showArrow: false,
       heroTag: effectiveTag,
       onTap: () {
         Navigator.push(

@@ -3,7 +3,6 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import 'account_single_details_page.dart';
 import '../../widgets/cooperative_account_card.dart';
-import '../../store/auth_store.dart';
 
 class AccountDetailsPage extends StatefulWidget {
   final Map<String, dynamic>? initialAccountsData;
@@ -341,13 +340,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         child: CooperativeAccountCard(
           isOverview: false,
           accountType: type,
-          title: name,
+          title: acc['scheme'] ?? name,
           balance: balance,
           accountNo: accountNo,
           interestRate: acc['interest_rate'],
           shareCount: acc['share_count'],
           maturityDate: acc['maturity_date'],
-          showBalance: AuthStore().showBalance,
+          showBalance: true,
           isDarkMode: isDarkMode,
           onTap: () {
             final List<Map<String, dynamic>> swipable = [];
