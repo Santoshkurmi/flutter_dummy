@@ -453,7 +453,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                 MobileScanner(
                   controller: _controller!,
                   onDetect: _onDetect,
-                  errorBuilder: (context, error, child) {
+                  errorBuilder: (context, error) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted) {
                         setState(() {
