@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../accounts/account_details_page.dart';
-import '../accounts/combined_statement_page.dart';
 import '../accounts/account_single_details_page.dart';
 import '../services/nepali_calendar_page.dart';
 import '../auth/register_member_page.dart';
@@ -206,8 +205,10 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   }
 
   void _handleActionTap(BuildContext context, String label) {
-    if (label == 'Statement') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const CombinedStatementPage()));
+    if (label == 'Accounts') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
+    } else if (label == 'Statement') {
+      widget.onTabChange(1); // Switches to the Statement bottom tab
     } else if (label == 'Savings' || label == 'Ledger') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Calendar') {
@@ -215,7 +216,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     } else if (label == 'Self Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
-      widget.onTabChange(1); // Accounts Tab
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Scan QR' || label == 'QR Scan') {
       widget.onTabChange(2); // Scan QR Tab
     } else {
@@ -778,16 +779,16 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     final actions = [
       {'icon': Icons.send_rounded, 'label': 'Send Money'},
       {'icon': Icons.arrow_downward_rounded, 'label': 'Receive'},
+      {'icon': Icons.account_balance_wallet_rounded, 'label': 'Accounts'},
       {'icon': Icons.receipt_long_rounded, 'label': 'Statement'},
-      {'icon': Icons.savings_rounded, 'label': 'Deposit'},
-      {'icon': Icons.menu_book_rounded, 'label': 'Ledger'},
-      {'icon': Icons.pie_chart_rounded, 'label': 'Share'},
-      {'icon': Icons.business_center_rounded, 'label': 'Loan'},
-      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
+      {'icon': Icons.qr_code_scanner_rounded, 'label': 'QR Scan'},
+      {'icon': Icons.phone_android_rounded, 'label': 'Recharge'},
       {'icon': Icons.bolt_rounded, 'label': 'Utility'},
+      {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
       {'icon': Icons.newspaper_rounded, 'label': 'Notice'},
       {'icon': Icons.calculate_rounded, 'label': 'Calculator'},
       {'icon': Icons.app_registration_rounded, 'label': 'Self Register'},
+      {'icon': Icons.support_agent_rounded, 'label': 'Support'},
     ];
 
     final Color containerColor = widget.isDarkMode 
