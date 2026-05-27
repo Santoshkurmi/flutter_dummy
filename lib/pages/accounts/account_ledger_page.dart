@@ -49,6 +49,7 @@ class DateMaskTextInputFormatter extends TextInputFormatter {
 }
 
 class AccountLedgerPage extends StatefulWidget {
+  static bool isOpening = false;
   final Map<String, dynamic> account;
   final String accountType;
   final String? heroTag;

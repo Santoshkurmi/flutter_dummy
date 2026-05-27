@@ -284,6 +284,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       'label': 'Statement',
       'icon': Icons.download_rounded,
       'onTap': () {
+        if (AccountLedgerPage.isOpening) return;
+        AccountLedgerPage.isOpening = true;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -295,7 +297,9 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               initialIndex: _currentIndex,
             ),
           ),
-        );
+        ).then((_) {
+          AccountLedgerPage.isOpening = false;
+        });
       },
     });
 
@@ -664,6 +668,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       showArrow: true,
       heroTag: effectiveTag,
       onTap: () {
+        if (AccountLedgerPage.isOpening) return;
+        AccountLedgerPage.isOpening = true;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -675,7 +681,9 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
               initialIndex: _currentIndex,
             ),
           ),
-        );
+        ).then((_) {
+          AccountLedgerPage.isOpening = false;
+        });
       },
     );
   }
