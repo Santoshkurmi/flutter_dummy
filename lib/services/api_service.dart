@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:android_id/android_id.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:geolocator/geolocator.dart';
+import 'location_service.dart';
 import '../store/auth_store.dart';
 import 'biometric_signature_service.dart';
 
@@ -85,19 +85,9 @@ class ApiService {
     } catch (_) {}
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.always ||
-            permission == LocationPermission.whileInUse) {
-          final position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.low,
-            timeLimit: const Duration(seconds: 4),
-          );
-          latitude = position.latitude.toString();
-          longitude = position.longitude.toString();
-        }
-      }
+      final loc = await LocationService().getLocation(forceRequestPermission: true);
+      latitude = loc['latitude'];
+      longitude = loc['longitude'];
     } catch (_) {}
 
     final Map<String, String> result = {};

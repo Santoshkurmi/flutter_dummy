@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'widgets/flying_hero_interactor.dart';
 import 'store/auth_store.dart';
 import 'pages/auth/onboarding_page.dart';
@@ -11,6 +12,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'store/notification_store.dart';
+import 'services/location_service.dart';
 import 'dart:convert';
 
 @pragma('vm:entry-point')
@@ -71,6 +73,10 @@ void main() async {
   // Initialize Auth Store (persistences and initial loadings)
   final authStore = AuthStore();
   await authStore.init();
+
+  // Initialize Location Service
+  final locationService = LocationService();
+  await locationService.init();
 
   runApp(const BrightBankApp());
 }
@@ -190,6 +196,16 @@ class _InitialRouterState extends State<InitialRouter> {
     super.initState();
     // Listen to changes in the global state to allow fast reactive routing
     AuthStore().addListener(_onStateChange);
+
+    // Schedule background location fetch when the app is idle after startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SchedulerBinding.instance.scheduleTask(
+        () async {
+          await LocationService().refreshLocationOnStartup();
+        },
+        Priority.idle,
+      );
+    });
   }
 
   @override

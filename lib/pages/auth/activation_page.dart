@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import '../../services/location_service.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import 'login_page.dart';
@@ -149,29 +149,12 @@ class _ActivationPageState extends State<ActivationPage> {
   }
 
   Future<Map<String, String>> _getGpsCoordinates() async {
-    String lat = '';
-    String lng = '';
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.always ||
-            permission == LocationPermission.whileInUse) {
-          final position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.low,
-            timeLimit: const Duration(seconds: 4),
-          );
-          lat = position.latitude.toString();
-          lng = position.longitude.toString();
-        }
-      }
+      return await LocationService().getLocation(forceRequestPermission: true);
     } catch (_) {}
     return {
-      'latitude': lat,
-      'longitude': lng,
+      'latitude': '',
+      'longitude': '',
     };
   }
 

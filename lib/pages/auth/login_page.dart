@@ -9,7 +9,7 @@ import 'activation_page.dart';
 import 'device_linking_page.dart';
 import '../settings/biometric_setup_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:geolocator/geolocator.dart';
+import '../../services/location_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LoginPage extends StatefulWidget {
@@ -67,17 +67,6 @@ class _LoginPageState extends State<LoginPage> {
         provisional: false,
         sound: true,
       );
-    } catch (_) {}
-
-    try {
-      // 3. Location permission
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          await Geolocator.requestPermission();
-        }
-      }
     } catch (_) {}
   }
 
@@ -160,24 +149,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (_) {}
 
-    // 2. GPS Location Permission and Coordinate retrieval
+    // 2. Retrieve location using helper service
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.always ||
-            permission == LocationPermission.whileInUse) {
-          final position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.low,
-            timeLimit: const Duration(seconds: 4),
-          );
-          latitude = position.latitude.toString();
-          longitude = position.longitude.toString();
-        }
-      }
+      final loc = await LocationService().getLocation(forceRequestPermission: true);
+      latitude = loc['latitude'];
+      longitude = loc['longitude'];
     } catch (_) {}
 
     return {
