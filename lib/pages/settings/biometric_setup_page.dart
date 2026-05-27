@@ -65,12 +65,6 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
         } catch (_) {}
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Biometric authentication registered successfully!'),
-              backgroundColor: Color(0xFF10B981),
-            ),
-          );
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
           } else {

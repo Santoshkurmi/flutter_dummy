@@ -186,12 +186,6 @@ class _LoginPageState extends State<LoginPage> {
           }
 
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful! Welcome to Bright Sahakari.'),
-              backgroundColor: Color(0xFF10B981),
-            ),
-          );
 
           // Check if biometrics setup is required
           final isServerBiometricSetup = (res['is_biometric_setup'] == true || res['is_biometric_setup'] == 1) || 
