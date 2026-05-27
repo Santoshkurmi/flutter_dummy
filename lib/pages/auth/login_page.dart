@@ -35,6 +35,15 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _passwordController.addListener(_onPasswordChanged);
+    
+    // Synchronously check cache for instant rendering
+    final authStore = AuthStore();
+    final type = authStore.biometricType;
+    if (authStore.isBiometricEnabled && type != null) {
+      _canAuthenticate = true;
+      _isFaceId = (type == 'face');
+    }
+    
     _checkBiometrics();
     _requestPermissionsAndWarmUp();
     AuthStore().addListener(_onStoreChange);
@@ -89,19 +98,31 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _checkBiometrics() async {
+    final authStore = AuthStore();
+    if (authStore.isBiometricEnabled && authStore.biometricType != null) {
+      setState(() {
+        _canAuthenticate = true;
+        _isFaceId = authStore.biometricType == 'face';
+      });
+      return;
+    }
+
     try {
       final isSupported = await _auth.isDeviceSupported();
       final canCheck = await _auth.canCheckBiometrics;
-      final isEnabled = AuthStore().isBiometricEnabled;
+      final isEnabled = authStore.isBiometricEnabled;
       
       if (isSupported && canCheck && isEnabled) {
         final availableBiometrics = await _auth.getAvailableBiometrics();
         final hasFace = availableBiometrics.contains(BiometricType.face);
         final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+        final type = (hasFace || isIOS) ? 'face' : 'fingerprint';
+        
+        await authStore.setBiometricType(type);
         
         setState(() {
           _canAuthenticate = true;
-          _isFaceId = hasFace || isIOS;
+          _isFaceId = (type == 'face');
         });
       } else {
         setState(() {
@@ -200,8 +221,9 @@ class _LoginPageState extends State<LoginPage> {
           final isServerBiometricSetup = (res['is_biometric_setup'] == true || res['is_biometric_setup'] == 1) || 
                                          (data['is_biometric_setup'] == true || data['is_biometric_setup'] == 1);
           final isLocallyEnabled = AuthStore().isBiometricEnabled;
+          final neverAsk = AuthStore().neverAskBiometric;
           
-          if (!isServerBiometricSetup || !isLocallyEnabled) {
+          if ((!isServerBiometricSetup || !isLocallyEnabled) && !neverAsk) {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const BiometricSetupPage()),
@@ -755,10 +777,12 @@ class _LoginPageState extends State<LoginPage> {
                                         IconButton(
                                           icon: Icon(
                                             _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
-                                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                            color: _isLoading
+                                                ? (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))
+                                                : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
                                             size: 50,
                                           ),
-                                          onPressed: _authenticateBiometrics,
+                                          onPressed: _isLoading ? null : _authenticateBiometrics,
                                         ),
                                       ],
                                     ),
@@ -788,6 +812,7 @@ class _LoginPageState extends State<LoginPage> {
                                         await store.setMobile(null);
                                         await store.setBiometricEnabled(false);
                                         await store.setNeverAskBiometric(false);
+                                        await store.setBiometricType(null);
                                         await store.clearAuth();
                                         
                                         if (!mounted) return;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
 import '../../store/auth_store.dart';
@@ -53,6 +54,16 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
         await authStore.setBiometricEnabled(true);
         await authStore.setNeverAskBiometric(true);
 
+        // Detect and save biometric type
+        try {
+          final localAuth = LocalAuthentication();
+          final availableBiometrics = await localAuth.getAvailableBiometrics();
+          final hasFace = availableBiometrics.contains(BiometricType.face);
+          final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+          final type = (hasFace || isIOS) ? 'face' : 'fingerprint';
+          await authStore.setBiometricType(type);
+        } catch (_) {}
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -60,11 +71,15 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
               backgroundColor: Color(0xFF10B981),
             ),
           );
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
-            (route) => false,
-          );
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+              (route) => false,
+            );
+          }
         }
       } else {
         throw Exception(res['message'] ?? 'Failed to register keys on cooperative server.');
@@ -77,14 +92,32 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
     }
   }
 
-  void _skipSetup() async {
+  void _skipSetup() {
+    if (mounted) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  void _neverAskSetup() async {
     await AuthStore().setNeverAskBiometric(true);
     if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-        (route) => false,
-      );
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -224,6 +257,27 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                         ),
                 ),
               ),
+              if (!_isLoading) ...[
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _neverAskSetup,
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Don\'t Ask Again',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               // Support Notice
               Text(

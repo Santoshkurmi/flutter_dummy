@@ -73,6 +73,14 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
     final mobile = _mobileController.text.trim();
     if (mobile.length != 10) return;
     
+    // Reset biometric preferences if logging in/registering with a different phone number
+    final store = AuthStore();
+    if (store.registeredMobile != mobile || store.mobile != mobile) {
+      await store.setBiometricEnabled(false);
+      await store.setNeverAskBiometric(false);
+      await store.setBiometricType(null);
+    }
+    
     setState(() {
       _isLoading = true;
     });

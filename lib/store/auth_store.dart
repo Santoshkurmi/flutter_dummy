@@ -24,6 +24,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String _language = 'en';
   bool _isBiometricEnabled = false;
   bool _neverAskBiometric = false;
+  String? _biometricType;
   bool _pushEnabled = true;
   bool _smsAlertsEnabled = true;
   String _dailyLimit = '50000';
@@ -39,6 +40,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String get language => _language;
   bool get isBiometricEnabled => _isBiometricEnabled;
   bool get neverAskBiometric => _neverAskBiometric;
+  String? get biometricType => _biometricType;
   bool get pushEnabled => _pushEnabled;
   bool get smsAlertsEnabled => _smsAlertsEnabled;
   String get dailyLimit => _dailyLimit;
@@ -88,6 +90,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
 
     _isBiometricEnabled = prefs.getBool('isBiometricEnabled') ?? false;
     _neverAskBiometric = prefs.getBool('neverAskBiometric') ?? false;
+    _biometricType = prefs.getString('biometricType');
     _pushEnabled = prefs.getBool('pushEnabled') ?? true;
     _smsAlertsEnabled = prefs.getBool('smsAlertsEnabled') ?? true;
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
@@ -138,6 +141,17 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _neverAskBiometric = neverAsk;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('neverAskBiometric', neverAsk);
+    notifyListeners();
+  }
+
+  Future<void> setBiometricType(String? type) async {
+    _biometricType = type;
+    final prefs = await SharedPreferences.getInstance();
+    if (type != null) {
+      await prefs.setString('biometricType', type);
+    } else {
+      await prefs.remove('biometricType');
+    }
     notifyListeners();
   }
 
@@ -228,6 +242,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _profile = null;
     _isBiometricEnabled = false;
     _neverAskBiometric = false;
+    _biometricType = null;
     _pushEnabled = true;
     _smsAlertsEnabled = true;
     _dailyLimit = '50000';
