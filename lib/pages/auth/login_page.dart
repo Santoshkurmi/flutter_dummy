@@ -9,6 +9,8 @@ import 'activation_page.dart';
 import 'device_linking_page.dart';
 import '../settings/biometric_setup_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../../services/location_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -28,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _canAuthenticate = false;
   bool _isFaceId = false;
   bool _obscurePassword = true;
+  bool _deviceHasBiometricHardware = false;
 
   bool get _isDarkMode => AuthStore().isDarkMode;
 
@@ -51,23 +54,27 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _requestPermissionsAndWarmUp() async {
     try {
-      // 1. Request native OS-level notification permission using permission_handler
-      await Permission.notification.request();
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        // 1. Request native OS-level notification permission using permission_handler
+        await Permission.notification.request();
+      }
     } catch (_) {}
 
-    try {
-      // 2. Warm up and request FCM notification permission
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-    } catch (_) {}
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        // 2. Warm up and request FCM notification permission
+        final messaging = FirebaseMessaging.instance;
+        await messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+      } catch (_) {}
+    }
   }
 
   @override
@@ -87,6 +94,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _checkBiometrics() async {
+    try {
+      final isSupported = await _auth.isDeviceSupported();
+      final canCheck = await _auth.canCheckBiometrics;
+      if (mounted) {
+        setState(() {
+          _deviceHasBiometricHardware = isSupported && canCheck;
+        });
+      }
+    } catch (_) {}
+
     final authStore = AuthStore();
     if (authStore.isBiometricEnabled && authStore.biometricType != null) {
       setState(() {
@@ -97,11 +114,9 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      final isSupported = await _auth.isDeviceSupported();
-      final canCheck = await _auth.canCheckBiometrics;
       final isEnabled = authStore.isBiometricEnabled;
       
-      if (isSupported && canCheck && isEnabled) {
+      if (_deviceHasBiometricHardware && isEnabled) {
         final availableBiometrics = await _auth.getAvailableBiometrics();
         final hasFace = availableBiometrics.contains(BiometricType.face);
         final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
@@ -131,23 +146,25 @@ class _LoginPageState extends State<LoginPage> {
     String? longitude;
 
     // 1. Firebase Notification Permission and FCM token retrieval
-    try {
-      final messaging = FirebaseMessaging.instance;
-      final settings = await messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        final settings = await messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional) {
-        fcmToken = await messaging.getToken();
-      }
-    } catch (_) {}
+        if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional) {
+          fcmToken = await messaging.getToken();
+        }
+      } catch (_) {}
+    }
 
     // 2. Retrieve location using helper service
     try {
@@ -193,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
           final isLocallyEnabled = AuthStore().isBiometricEnabled;
           final neverAsk = AuthStore().neverAskBiometric;
           
-          if ((!isServerBiometricSetup || !isLocallyEnabled) && !neverAsk) {
+          if (_deviceHasBiometricHardware && (!isServerBiometricSetup || !isLocallyEnabled) && !neverAsk) {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const BiometricSetupPage()),

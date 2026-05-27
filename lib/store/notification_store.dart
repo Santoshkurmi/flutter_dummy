@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -17,17 +19,19 @@ class NotificationStore extends ChangeNotifier {
     await loadNotifications();
     
     // Listen to foreground FCM messages
-    try {
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        final notification = message.notification;
-        if (notification != null) {
-          addNotification(
-            title: notification.title ?? 'Alert',
-            body: notification.body ?? '',
-          );
-        }
-      });
-    } catch (_) {}
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          final notification = message.notification;
+          if (notification != null) {
+            addNotification(
+              title: notification.title ?? 'Alert',
+              body: notification.body ?? '',
+            );
+          }
+        });
+      } catch (_) {}
+    }
   }
 
   Future<void> loadNotifications() async {

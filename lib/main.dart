@@ -12,6 +12,8 @@ import 'pages/dashboard/dashboard_page.dart';
 import 'package:refresh_rate/refresh_rate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'store/notification_store.dart';
 import 'services/location_service.dart';
@@ -59,13 +61,15 @@ void main() async {
     debugPrint("Failed to load .env file: $e");
   }
   
-  try {
-    // Initialize Firebase Services
-    await Firebase.initializeApp();
-    // Setup background message handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    try {
+      // Initialize Firebase Services
+      await Firebase.initializeApp();
+      // Setup background message handler
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      debugPrint("Firebase initialization failed: $e");
+    }
   }
   
   try {

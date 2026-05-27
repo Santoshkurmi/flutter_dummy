@@ -9,6 +9,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'location_service.dart';
 import '../store/auth_store.dart';
 import 'biometric_signature_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:math';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
@@ -20,23 +23,59 @@ class ApiService {
   static String? _cachedDeviceId;
   static Map<String, String>? _cachedDeviceMetaData;
 
-  // Retrieve native device identifier dynamically
+  // Retrieve native device identifier dynamically, or fallback to generated UUID
   static Future<String> getDeviceId() async {
-    if (_cachedDeviceId != null) return _cachedDeviceId!;
+    if (_cachedDeviceId != null && _cachedDeviceId!.isNotEmpty) return _cachedDeviceId!;
+
+    // 1. Try to load saved fallback device ID from SharedPreferences
     try {
-      if (Platform.isAndroid) {
-        const androidIdPlugin = AndroidId();
-        final String? androidId = await androidIdPlugin.getId();
-        _cachedDeviceId = androidId ?? '';
-      } else if (Platform.isIOS) {
-        final deviceInfo = DeviceInfoPlugin();
-        final iosInfo = await deviceInfo.iosInfo;
-        _cachedDeviceId = iosInfo.identifierForVendor ?? '';
+      final prefs = await SharedPreferences.getInstance();
+      final storedId = prefs.getString('fallback_device_id');
+      if (storedId != null && storedId.isNotEmpty) {
+        _cachedDeviceId = storedId;
+        return _cachedDeviceId!;
+      }
+    } catch (_) {}
+
+    // 2. Try native platform device IDs (for Android/iOS only)
+    try {
+      if (!kIsWeb) {
+        if (Platform.isAndroid) {
+          const androidIdPlugin = AndroidId();
+          final String? androidId = await androidIdPlugin.getId();
+          _cachedDeviceId = androidId ?? '';
+        } else if (Platform.isIOS) {
+          final deviceInfo = DeviceInfoPlugin();
+          final iosInfo = await deviceInfo.iosInfo;
+          _cachedDeviceId = iosInfo.identifierForVendor ?? '';
+        }
       }
     } catch (e) {
       // Fallback
     }
-    _cachedDeviceId ??= '';
+
+    // 3. Fallback: Generate random UUID for other platforms (Web, Desktop)
+    if (_cachedDeviceId == null || _cachedDeviceId!.isEmpty) {
+      final random = Random.secure();
+      final List<int> values = List<int>.generate(16, (i) => random.nextInt(256));
+      values[6] = (values[6] & 0x0f) | 0x40;
+      values[8] = (values[8] & 0x3f) | 0x80;
+      final StringBuffer buffer = StringBuffer();
+      for (int i = 0; i < 16; i++) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) {
+          buffer.write('-');
+        }
+        buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
+      }
+      _cachedDeviceId = buffer.toString();
+
+      // Persist generated UUID in SharedPreferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fallback_device_id', _cachedDeviceId!);
+      } catch (_) {}
+    }
+
     return _cachedDeviceId!;
   }
 
@@ -100,10 +139,12 @@ class ApiService {
     String? latitude;
     String? longitude;
 
-    try {
-      final messaging = FirebaseMessaging.instance;
-      fcmToken = await messaging.getToken();
-    } catch (_) {}
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        fcmToken = await messaging.getToken();
+      } catch (_) {}
+    }
 
     try {
       final loc = await LocationService().getLocation(forceRequestPermission: true);

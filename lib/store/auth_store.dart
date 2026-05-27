@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -36,7 +37,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String? get mobile => _mobile;
   String? get registeredMobile => _registeredMobile;
   
-  bool get isCustomApp => dotenv.env['IS_CUSTOM_APP'] == 'true';
+  bool get isCustomApp => !kIsWeb && Platform.isAndroid && dotenv.env['IS_CUSTOM_APP'] == 'true';
   bool get preferencesSetupCompleted => _preferencesSetupCompleted;
 
   Map<String, dynamic>? get selectedCooperative {
