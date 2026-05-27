@@ -410,7 +410,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
     final receiptBgColor = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: receiptBgColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
