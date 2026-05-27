@@ -122,6 +122,7 @@ class TranslationService {
     'Daily Transfer Limit': 'दैनिक स्थानान्तरण सीमा',
     'APPEARANCE': 'देखावट',
     'View All': 'सबै हेर्नुहोस्',
+    'Show More': 'थप हेर्नुहोस्',
 
     // QR Scanner
     'No QR code or barcode found in the image.': 'तस्बिरमा QR कोड वा बारकोड फेला परेन।',

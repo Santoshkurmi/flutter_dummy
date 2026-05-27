@@ -9,11 +9,13 @@ import '../services/all_services_page.dart';
 import '../../widgets/cooperative_account_card.dart';
 import '../../store/notification_store.dart';
 import 'notifications_tab.dart';
+import '../accounts/transaction_receipt_page.dart';
 
 class HomeTab extends StatefulWidget {
   final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
   final Map<String, dynamic>? summaryData;
   final Map<String, dynamic>? accountsData;
+  final List<dynamic>? cachedLedgerItems;
   final bool showBalance;
   final bool isDarkMode;
   final bool isLoadingSummary;
@@ -29,6 +31,7 @@ class HomeTab extends StatefulWidget {
     this.refreshIndicatorKey,
     required this.summaryData,
     required this.accountsData,
+    this.cachedLedgerItems,
     required this.showBalance,
     required this.isDarkMode,
     required this.isLoadingSummary,
@@ -242,7 +245,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     final savingsBalance = 'Rs. $savingsVal';
     final shareBalance = 'Rs. $shareVal';
     final loanBalance = 'Rs. $loanVal';
-    final recentTransactions = widget.summaryData?['recent_transactions'] as List?;
+    final recentTransactions = widget.cachedLedgerItems?.take(6).toList();
 
     final List<Map<String, dynamic>> cardsList = [];
 
@@ -631,9 +634,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData))),
+                onPressed: () => widget.onTabChange(1),
                 child: Text(
-                  'View All'.tr,
+                  'Show More'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -650,35 +653,91 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.', style: TextStyle(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4), fontSize: 13))))
                   : Column(
                       children: recentTransactions.map((tx) {
-                        final isCredit = tx['type'] == 'credit' || tx['type'] == 'CR';
-                        final amount = tx['amount'] ?? '0.00';
-                        final amountStr = '${isCredit ? "+" : "-"} Rs. $amount';
-                        final desc = tx['description'] ?? 'Transaction';
-                        final dateStr = tx['date'] ?? '';
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: widget.isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.04)
-                                  : Colors.black.withValues(alpha: 0.04),
+                        final typeStr = (tx['type'] ?? '').toString().toUpperCase();
+                        final isCredit = typeStr == 'CR' || typeStr == 'CREDIT';
+                        final double amount = (tx['amount'] ?? 0.0).toDouble();
+                        final amountStr = '${isCredit ? "+" : "-"} Rs. ${_formatAmount(amount)}';
+                        final desc = tx['desc'] ?? tx['description'] ?? 'Transaction';
+                        final dateStr = tx['nepaliDate'] ?? tx['date'] ?? '';
+                        final refNo = tx['refNo'] ?? tx['reference_number'] ?? '';
+                        final accountType = tx['accountType'] ?? 'savings';
+                        final accountNo = tx['accountNo'] ?? 'N/A';
+
+                        Color badgeBg;
+                        Color badgeText;
+                        String typeLabel;
+                        if (accountType == 'savings') {
+                          typeLabel = 'Savings';
+                          badgeBg = widget.isDarkMode ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF);
+                          badgeText = widget.isDarkMode ? const Color(0xFF818CF8) : const Color(0xFF4F46E5);
+                        } else if (accountType == 'loans') {
+                          typeLabel = 'Loan';
+                          badgeBg = widget.isDarkMode ? const Color(0xFF451A03) : const Color(0xFFFEF2F2);
+                          badgeText = widget.isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+                        } else if (accountType == 'shares') {
+                          typeLabel = 'Shares';
+                          badgeBg = widget.isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
+                          badgeText = widget.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+                        } else {
+                          typeLabel = 'Account';
+                          badgeBg = widget.isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
+                          badgeText = widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+                        }
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TransactionReceiptPage(
+                                  transaction: Map<String, dynamic>.from(tx),
+                                  accountType: accountType,
+                                  accountNo: accountNo,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: widget.isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.04)
+                                    : Colors.black.withValues(alpha: 0.04),
+                              ),
+                              boxShadow: widget.isDarkMode
+                                  ? []
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.015),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ],
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: isCredit ? const Color(0xFF10B981).withValues(alpha: 0.1) : const Color(0xFFEF4444).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                                    child: Icon(isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444), size: 14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isCredit
+                                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                                        : const Color(0xFFEF4444).withValues(alpha: 0.1),
                                   ),
-                                  const SizedBox(width: 14),
-                                  Column(
+                                  child: Icon(
+                                    isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                                    color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                    size: 16,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
@@ -689,27 +748,78 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                           color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        crossAxisAlignment: WrapCrossAlignment.center,
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: badgeBg,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              typeLabel,
+                                              style: TextStyle(
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.w900,
+                                                color: badgeText,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            accountNo,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
                                       Text(
                                         dateStr,
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.6)
+                                              : const Color(0xFF475569),
                                         ),
                                       ),
+                                      if (refNo.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Ref: $refNo',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            color: widget.isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                ],
-                              ),
-                              Text(
-                                amountStr,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isCredit ? const Color(0xFF10B981) : (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B)),
-                                  fontSize: 14,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      amountStr,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),

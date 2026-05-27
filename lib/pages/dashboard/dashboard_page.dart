@@ -8,7 +8,7 @@ import '../accounts/combined_statement_page.dart';
 import 'qr_tab.dart';
 import 'notice_tab.dart';
 import 'profile_tab.dart';
-import '../auth/login_page.dart';
+
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -24,6 +24,9 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _hasError = false;
   Map<String, dynamic>? _summaryData;
   Map<String, dynamic>? _accountsData;
+  List<dynamic>? _cachedLedgerItems;
+  DateTime? _lastLedgerFetchTime;
+  late PageController _pageController;
   bool get _isDarkMode => AuthStore().isDarkMode;
 
   final GlobalKey<QRTabState> _qrKey = GlobalKey<QRTabState>();
@@ -32,6 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshIndicatorKey.currentState?.show();
     });
@@ -40,6 +44,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     AuthStore().removeListener(_onStateChange);
     super.dispose();
   }
@@ -55,17 +60,24 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     }
     try {
-      final summaryRes = await ApiService().getDashboardSummary();
-      Map<String, dynamic>? accountsRes;
-      try {
-        accountsRes = await ApiService().getAccounts();
-      } catch (_) {
-        // Fallback: ignore accounts loading error so overview still displays
-      }
+      final Future<Map<String, dynamic>> summaryFuture = ApiService().getDashboardSummary();
+      final Future<Map<String, dynamic>> accountsFuture = ApiService().getAccounts().catchError((_) => <String, dynamic>{});
+      final Future<Map<String, dynamic>> ledgerFuture = ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
+
+      final results = await Future.wait([summaryFuture, accountsFuture, ledgerFuture]);
+      
+      final Map<String, dynamic> summaryRes = results[0];
+      final Map<String, dynamic> accountsRes = results[1];
+      final Map<String, dynamic> ledgerRes = results[2];
+
       if (mounted) {
         setState(() {
           _summaryData = summaryRes['data'];
-          _accountsData = accountsRes?['data'];
+          _accountsData = accountsRes.isNotEmpty ? accountsRes['data'] : null;
+          if (ledgerRes['data'] != null) {
+            _cachedLedgerItems = ledgerRes['data'];
+            _lastLedgerFetchTime = DateTime.now();
+          }
           _isLoadingSummary = false;
           _hasError = false;
         });
@@ -87,7 +99,7 @@ class _DashboardPageState extends State<DashboardPage> {
     if (confirm != true) return;
 
     // Trigger API call in the background without awaiting it
-    ApiService().logout().catchError((_) {});
+    ApiService().logout().catchError((_) => <String, dynamic>{});
     
     final store = AuthStore();
     await store.clearAuth();
@@ -272,23 +284,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _onTabChanged(int newIndex) {
-    final oldIndex = _currentIndex;
-
-    // Deactivate QR camera when leaving QR tab
-    if (oldIndex == 2 && newIndex != 2) {
-      _qrKey.currentState?.stopCamera();
-    }
-
-    setState(() {
-      _currentIndex = newIndex;
-    });
-
-    // Activate QR camera when entering QR tab
-    if (newIndex == 2 && oldIndex != 2) {
-      Future.delayed(const Duration(milliseconds: 50), () {
-        _qrKey.currentState?.startCamera();
-      });
-    }
+    _pageController.jumpToPage(newIndex);
   }
 
   @override
@@ -317,33 +313,75 @@ class _DashboardPageState extends State<DashboardPage> {
       },
       child: Scaffold(
         backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
-        body: IndexedStack(
-          index: _currentIndex,
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          onPageChanged: (index) {
+            final oldIndex = _currentIndex;
+            if (oldIndex == 2 && index != 2) {
+              _qrKey.currentState?.stopCamera();
+            }
+            if (index == 2 && oldIndex != 2) {
+              Future.delayed(const Duration(milliseconds: 50), () {
+                _qrKey.currentState?.startCamera();
+              });
+            }
+            setState(() {
+              _currentIndex = index;
+            });
+          },
           children: [
-            HomeTab(
-              refreshIndicatorKey: _refreshIndicatorKey,
-              summaryData: _summaryData,
-              accountsData: _accountsData,
-              showBalance: _showBalance,
-              isDarkMode: _isDarkMode,
-              isLoadingSummary: _isLoadingSummary,
-              hasError: _hasError,
-              onRefresh: _loadSummary,
-              onThemeToggle: _cycleTheme,
-              onLogout: _logout,
-              onTabChange: _onTabChanged,
-              onToggleBalanceVisibility: () {
-                setState(() {
-                  _showBalance = !_showBalance;
-                });
-              },
+            KeepAliveWrapper(
+              child: HomeTab(
+                refreshIndicatorKey: _refreshIndicatorKey,
+                summaryData: _summaryData,
+                accountsData: _accountsData,
+                cachedLedgerItems: _cachedLedgerItems,
+                showBalance: _showBalance,
+                isDarkMode: _isDarkMode,
+                isLoadingSummary: _isLoadingSummary,
+                hasError: _hasError,
+                onRefresh: _loadSummary,
+                onThemeToggle: _cycleTheme,
+                onLogout: _logout,
+                onTabChange: (index) {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                onToggleBalanceVisibility: () {
+                  setState(() {
+                    _showBalance = !_showBalance;
+                  });
+                },
+              ),
             ),
-            _currentIndex == 1 ? const CombinedStatementPage() : const SizedBox.shrink(),
-            QRTab(key: _qrKey, isDarkMode: _isDarkMode),
-            NoticeTab(isDarkMode: _isDarkMode),
-            ProfileTab(
-              isDarkMode: _isDarkMode,
-              onLogout: _logout,
+            KeepAliveWrapper(
+              child: CombinedStatementPage(
+                currentIndex: _currentIndex,
+                cachedLedgerItems: _cachedLedgerItems,
+                lastLedgerFetchTime: _lastLedgerFetchTime,
+                onLedgerFetched: (items) {
+                  setState(() {
+                    _cachedLedgerItems = items;
+                    _lastLedgerFetchTime = DateTime.now();
+                  });
+                },
+              ),
+            ),
+            KeepAliveWrapper(
+              child: QRTab(key: _qrKey, isDarkMode: _isDarkMode),
+            ),
+            KeepAliveWrapper(
+              child: NoticeTab(isDarkMode: _isDarkMode),
+            ),
+            KeepAliveWrapper(
+              child: ProfileTab(
+                isDarkMode: _isDarkMode,
+                onLogout: _logout,
+              ),
             ),
           ],
         ),
@@ -400,5 +438,26 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+}
+
+class KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+
+  const KeepAliveWrapper({super.key, required this.child});
+
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

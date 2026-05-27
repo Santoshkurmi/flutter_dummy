@@ -47,13 +47,28 @@ class DateMaskTextInputFormatter extends TextInputFormatter {
 }
 
 class CombinedStatementPage extends StatefulWidget {
-  const CombinedStatementPage({super.key});
+  final int? currentIndex;
+  final List<dynamic>? cachedLedgerItems;
+  final DateTime? lastLedgerFetchTime;
+  final ValueChanged<List<dynamic>>? onLedgerFetched;
+
+  const CombinedStatementPage({
+    super.key,
+    this.currentIndex,
+    this.cachedLedgerItems,
+    this.lastLedgerFetchTime,
+    this.onLedgerFetched,
+  });
 
   @override
   State<CombinedStatementPage> createState() => _CombinedStatementPageState();
 }
 
 class _CombinedStatementPageState extends State<CombinedStatementPage> {
+  bool get _shouldRefetchLedger =>
+      widget.cachedLedgerItems == null ||
+      widget.lastLedgerFetchTime == null ||
+      DateTime.now().difference(widget.lastLedgerFetchTime!) >= const Duration(minutes: 4);
   bool _isLoading = true;
   bool _hasError = false;
   List<dynamic> _ledgerItems = [];
@@ -71,6 +86,14 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     _loadLedger();
   }
 
+  @override
+  void didUpdateWidget(CombinedStatementPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentIndex == 1 && oldWidget.currentIndex != 1) {
+      _loadLedger();
+    }
+  }
+
   bool _isValidDate(String dateStr) {
     if (dateStr.isEmpty) return true;
     final regExp = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
@@ -82,7 +105,22 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     return month >= 1 && month <= 12 && day >= 1 && day <= 32;
   }
 
-  Future<void> _loadLedger() async {
+  Future<void> _loadLedger({bool forceRefetch = false}) async {
+    final hasFilters = _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty || _selectedPreset != null;
+
+    if (!hasFilters && !forceRefetch && !_shouldRefetchLedger) {
+      if (widget.cachedLedgerItems != null) {
+        if (mounted) {
+          setState(() {
+            _ledgerItems = widget.cachedLedgerItems!;
+            _isLoading = false;
+            _hasError = false;
+          });
+        }
+        return;
+      }
+    }
+
     if (mounted) {
       setState(() {
         _isLoading = true;
@@ -96,9 +134,15 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
         toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
         preset: _selectedPreset,
       );
+      final items = res['data'] ?? [];
+
+      if (!hasFilters && widget.onLedgerFetched != null) {
+        widget.onLedgerFetched!(items);
+      }
+
       if (mounted) {
         setState(() {
-          _ledgerItems = res['data'] ?? [];
+          _ledgerItems = items;
           _isLoading = false;
           _hasError = false;
         });
@@ -748,7 +792,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadLedger,
+          onRefresh: () => _loadLedger(forceRefetch: true),
           color: const Color(0xFF2563EB),
           backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
           child: ListView(
