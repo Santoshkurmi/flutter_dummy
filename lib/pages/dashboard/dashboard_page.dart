@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
@@ -85,22 +86,77 @@ class _DashboardPageState extends State<DashboardPage> {
     final confirm = await _showLogoutConfirmation();
     if (confirm != true) return;
 
-    try {
-      await ApiService().logout();
-    } catch (_) {}
+    // Trigger API call in the background without awaiting it
+    ApiService().logout().catchError((_) {});
     
     final store = AuthStore();
-    final mobile = store.registeredMobile ?? store.mobile ?? '';
     await store.clearAuth();
     
     if (!mounted) return;
     
-    // Explicitly navigate to LoginPage instead of the InitialRouter / Phone page
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage(mobileNumber: mobile)),
-      (route) => false,
+    // Pop all screens on top of the root route to avoid duplicate LoginPage
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  void _logoutAndExit() async {
+    // Show a loading progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        final isDark = AuthStore().isDarkMode;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Logging out...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please wait while we secure your session.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+
+    // Call logout API and wait
+    try {
+      await ApiService().logout();
+    } catch (_) {}
+
+    // Clear local auth
+    final store = AuthStore();
+    await store.clearAuth();
+
+    // Close loading dialog if mounted
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    // Exit app
+    await SystemNavigator.pop();
   }
 
   Future<bool?> _showLogoutConfirmation() async {
@@ -123,6 +179,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -141,11 +198,64 @@ class _DashboardPageState extends State<DashboardPage> {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
                 'Logout',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool?> _showExitLogoutConfirmation() async {
+    final isDark = AuthStore().isDarkMode;
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Logout & Exit',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to log out of your session and exit the app?',
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+          ),
+          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Logout & Exit',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -184,9 +294,17 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _currentIndex == 0,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
+        if (didPop) return;
+        
+        if (_currentIndex == 0) {
+          _showExitLogoutConfirmation().then((shouldLogoutAndExit) {
+            if (shouldLogoutAndExit == true) {
+              _logoutAndExit();
+            }
+          });
+        } else {
           if (_currentIndex == 2) {
             final qrState = _qrKey.currentState;
             if (qrState != null && qrState.hasResult) {
@@ -220,7 +338,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 });
               },
             ),
-            const CombinedStatementPage(),
+            _currentIndex == 1 ? const CombinedStatementPage() : const SizedBox.shrink(),
             QRTab(key: _qrKey, isDarkMode: _isDarkMode),
             NoticeTab(isDarkMode: _isDarkMode),
             ProfileTab(

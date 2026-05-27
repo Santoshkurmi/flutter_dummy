@@ -352,8 +352,19 @@ class ApiService {
   // Helper response handler with retry capability
   Future<dynamic> _handleResponse(http.Response response, Future<dynamic> Function() retryCallback) async {
     if (response.statusCode == 401) {
+      final isLogoutReq = response.request?.url.path.contains('/logout') ?? false;
+      if (isLogoutReq) {
+        try {
+          return jsonDecode(response.body);
+        } catch (_) {
+          return {};
+        }
+      }
+
+      final isGet = response.request?.method == 'GET';
       final reauthenticated = await _handle401();
-      if (reauthenticated) {
+      
+      if (reauthenticated && isGet) {
         return await retryCallback();
       }
       throw Exception('Unauthorized. Session expired.');
