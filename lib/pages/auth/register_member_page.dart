@@ -607,11 +607,13 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                 switchInCurve: Curves.easeInOut,
                 switchOutCurve: Curves.easeInOut,
                 transitionBuilder: (child, animation) {
+                  final isIncoming = child.key == ValueKey(_showForm ? 'form_wizard' : 'dashboard');
+                  final double slideOffset = _showForm ? 0.05 : -0.05;
                   return FadeTransition(
                     opacity: animation,
                     child: SlideTransition(
                       position: Tween<Offset>(
-                        begin: const Offset(0.05, 0.0),
+                        begin: isIncoming ? Offset(slideOffset, 0.0) : Offset(-slideOffset, 0.0),
                         end: Offset.zero,
                       ).animate(animation),
                       child: child,
