@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   static final AuthStore _instance = AuthStore._internal();
@@ -19,6 +20,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   Map<String, dynamic>? _selectedCooperative;
   Map<String, dynamic>? _profile;
   String? _customApiUrl;
+  bool _preferencesSetupCompleted = false;
 
   // App settings & preferences
   String _language = 'en';
@@ -33,7 +35,34 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String? get token => _token;
   String? get mobile => _mobile;
   String? get registeredMobile => _registeredMobile;
-  Map<String, dynamic>? get selectedCooperative => _selectedCooperative;
+  
+  bool get isCustomApp => dotenv.env['IS_CUSTOM_APP'] == 'true';
+  bool get preferencesSetupCompleted => _preferencesSetupCompleted;
+
+  Map<String, dynamic>? get selectedCooperative {
+    if (isCustomApp) {
+      final domain = dotenv.env['API_URL'] ?? dotenv.env['APi_URl'] ?? 'http://192.168.1.253:8000';
+      final path = dotenv.env['API_BASE'] ?? dotenv.env['APi_BASE'] ?? '/api/mobile-banking/v1';
+      final cleanDomain = domain.replaceAll(RegExp(r'/$'), '');
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      final fullUrl = '$cleanDomain$cleanPath';
+
+      final enName = dotenv.env['COOPERATIVE_NAME'] ?? 'Bright Saving & Credit Co-operative Ltd.';
+      final neName = dotenv.env['COOPERATIVE_NAME_NEPALI'] ?? 'ब्राइट बचत तथा ऋण सहकारी संस्था लि.';
+      final logoUrl = dotenv.env['COOPERATIVE_LOGO_URL'] ?? '';
+
+      return {
+        'id': 1,
+        'name': _language == 'ne' ? neName : enName,
+        'address': _language == 'ne' ? 'काठमाडौं, नेपाल' : 'Kathmandu, Nepal',
+        'gradient': 'bg-blue-600',
+        'url': fullUrl,
+        'logo_url': logoUrl,
+      };
+    }
+    return _selectedCooperative;
+  }
+  
   Map<String, dynamic>? get profile => _profile;
   String? get customApiUrl => _customApiUrl;
 
@@ -64,7 +93,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   bool get isAuthenticated => _token != null;
-  bool get hasCooperative => _selectedCooperative != null;
+  bool get hasCooperative => isCustomApp || _selectedCooperative != null;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -96,6 +125,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
     _themeMode = prefs.getString('themeMode') ?? 'system';
     _language = prefs.getString('language') ?? 'en';
+    _preferencesSetupCompleted = prefs.getBool('preferences_setup_completed') ?? false;
 
     notifyListeners();
   }
@@ -104,6 +134,13 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _language = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', value);
+    notifyListeners();
+  }
+
+  Future<void> setPreferencesSetupCompleted(bool value) async {
+    _preferencesSetupCompleted = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('preferences_setup_completed', value);
     notifyListeners();
   }
 
@@ -247,6 +284,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _smsAlertsEnabled = true;
     _dailyLimit = '50000';
     _themeMode = 'system';
+    _preferencesSetupCompleted = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();

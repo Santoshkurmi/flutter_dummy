@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'widgets/flying_hero_interactor.dart';
 import 'store/auth_store.dart';
 import 'pages/auth/onboarding_page.dart';
@@ -49,6 +51,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Failed to load .env file: $e");
+  }
   
   try {
     // Initialize Firebase Services
@@ -143,7 +152,9 @@ class BrightBankApp extends StatelessWidget {
         final isDark = AuthStore().isDarkMode;
         return MaterialApp(
           navigatorKey: AuthStore.navigatorKey,
-          title: 'Bright Sahakari',
+          title: AuthStore().isCustomApp
+              ? (AuthStore().selectedCooperative?['name'] ?? 'Bright Sahakari')
+              : 'Bright Sahakari',
           debugShowCheckedModeBanner: false,
           scrollBehavior: const BouncingScrollBehavior(),
           theme: ThemeData(
@@ -233,12 +244,21 @@ class _InitialRouterState extends State<InitialRouter> {
       return LoginPage(mobileNumber: registeredMobile);
     }
 
-    // 3. If cooperative selected but device not registered -> Go to Status Check page
+    // 3. For Custom App: if preferences setup is completed, we bypass Select Cooperative and go to StatusCheckPage
+    if (store.isCustomApp) {
+      if (store.preferencesSetupCompleted) {
+        return const StatusCheckPage();
+      } else {
+        return const OnboardingPage();
+      }
+    }
+
+    // 4. For Multi-cooperative App: if cooperative is selected -> Go to Status Check page
     if (store.hasCooperative) {
       return const StatusCheckPage();
     }
 
-    // 4. Fallback: Go to Onboarding Page
+    // 5. Fallback: Go to Onboarding Page
     return const OnboardingPage();
   }
 }

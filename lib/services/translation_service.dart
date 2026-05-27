@@ -37,6 +37,7 @@ class TranslationService {
     'Select English or Nepali language': 'अंग्रेजी वा नेपाली भाषा चयन गर्नुहोस्',
     'Select your default visual theme style': 'तपाईंको पूर्वनिर्धारित थिम चयन गर्नुहोस्',
     'Proceed to Select Cooperative': 'सहकारी चयन गर्न अगाडि बढ्नुहोस्',
+    'Proceed to Mobile Banking': 'बैंकिङ्ग सेवामा जानुहोस्',
     'Customize Experience': 'अनुभव अनुकूलित गर्नुहोस्',
     'Set your preferred language and layout theme style': 'आफ्नो मनपर्ने भाषा र थिम चयन गर्नुहोस्',
 
@@ -135,7 +136,7 @@ class TranslationService {
     'Not Supported': 'समर्थित छैन',
 
     // New member
-    'New to Bright Sahakari?': 'ब्राइट सहकारीमा नयाँ?',
+    'New to Sahakari?': 'ब्राइट सहकारीमा नयाँ?',
     'Register New Member': 'नयाँ सदस्य दर्ता',
   };
 

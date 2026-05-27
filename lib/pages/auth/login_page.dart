@@ -794,20 +794,22 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  // Switch cooperative option
-                                  Center(
-                                    child: TextButton(
-                                      onPressed: () {
-                                        AuthStore().clearAll();
-                                        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                                      },
-                                      child: Text(
-                                        'Switch Cooperative Bank',
-                                        style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                  if (!AuthStore().isCustomApp) ...[
+                                    const SizedBox(height: 10),
+                                    // Switch cooperative option
+                                    Center(
+                                      child: TextButton(
+                                        onPressed: () {
+                                          AuthStore().clearAll();
+                                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                        },
+                                        child: Text(
+                                          'Switch Cooperative Bank',
+                                          style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                   const SizedBox(height: 20),
                                 ],
                               ),

@@ -491,7 +491,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                       },
                                       child: Text.rich(
                                         TextSpan(
-                                          text: '${'New to Bright Sahakari?'.tr} ',
+                                          text:'${'New to Sahakari?'.tr} ',
                                           style: TextStyle(
                                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                             fontSize: 14,
@@ -511,57 +511,59 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                   ),
                                   const SizedBox(height: 10),
                                   
-                                  // Change Cooperative Bank
-                                  Center(
-                                    child: TextButton(
-                                      onPressed: () async {
-                                        // Show a confirmation dialog
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-                                            title: Text(
-                                              'Switch Cooperative'.tr,
-                                              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B)),
-                                            ),
-                                            content: Text(
-                                              'Are you sure you want to disconnect and switch to a different cooperative bank? All local session data will be cleared.'.tr,
-                                              style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context, false),
-                                                child: Text(
-                                                  'Cancel'.tr,
-                                                  style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                                  // Change Cooperative Bank (only if not custom app)
+                                  if (!AuthStore().isCustomApp) ...[
+                                    Center(
+                                      child: TextButton(
+                                        onPressed: () async {
+                                          // Show a confirmation dialog
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                              title: Text(
+                                                'Switch Cooperative'.tr,
+                                                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B)),
+                                              ),
+                                              content: Text(
+                                                'Are you sure you want to disconnect and switch to a different cooperative bank? All local session data will be cleared.'.tr,
+                                                style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, false),
+                                                  child: Text(
+                                                    'Cancel'.tr,
+                                                    style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                                                  ),
                                                 ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context, true),
-                                                child: Text('Switch'.tr, style: const TextStyle(color: Colors.red)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: Text('Switch'.tr, style: const TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
 
-                                        if (confirm == true) {
-                                          await AuthStore().clearAll();
-                                          if (!mounted) return;
-                                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                                        }
-                                      },
-                                      child: Text(
-                                        'Change Cooperative Bank'.tr,
-                                        style: TextStyle(
-                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.2,
+                                          if (confirm == true) {
+                                            await AuthStore().clearAll();
+                                            if (!mounted) return;
+                                            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                          }
+                                        },
+                                        child: Text(
+                                          'Change Cooperative Bank'.tr,
+                                          style: TextStyle(
+                                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.2,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 20),
+                                    const SizedBox(height: 20),
+                                  ],
                                 ],
                               ),
                             ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import 'select_cooperative_page.dart';
+import 'status_check_page.dart';
+
 
 class AppPreferencesSetupPage extends StatelessWidget {
   const AppPreferencesSetupPage({super.key});
@@ -186,13 +188,26 @@ class AppPreferencesSetupPage extends StatelessWidget {
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SelectCooperativePage(),
-                        ),
-                      );
+                    onPressed: () async {
+                      if (store.isCustomApp) {
+                        await store.setPreferencesSetupCompleted(true);
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const StatusCheckPage(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SelectCooperativePage(),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2563EB),
@@ -206,7 +221,9 @@ class AppPreferencesSetupPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Proceed to Select Cooperative'.tr,
+                          store.isCustomApp
+                              ? 'Proceed to Mobile Banking'.tr
+                              : 'Proceed to Select Cooperative'.tr,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,

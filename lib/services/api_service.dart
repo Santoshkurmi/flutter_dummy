@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'location_service.dart';
 import '../store/auth_store.dart';
 import 'biometric_signature_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 class ApiService {
@@ -42,21 +43,41 @@ class ApiService {
   static const String defaultBaseUrl = 'http://192.168.1.253:8000/api/mobile-banking/v1';
 
   String get _baseUrl {
+    final path = dotenv.env['API_BASE'] ?? dotenv.env['APi_BASE'] ?? '/api/mobile-banking/v1';
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+
     final custom = AuthStore().customApiUrl;
     if (custom != null && custom.isNotEmpty) {
       return custom;
     }
+
+    if (AuthStore().isCustomApp) {
+      final domain = dotenv.env['API_URL'] ?? dotenv.env['APi_URl'] ?? 'http://192.168.1.253:8000';
+      final cleanDomain = domain.replaceAll(RegExp(r'/$'), '');
+      return '$cleanDomain$cleanPath';
+    }
+
     final coop = AuthStore().selectedCooperative;
     if (coop != null && coop['url'] != null) {
-      String url = coop['url'] as String;
-      // Map port 3000 to port 8000 for mobile backend APIs
-      url = url.replaceAll(':3000', ':8000');
-      if (!url.endsWith('/api/mobile-banking/v1')) {
-        url = url.replaceAll(RegExp(r'/$'), '') + '/api/mobile-banking/v1';
+      final String url = coop['url'] as String;
+      String domain = url;
+      try {
+        final uri = Uri.parse(url);
+        if (uri.scheme.isNotEmpty && uri.host.isNotEmpty) {
+          domain = '${uri.scheme}://${uri.host}${uri.hasPort ? ":${uri.port}" : ""}';
+        } else {
+          domain = url.split('/api')[0];
+        }
+      } catch (_) {
+        domain = url.split('/api')[0];
       }
-      return url;
+      final cleanDomain = domain.replaceAll(RegExp(r'/$'), '');
+      return '$cleanDomain$cleanPath';
     }
-    return defaultBaseUrl;
+    
+    final domain = dotenv.env['API_URL'] ?? dotenv.env['APi_URl'] ?? 'http://192.168.1.253:8000';
+    final cleanDomain = domain.replaceAll(RegExp(r'/$'), '');
+    return '$cleanDomain$cleanPath';
   }
 
   Map<String, String> get _headers {
