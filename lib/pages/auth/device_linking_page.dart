@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
@@ -19,6 +20,8 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
   int _step = 1; // Step 1 to 5
   bool _isLoading = false;
   String _errorMessage = '';
+  int _resendCountdown = 0;
+  Timer? _countdownTimer;
 
   // Form Keys
   final _step1FormKey = GlobalKey<FormState>();
@@ -40,6 +43,26 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
   bool _isSmsEnabled = false;
   bool _needsPasswordSetup = true;
 
+  void _startResendTimer() {
+    setState(() {
+      _resendCountdown = 60;
+    });
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_resendCountdown > 0) {
+            _resendCountdown--;
+          } else {
+            _countdownTimer?.cancel();
+          }
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +76,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _dobController.removeListener(_formatDobInput);
     _membershipController.dispose();
     _fullNameController.dispose();
@@ -224,6 +248,16 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         );
 
         // response_code 2 indicates success OTP sent (or response code returned from backend)
+        _startResendTimer();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verification OTP sent successfully.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        
         setState(() {
           _step = 4; // Move to final OTP confirmation step
         });
@@ -821,10 +855,14 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
           Center(
             child: TextButton(
-              onPressed: _isLoading ? null : () => _handleStep3PinSubmit(true),
-              child: const Text(
-                'Resend Verification OTP',
-                style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB), fontSize: 13),
+              onPressed: (_isLoading || _resendCountdown > 0) ? null : () => _handleStep3PinSubmit(true),
+              child: Text(
+                _resendCountdown > 0 ? 'Resend OTP in ${_resendCountdown}s' : 'Resend Verification OTP',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: (_isLoading || _resendCountdown > 0) ? Colors.grey : const Color(0xFF2563EB),
+                  fontSize: 13,
+                ),
               ),
             ),
           )

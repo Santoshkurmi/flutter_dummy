@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
@@ -17,6 +18,8 @@ class _ActivationPageState extends State<ActivationPage> {
   int _step = 1; // Step 1 to 5
   bool _isLoading = false;
   String _errorMessage = '';
+  int _resendCountdown = 0;
+  Timer? _countdownTimer;
 
   // Form Keys
   final _step1FormKey = GlobalKey<FormState>();
@@ -41,6 +44,26 @@ class _ActivationPageState extends State<ActivationPage> {
   bool _isSmsEnabled = false;
   String _paymentMethod = 'saving'; // 'saving' or 'manual'
 
+  void _startResendTimer() {
+    setState(() {
+      _resendCountdown = 60;
+    });
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_resendCountdown > 0) {
+            _resendCountdown--;
+          } else {
+            _countdownTimer?.cancel();
+          }
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +73,7 @@ class _ActivationPageState extends State<ActivationPage> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _dobController.removeListener(_formatDobInput);
     _membershipController.dispose();
     _fullNameController.dispose();
@@ -183,6 +207,15 @@ class _ActivationPageState extends State<ActivationPage> {
 
         final responseCode = res['response_code'];
         if (responseCode == 3) { // RESP_OTP_SENT
+          _startResendTimer();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Verification OTP sent successfully.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
           setState(() {
             _step = 5; // Move to final OTP confirmation step
           });
@@ -946,10 +979,14 @@ class _ActivationPageState extends State<ActivationPage> {
 
           Center(
             child: TextButton(
-              onPressed: _isLoading ? null : () => _handleStep4PinSubmit(true),
-              child: const Text(
-                'Resend Verification OTP',
-                style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB), fontSize: 13),
+              onPressed: (_isLoading || _resendCountdown > 0) ? null : () => _handleStep4PinSubmit(true),
+              child: Text(
+                _resendCountdown > 0 ? 'Resend OTP in ${_resendCountdown}s' : 'Resend Verification OTP',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: (_isLoading || _resendCountdown > 0) ? Colors.grey : const Color(0xFF2563EB),
+                  fontSize: 13,
+                ),
               ),
             ),
           )
