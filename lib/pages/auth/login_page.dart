@@ -1132,6 +1132,10 @@ class FullScreenImagePage extends StatefulWidget {
 
 class _FullScreenImagePageState extends State<FullScreenImagePage> {
   final TransformationController _transformationController = TransformationController();
+  double _dragOffset = 0.0;
+  int _activePointers = 0;
+  double _startY = 0.0;
+  bool _dragStarted = false;
 
   @override
   void dispose() {
@@ -1139,49 +1143,112 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
     super.dispose();
   }
 
+  double get _currentScale {
+    return _transformationController.value.entry(0, 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
+    double opacity = (1.0 - (_dragOffset.abs() / 300.0)).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF090D16) : Colors.white,
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: InteractiveViewer(
-              transformationController: _transformationController,
-              maxScale: 4.0,
-              minScale: 1.0,
-              child: Center(
-                child: Hero(
-                  tag: widget.heroTag,
-                  child: Image.network(
-                    widget.imageUrl,
-                    fit: BoxFit.contain,
+      backgroundColor: (isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC)).withValues(alpha: opacity),
+      body: Listener(
+        onPointerDown: (event) {
+          setState(() {
+            _activePointers++;
+            if (_activePointers == 1) {
+              _startY = event.position.dy;
+              _dragStarted = true;
+            } else {
+              _dragOffset = 0.0;
+              _dragStarted = false;
+            }
+          });
+        },
+        onPointerMove: (event) {
+          if (_activePointers == 1 && _dragStarted && _currentScale <= 1.01) {
+            final currentY = event.position.dy;
+            final deltaY = currentY - _startY;
+            if (deltaY > 0) {
+              setState(() {
+                _dragOffset = deltaY;
+              });
+            } else {
+              setState(() {
+                _dragOffset = 0.0;
+              });
+            }
+          }
+        },
+        onPointerUp: (event) {
+          setState(() {
+            _activePointers--;
+            if (_activePointers < 0) _activePointers = 0;
+
+            if (_activePointers == 0 && _dragStarted) {
+              _dragStarted = false;
+              if (_dragOffset > 80.0) {
+                Navigator.of(context).pop();
+              } else {
+                _dragOffset = 0.0;
+              }
+            }
+          });
+        },
+        onPointerCancel: (event) {
+          setState(() {
+            _activePointers--;
+            if (_activePointers < 0) _activePointers = 0;
+            _dragOffset = 0.0;
+            _dragStarted = false;
+          });
+        },
+        child: Stack(
+          children: [
+            Transform.translate(
+              offset: Offset(0.0, _dragOffset),
+              child: SizedBox.expand(
+                child: InteractiveViewer(
+                  transformationController: _transformationController,
+                  maxScale: 4.0,
+                  minScale: 1.0,
+                  child: Center(
+                    child: Hero(
+                      tag: widget.heroTag,
+                      child: Image.network(
+                        widget.imageUrl,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: isDark ? Colors.white : Colors.black,
-                  size: 24,
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 16,
+              child: Opacity(
+                opacity: opacity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: isDark ? Colors.white : Colors.black,
+                      size: 24,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
-                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
