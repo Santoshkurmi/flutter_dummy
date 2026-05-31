@@ -499,6 +499,7 @@ class ApiService {
       urlStr += '?$queryStr';
     }
     final reqHeaders = Map<String, String>.from(_headers);
+    reqHeaders['X-Device-Id'] = await getDeviceId();
     final meta = await getDeviceMetaData();
     reqHeaders.addAll(meta);
     final response = await http.get(Uri.parse(urlStr), headers: reqHeaders);
@@ -524,6 +525,7 @@ class ApiService {
       payload['device_version'] = meta['X-Device-Os'];
     }
     final reqHeaders = Map<String, String>.from(_headers);
+    reqHeaders['X-Device-Id'] = await getDeviceId();
     reqHeaders.addAll(meta);
     final response = await http.post(
       Uri.parse('$_baseUrl$endpoint'),
