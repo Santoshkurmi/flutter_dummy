@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:async';
 import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
@@ -32,12 +34,25 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _deviceHasBiometricHardware = false;
 
+  late final PageController _pageController;
+  int _currentImageIndex = 0;
+  Timer? _sliderTimer;
+
+  final List<String> _sliderImages = [
+    'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=800&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=800&auto=format&fit=crop&q=60',
+  ];
+
   bool get _isDarkMode => AuthStore().isDarkMode;
 
   @override
   void initState() {
     super.initState();
     _passwordController.addListener(_onPasswordChanged);
+    final int initialPage = 999 - (999 % _sliderImages.length);
+    _pageController = PageController(initialPage: initialPage);
+    _startSliderTimer();
     
     // Synchronously check cache for instant rendering
     final authStore = AuthStore();
@@ -79,6 +94,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _sliderTimer?.cancel();
+    _pageController.dispose();
     _passwordController.removeListener(_onPasswordChanged);
     _passwordController.dispose();
     AuthStore().removeListener(_onStoreChange);
@@ -91,6 +108,165 @@ class _LoginPageState extends State<LoginPage> {
 
   void _onPasswordChanged() {
     setState(() {});
+  }
+
+  void _startSliderTimer() {
+    _sliderTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_pageController.hasClients) {
+        int nextPage = _pageController.page!.round() + 1;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOutCubic,
+        );
+      }
+    });
+  }
+
+  Widget _buildImageSlider() {
+    final isDark = _isDarkMode;
+    final List<List<Color>> indicatorColors = [
+      [const Color(0xFF2563EB), const Color(0xFF4338CA)],
+      [const Color(0xFF059669), const Color(0xFF0F766E)],
+      [const Color(0xFF9333EA), const Color(0xFFBE123C)],
+    ];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 180,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification notification) {
+                if (notification is UserScrollNotification) {
+                  if (notification.direction != ScrollDirection.idle) {
+                    _sliderTimer?.cancel();
+                    _sliderTimer = null;
+                  }
+                }
+                return false;
+              },
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentImageIndex = index % _sliderImages.length;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final int imageIndex = index % _sliderImages.length;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            _sliderImages[imageIndex],
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.4),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        AnimatedBuilder(
+          animation: _pageController,
+          builder: (context, child) {
+            double page = 0.0;
+            if (_pageController.hasClients) {
+              page = _pageController.page ?? 0.0;
+            } else {
+              page = _currentImageIndex.toDouble();
+            }
+            
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_sliderImages.length, (index) {
+                double diff = (index - (page % _sliderImages.length));
+                if (diff > _sliderImages.length / 2.0) {
+                  diff -= _sliderImages.length;
+                } else if (diff < -_sliderImages.length / 2.0) {
+                  diff += _sliderImages.length;
+                }
+                double distance = diff.abs();
+                double activeRatio = (1.0 - distance.clamp(0.0, 1.0));
+                double width = 6.0 + (18.0 * activeRatio);
+                final colors = indicatorColors[index % indicatorColors.length];
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  height: 6,
+                  width: width,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    gradient: activeRatio > 0.05
+                        ? LinearGradient(
+                            colors: colors.map((c) => c.withValues(alpha: activeRatio)).toList(),
+                          )
+                        : null,
+                    color: activeRatio <= 0.05
+                        ? (isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.15))
+                        : null,
+                  ),
+                );
+              }),
+            );
+          },
+        ),
+      ],
+    );
   }
 
   Future<void> _checkBiometrics() async {
@@ -500,134 +676,153 @@ class _LoginPageState extends State<LoginPage> {
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  const SizedBox(height: 40),
-                                  // Visual Logo of the selected Sahakari
+                                  const SizedBox(height: 10),
+                                  // Visual Logo & Sahakari Name Card in same row
                                   Builder(
                                     builder: (context) {
                                       final selectedSahakari = AuthStore().selectedCooperative;
                                       final String sahakariName = selectedSahakari?['name'] ?? '';
+                                      final String sahakariAddress = selectedSahakari?['address'] ?? '';
                                       final String? logoUrl = selectedSahakari?['logo_url'];
                                       final String? gradientClass = selectedSahakari?['gradient'];
                                       final gradient = _getGradient(gradientClass);
                                       final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
 
-                                      return Center(
-                                        child: Container(
-                                          width: 86,
-                                          height: 86,
-                                          padding: const EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.1)
-                                                  : Colors.black.withValues(alpha: 0.05),
-                                              width: 1.5,
-                                            ),
+                                      return Card(
+                                        elevation: 0,
+                                        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          side: BorderSide(
+                                            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                                            width: 1.5,
                                           ),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
-                                              color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
-                                                  blurRadius: 16,
-                                                  offset: const Offset(0, 6),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: 44,
+                                                height: 44,
+                                                padding: const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: isDark
+                                                        ? Colors.white.withValues(alpha: 0.1)
+                                                        : Colors.black.withValues(alpha: 0.05),
+                                                    width: 1.2,
+                                                  ),
                                                 ),
-                                              ],
-                                            ),
-                                            child: logoUrl != null && logoUrl.isNotEmpty
-                                                ? ClipRRect(
-                                                    borderRadius: BorderRadius.circular(40),
-                                                    child: Image.network(
-                                                      logoUrl,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return Container(
-                                                          decoration: BoxDecoration(
-                                                            shape: BoxShape.circle,
-                                                            gradient: gradient,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
+                                                    color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
+                                                  ),
+                                                  child: logoUrl != null && logoUrl.isNotEmpty
+                                                      ? ClipRRect(
+                                                          borderRadius: BorderRadius.circular(20),
+                                                          child: Image.network(
+                                                            logoUrl,
+                                                            fit: BoxFit.cover,
+                                                            errorBuilder: (context, error, stackTrace) {
+                                                              return Container(
+                                                                decoration: BoxDecoration(
+                                                                  shape: BoxShape.circle,
+                                                                  gradient: gradient,
+                                                                ),
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    initialLetter,
+                                                                    style: const TextStyle(
+                                                                      fontSize: 16,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
                                                           ),
-                                                          child: Center(
-                                                            child: Text(
-                                                              initialLetter,
-                                                              style: const TextStyle(
-                                                                fontSize: 32,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: Colors.white,
-                                                              ),
+                                                        )
+                                                      : Center(
+                                                          child: Text(
+                                                            initialLetter,
+                                                            style: const TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.white,
                                                             ),
                                                           ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                : Center(
-                                                    child: Text(
-                                                      initialLetter,
-                                                      style: const TextStyle(
-                                                        fontSize: 32,
+                                                        ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      sahakariName.isNotEmpty ? sahakariName : 'Cooperative Bank',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
                                                         fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
+                                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                                                       ),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
-                                                  ),
+                                                    if (sahakariAddress.isNotEmpty) ...[
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        sahakariAddress,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       );
                                     },
                                   ),
-                                  const SizedBox(height: 24),
-                                  Builder(
-                                    builder: (context) {
-                                      final selectedSahakari = AuthStore().selectedCooperative;
-                                      final String sahakariName = selectedSahakari?['name'] ?? '';
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            sahakariName.isNotEmpty ? sahakariName : 'Welcome Back',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w900,
-                                              color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                              letterSpacing: -0.5,
-                                            ),
-                                          ),
-                                          if (sahakariName.isNotEmpty) ...[
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              'Welcome Back',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 12),
+                                  
+                                  // Welcome Back and Phone number in different row in center
                                   Center(
                                     child: Text(
-                                      widget.mobileNumber,
+                                      'Welcome Back'.tr,
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                        fontSize: 14,
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 4),
+                                  Center(
+                                    child: Text(
+                                      widget.mobileNumber,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
 
                                   // Password Input Field
                                   Text(
@@ -693,7 +888,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 20),
 
                                   // Primary Submit Button inside visual gradient wrapper
                                   Container(
@@ -743,7 +938,7 @@ class _LoginPageState extends State<LoginPage> {
                                               ),
                                             )
                                           : Text(
-                                              'Secure Login'.tr,
+                                              'Login'.tr,
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -754,45 +949,47 @@ class _LoginPageState extends State<LoginPage> {
                                             ),
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
-
+                                  
                                   // Quick Biometric login trigger
                                   if (_canAuthenticate) ...[
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(
-                                            _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
-                                            color: _isLoading
-                                                ? (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))
-                                                : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
-                                            size: 50,
-                                          ),
-                                          onPressed: _isLoading ? null : _authenticateBiometrics,
-                                        ),
-                                      ],
-                                    ),
+                                    const SizedBox(height: 12),
                                     Center(
-                                      child: Text(
-                                        _isFaceId ? 'Tap to Login with Face ID'.tr : 'Tap to Login with Fingerprint'.tr,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                      child: InkWell(
+                                        onTap: _isLoading ? null : _authenticateBiometrics,
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
+                                                color: _isLoading
+                                                    ? (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))
+                                                    : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                _isFaceId ? 'Login with Face ID'.tr : 'Login with Fingerprint'.tr,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 30),
                                   ],
-                                ],
-                              ),
 
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
+                                  const SizedBox(height: 8),
                                   // Login with another phone number
                                   Center(
-                                    child: TextButton(
+                                    child: TextButton.icon(
                                       onPressed: () async {
                                         final store = AuthStore();
                                         await store.setRegisteredMobile(null);
@@ -805,33 +1002,56 @@ class _LoginPageState extends State<LoginPage> {
                                         if (!mounted) return;
                                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                       },
-                                      child: Text(
-                                        'Login with another phone number',
-                                        style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                      icon: Icon(
+                                        Icons.help_outline_rounded,
+                                        size: 16,
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                      ),
+                                      label: Text(
+                                        'Login with another phone number'.tr,
+                                        style: TextStyle(
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
                                     ),
                                   ),
                                   if (!AuthStore().isCustomApp) ...[
-                                    const SizedBox(height: 10),
                                     // Switch cooperative option
                                     Center(
-                                      child: TextButton(
+                                      child: TextButton.icon(
                                         onPressed: () {
                                           AuthStore().clearAll();
                                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                         },
-                                        child: Text(
-                                          'Switch Cooperative Bank',
-                                          style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569)),
+                                        icon: Icon(
+                                          Icons.help_outline_rounded,
+                                          size: 16,
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                        ),
+                                        label: Text(
+                                          'Switch Cooperative Bank'.tr,
+                                          style: TextStyle(
+                                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                       ),
                                     ),
                                   ],
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 16),
+                                  _buildImageSlider(),
+                                  const SizedBox(height: 12),
                                 ],
                               ),
-                            ],
-                          ),
                         ),
                       ),
                     ),
