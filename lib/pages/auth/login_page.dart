@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  void _openFullScreenImage(BuildContext context, String imageUrl, int index) {
+  void _openFullScreenImage(BuildContext context, int index) {
     FocusScope.of(context).unfocus();
     _isAutoplayEnabled = false;
     _sliderTimer?.cancel();
@@ -141,14 +141,23 @@ class _LoginPageState extends State<LoginPage> {
           return FadeTransition(
             opacity: animation,
             child: FullScreenImagePage(
-              imageUrl: imageUrl,
-              heroTag: 'slider_image_$index',
+              imageUrls: _sliderImages,
+              initialIndex: index,
               isDark: _isDarkMode,
             ),
           );
         },
       ),
-    ).then((_) {
+    ).then((result) {
+      if (result is int) {
+        setState(() {
+          _currentPageViewIndex = result;
+          _currentImageIndex = result % _sliderImages.length;
+        });
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(result);
+        }
+      }
       if (_isAutoplayEnabled) {
         _startSliderTimer();
       }
@@ -184,9 +193,7 @@ class _LoginPageState extends State<LoginPage> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  final int pageIndex = _currentPageViewIndex;
-                  final int imageIndex = pageIndex % _sliderImages.length;
-                  _openFullScreenImage(context, _sliderImages[imageIndex], pageIndex);
+                  _openFullScreenImage(context, _currentPageViewIndex);
                 },
                 child: PageView.builder(
                   controller: _pageController,
@@ -199,7 +206,7 @@ class _LoginPageState extends State<LoginPage> {
                   itemBuilder: (context, index) {
                     final int imageIndex = index % _sliderImages.length;
                     return GestureDetector(
-                      onTap: () => _openFullScreenImage(context, _sliderImages[imageIndex], index),
+                      onTap: () => _openFullScreenImage(context, index),
                       child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: ClipRRect(
@@ -1115,14 +1122,14 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class FullScreenImagePage extends StatefulWidget {
-  final String imageUrl;
-  final String heroTag;
+  final List<String> imageUrls;
+  final int initialIndex;
   final bool isDark;
 
   const FullScreenImagePage({
     super.key,
-    required this.imageUrl,
-    required this.heroTag,
+    required this.imageUrls,
+    required this.initialIndex,
     required this.isDark,
   });
 
@@ -1131,20 +1138,72 @@ class FullScreenImagePage extends StatefulWidget {
 }
 
 class _FullScreenImagePageState extends State<FullScreenImagePage> {
-  final TransformationController _transformationController = TransformationController();
+  PageController? _fullscreenPageController;
+  double? _lastScreenWidth;
+  late int _currentPageIndex;
+  final Map<int, TransformationController> _transformationControllers = {};
+  final Map<int, bool> _isScaledMap = {};
   double _dragOffset = 0.0;
   int _activePointers = 0;
+  double _startX = 0.0;
   double _startY = 0.0;
   bool _dragStarted = false;
+  bool _isVerticalDrag = false;
+  bool _isHorizontalDrag = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPageIndex = widget.initialIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (_fullscreenPageController == null || _lastScreenWidth != screenWidth) {
+      _lastScreenWidth = screenWidth;
+      _fullscreenPageController?.dispose();
+      _fullscreenPageController = PageController(
+        initialPage: _currentPageIndex,
+      );
+    }
+  }
 
   @override
   void dispose() {
-    _transformationController.dispose();
+    _fullscreenPageController?.dispose();
+    for (final controller in _transformationControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
+  TransformationController _getTransformationController(int index) {
+    if (!_transformationControllers.containsKey(index)) {
+      final controller = TransformationController();
+      controller.addListener(() {
+        final scale = controller.value.entry(0, 0);
+        final isScaled = scale > 1.01;
+        final wasScaled = _isScaledMap[index] ?? false;
+        if (wasScaled != isScaled) {
+          setState(() {
+            _isScaledMap[index] = isScaled;
+          });
+        }
+      });
+      _transformationControllers[index] = controller;
+    }
+    return _transformationControllers[index]!;
+  }
+
+  double _getScale(int index) {
+    if (!_transformationControllers.containsKey(index)) return 1.0;
+    return _transformationControllers[index]!.value.entry(0, 0);
+  }
+
   double get _currentScale {
-    return _transformationController.value.entry(0, 0);
+    return _getScale(_currentPageIndex);
   }
 
   @override
@@ -1152,102 +1211,150 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
     final isDark = widget.isDark;
     double opacity = (1.0 - (_dragOffset.abs() / 300.0)).clamp(0.0, 1.0);
 
-    return Scaffold(
-      backgroundColor: (isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC)).withValues(alpha: opacity),
-      body: Listener(
-        onPointerDown: (event) {
-          setState(() {
-            _activePointers++;
-            if (_activePointers == 1) {
-              _startY = event.position.dy;
-              _dragStarted = true;
-            } else {
-              _dragOffset = 0.0;
-              _dragStarted = false;
-            }
-          });
-        },
-        onPointerMove: (event) {
-          if (_activePointers == 1 && _dragStarted && _currentScale <= 1.01) {
-            final currentY = event.position.dy;
-            final deltaY = currentY - _startY;
-            if (deltaY > 0) {
-              setState(() {
-                _dragOffset = deltaY;
-              });
-            } else {
-              setState(() {
-                _dragOffset = 0.0;
-              });
-            }
-          }
-        },
-        onPointerUp: (event) {
-          setState(() {
-            _activePointers--;
-            if (_activePointers < 0) _activePointers = 0;
-
-            if (_activePointers == 0 && _dragStarted) {
-              _dragStarted = false;
-              if (_dragOffset > 80.0) {
-                Navigator.of(context).pop();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_currentPageIndex);
+      },
+      child: Scaffold(
+        backgroundColor: (isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC)).withValues(alpha: opacity),
+        body: Listener(
+          onPointerDown: (event) {
+            setState(() {
+              _activePointers++;
+              if (_activePointers == 1) {
+                _startX = event.position.dx;
+                _startY = event.position.dy;
+                _dragStarted = true;
+                _isVerticalDrag = false;
+                _isHorizontalDrag = false;
               } else {
                 _dragOffset = 0.0;
+                _dragStarted = false;
+                _isVerticalDrag = false;
+                _isHorizontalDrag = false;
+              }
+            });
+          },
+          onPointerMove: (event) {
+            if (_activePointers == 1 && _dragStarted && _currentScale <= 1.01) {
+              final currentX = event.position.dx;
+              final currentY = event.position.dy;
+              final deltaX = (currentX - _startX).abs();
+              final deltaY = currentY - _startY;
+
+              // If direction is not locked yet, check if we exceed the threshold to lock it
+              if (!_isVerticalDrag && !_isHorizontalDrag) {
+                const double threshold = 20.0; // 20px threshold before triggering/locking
+                if (deltaY > threshold && deltaY > deltaX) {
+                  _isVerticalDrag = true;
+                } else if (deltaX > threshold && deltaX >= deltaY) {
+                  _isHorizontalDrag = true;
+                }
+              }
+
+              if (_isVerticalDrag) {
+                // To avoid sudden jump when exceeding threshold, subtract threshold
+                const double threshold = 20.0;
+                final offset = deltaY - threshold;
+                setState(() {
+                  _dragOffset = offset > 0 ? offset : 0.0;
+                });
               }
             }
-          });
-        },
-        onPointerCancel: (event) {
-          setState(() {
-            _activePointers--;
-            if (_activePointers < 0) _activePointers = 0;
-            _dragOffset = 0.0;
-            _dragStarted = false;
-          });
-        },
-        child: Stack(
-          children: [
-            Transform.translate(
-              offset: Offset(0.0, _dragOffset),
-              child: SizedBox.expand(
-                child: InteractiveViewer(
-                  transformationController: _transformationController,
-                  maxScale: 4.0,
-                  minScale: 1.0,
-                  child: Center(
-                    child: Hero(
-                      tag: widget.heroTag,
-                      child: Image.network(
-                        widget.imageUrl,
-                        fit: BoxFit.contain,
+          },
+          onPointerUp: (event) {
+            setState(() {
+              _activePointers--;
+              if (_activePointers < 0) _activePointers = 0;
+  
+              if (_activePointers == 0 && _dragStarted) {
+                _dragStarted = false;
+                final wasVertical = _isVerticalDrag;
+                _isVerticalDrag = false;
+                _isHorizontalDrag = false;
+                
+                if (wasVertical && _dragOffset > 80.0) {
+                  Navigator.of(context).pop(_currentPageIndex);
+                } else {
+                  _dragOffset = 0.0;
+                }
+              }
+            });
+          },
+          onPointerCancel: (event) {
+            setState(() {
+              _activePointers--;
+              if (_activePointers < 0) _activePointers = 0;
+              _dragOffset = 0.0;
+              _dragStarted = false;
+              _isVerticalDrag = false;
+              _isHorizontalDrag = false;
+            });
+          },
+          child: Stack(
+            children: [
+              Transform.translate(
+                offset: Offset(0.0, _dragOffset),
+                child: SizedBox.expand(
+                  child: PageView.builder(
+                    controller: _fullscreenPageController!,
+                    physics: (_isScaledMap[_currentPageIndex] ?? false) || _activePointers > 1
+                        ? const NeverScrollableScrollPhysics()
+                        : const BouncingScrollPhysics(),
+                    onPageChanged: (index) {
+                      setState(() {
+                        _transformationControllers[_currentPageIndex]?.value = Matrix4.identity();
+                        _isScaledMap[_currentPageIndex] = false;
+                        _currentPageIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final int imageIndex = index % widget.imageUrls.length;
+                      final controller = _getTransformationController(index);
+                      
+                      return InteractiveViewer(
+                        transformationController: controller,
+                        maxScale: 4.0,
+                        minScale: 1.0,
+                        child: Center(
+                          child: Hero(
+                            tag: 'slider_image_$index',
+                            child: Image.network(
+                              widget.imageUrls[imageIndex],
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                left: 16,
+                child: Opacity(
+                  opacity: opacity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 24,
                       ),
+                      onPressed: () => Navigator.of(context).pop(_currentPageIndex),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 10,
-              left: 16,
-              child: Opacity(
-                opacity: opacity,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      color: isDark ? Colors.white : Colors.black,
-                      size: 24,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
