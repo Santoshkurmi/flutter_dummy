@@ -36,7 +36,9 @@ class _LoginPageState extends State<LoginPage> {
 
   late final PageController _pageController;
   int _currentImageIndex = 0;
+  int _currentPageViewIndex = 0;
   Timer? _sliderTimer;
+  bool _isAutoplayEnabled = true;
 
   final List<String> _sliderImages = [
     'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=60',
@@ -51,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     _passwordController.addListener(_onPasswordChanged);
     final int initialPage = 999 - (999 % _sliderImages.length);
+    _currentPageViewIndex = initialPage;
     _pageController = PageController(initialPage: initialPage);
     _startSliderTimer();
     
@@ -112,13 +115,42 @@ class _LoginPageState extends State<LoginPage> {
 
   void _startSliderTimer() {
     _sliderTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_pageController.hasClients) {
+      if (mounted && _pageController.hasClients && (ModalRoute.of(context)?.isCurrent ?? false)) {
         int nextPage = _pageController.page!.round() + 1;
         _pageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOutCubic,
         );
+      }
+    });
+  }
+
+  void _openFullScreenImage(BuildContext context, String imageUrl, int index) {
+    FocusScope.of(context).unfocus();
+    _isAutoplayEnabled = false;
+    _sliderTimer?.cancel();
+    _sliderTimer = null;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.9),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: FullScreenImagePage(
+              imageUrl: imageUrl,
+              heroTag: 'slider_image_$index',
+              isDark: _isDarkMode,
+            ),
+          );
+        },
+      ),
+    ).then((_) {
+      if (_isAutoplayEnabled) {
+        _startSliderTimer();
       }
     });
   }
@@ -142,76 +174,91 @@ class _LoginPageState extends State<LoginPage> {
               onNotification: (ScrollNotification notification) {
                 if (notification is UserScrollNotification) {
                   if (notification.direction != ScrollDirection.idle) {
+                    _isAutoplayEnabled = false;
                     _sliderTimer?.cancel();
                     _sliderTimer = null;
                   }
                 }
                 return false;
               },
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentImageIndex = index % _sliderImages.length;
-                  });
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  final int pageIndex = _currentPageViewIndex;
+                  final int imageIndex = pageIndex % _sliderImages.length;
+                  _openFullScreenImage(context, _sliderImages[imageIndex], pageIndex);
                 },
-                itemBuilder: (context, index) {
-                  final int imageIndex = index % _sliderImages.length;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.network(
-                            _sliderImages[imageIndex],
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_not_supported_outlined,
-                                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.4),
-                                ],
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPageViewIndex = index;
+                      _currentImageIndex = index % _sliderImages.length;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final int imageIndex = index % _sliderImages.length;
+                    return GestureDetector(
+                      onTap: () => _openFullScreenImage(context, _sliderImages[imageIndex], index),
+                      child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Hero(
+                              tag: 'slider_image_$index',
+                              child: Image.network(
+                                _sliderImages[imageIndex],
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                        ],
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.4),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -220,6 +267,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
         const SizedBox(height: 12),
         AnimatedBuilder(
           animation: _pageController,
@@ -1058,6 +1106,79 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 );
               }
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FullScreenImagePage extends StatefulWidget {
+  final String imageUrl;
+  final String heroTag;
+  final bool isDark;
+
+  const FullScreenImagePage({
+    super.key,
+    required this.imageUrl,
+    required this.heroTag,
+    required this.isDark,
+  });
+
+  @override
+  State<FullScreenImagePage> createState() => _FullScreenImagePageState();
+}
+
+class _FullScreenImagePageState extends State<FullScreenImagePage> {
+  final TransformationController _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF090D16) : Colors.white,
+      body: Stack(
+        children: [
+          SizedBox.expand(
+            child: InteractiveViewer(
+              transformationController: _transformationController,
+              maxScale: 4.0,
+              minScale: 1.0,
+              child: Center(
+                child: Hero(
+                  tag: widget.heroTag,
+                  child: Image.network(
+                    widget.imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 16,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : Colors.black,
+                  size: 24,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
           ),
         ],
