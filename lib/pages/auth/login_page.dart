@@ -27,6 +27,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _passwordFocusNode = FocusNode();
   final LocalAuthentication _auth = LocalAuthentication();
   bool _isLoading = false;
   bool _canAuthenticate = false;
@@ -101,6 +102,7 @@ class _LoginPageState extends State<LoginPage> {
     _pageController.dispose();
     _passwordController.removeListener(_onPasswordChanged);
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     AuthStore().removeListener(_onStoreChange);
     super.dispose();
   }
@@ -127,6 +129,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _openFullScreenImage(BuildContext context, int index) {
+    _passwordFocusNode.unfocus();
     FocusScope.of(context).unfocus();
     _isAutoplayEnabled = false;
     _sliderTimer?.cancel();
@@ -149,6 +152,12 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
     ).then((result) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _passwordFocusNode.unfocus();
+          FocusManager.instance.primaryFocus?.unfocus();
+        }
+      });
       if (result is int) {
         setState(() {
           _currentPageViewIndex = result;
@@ -685,10 +694,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = _isDarkMode;
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
+    return GestureDetector(
+      onTap: () {
+        _passwordFocusNode.unfocus();
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+        body: Stack(
+          children: [
           // 1. Premium Gradient Background
           Positioned.fill(
             child: Container(
@@ -892,6 +906,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 8),
                                   TextFormField(
                                     controller: _passwordController,
+                                    focusNode: _passwordFocusNode,
                                     keyboardType: TextInputType.visiblePassword,
                                     obscureText: _obscurePassword,
                                     style: TextStyle(
@@ -1117,8 +1132,9 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class FullScreenImagePage extends StatefulWidget {
