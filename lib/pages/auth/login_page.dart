@@ -41,13 +41,35 @@ class _LoginPageState extends State<LoginPage> {
   Timer? _sliderTimer;
   bool _isAutoplayEnabled = true;
 
-  final List<String> _sliderImages = [
+  List<String> _sliderImages = [
     'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=60',
     'https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=800&auto=format&fit=crop&q=60',
     'https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=800&auto=format&fit=crop&q=60',
   ];
 
   bool get _isDarkMode => AuthStore().isDarkMode;
+
+  Future<void> _fetchSliderImages() async {
+    try {
+      final res = await ApiService().get('/mobile-app-slides');
+      if (res != null && res['response_code'] == 1 && res['data'] != null) {
+        final List<dynamic> slides = res['data'] as List<dynamic>;
+        if (slides.isNotEmpty) {
+          final List<String> urls = slides
+              .map((slide) => slide['image_path']?.toString() ?? '')
+              .where((url) => url.isNotEmpty)
+              .toList();
+          if (urls.isNotEmpty && mounted) {
+            setState(() {
+              _sliderImages = urls;
+            });
+          }
+        }
+      }
+    } catch (_) {
+      // Keep using default fallback images
+    }
+  }
 
   @override
   void initState() {
@@ -69,6 +91,7 @@ class _LoginPageState extends State<LoginPage> {
     _checkBiometrics();
     _requestPermissionsAndWarmUp();
     AuthStore().addListener(_onStoreChange);
+    _fetchSliderImages();
   }
 
   Future<void> _requestPermissionsAndWarmUp() async {
