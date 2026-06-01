@@ -888,13 +888,14 @@ class _LoginPageState extends State<LoginPage> {
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
                     ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                    child: IntrinsicHeight(
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                                   const SizedBox(height: 10),
                                   // Visual Logo & Sahakari Name Card in same row
@@ -1271,11 +1272,12 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                   ],
-                                  const SizedBox(height: 16),
+                                  const Spacer(),
                                   _buildImageSlider(),
                                   const SizedBox(height: 12),
                                 ],
                               ),
+                          ),
                         ),
                       ),
                     ),
