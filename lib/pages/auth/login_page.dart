@@ -548,37 +548,49 @@ class _LoginPageState extends State<LoginPage> {
     switch (responseCode) {
       case 1: // RESP_SUCCESS
         if (token != null) {
+          // ── Biometric decision BEFORE setToken ─────────────────────────────
+          // setToken() calls notifyListeners() which causes InitialRouter to
+          // rebuild and return DashboardPage(), unmounting LoginPage before we
+          // can navigate ourselves. By making the decision here (while still
+          // mounted) and writing it to a flag, InitialRouter will read the flag
+          // and route to BiometricSetupPage instead of DashboardPage.
+
+          bool hasHardwareNow = _deviceHasBiometricHardware;
+          if (!hasHardwareNow) {
+            try {
+              final isSupported = await _auth.isDeviceSupported();
+              final canCheck = await _auth.canCheckBiometrics;
+              hasHardwareNow = isSupported && canCheck;
+              if (mounted) setState(() => _deviceHasBiometricHardware = hasHardwareNow);
+            } catch (_) {}
+          }
+
+          final isServerBiometricSetup =
+              (res['is_biometric_setup'] == true || res['is_biometric_setup'] == 1) ||
+              (data['is_biometric_setup'] == true || data['is_biometric_setup'] == 1);
+          final isLocallyEnabled = AuthStore().isBiometricEnabled;
+          final neverAsk = AuthStore().neverAskBiometric;
+
+          final shouldShowBiometric =
+              hasHardwareNow && (!isServerBiometricSetup || !isLocallyEnabled) && !neverAsk;
+
+          // Set the flag before setToken so InitialRouter sees it on first rebuild
+          if (shouldShowBiometric) {
+            AuthStore().setPendingBiometricSetup(true);
+          }
+
+          // ── Persist auth (InitialRouter rebuilds here, routes via flag) ────
           await AuthStore().setToken(token);
           await AuthStore().setMobile(widget.mobileNumber);
           await AuthStore().setRegisteredMobile(widget.mobileNumber);
-          
+
           final profileRes = await ApiService().getProfile();
           if (profileRes['data'] != null) {
             await AuthStore().setProfile(profileRes['data']);
           }
-
-          if (!mounted) return;
-
-          // Check if biometrics setup is required
-          final isServerBiometricSetup = (res['is_biometric_setup'] == true || res['is_biometric_setup'] == 1) || 
-                                         (data['is_biometric_setup'] == true || data['is_biometric_setup'] == 1);
-          final isLocallyEnabled = AuthStore().isBiometricEnabled;
-          final neverAsk = AuthStore().neverAskBiometric;
-          
-          if (_deviceHasBiometricHardware && (!isServerBiometricSetup || !isLocallyEnabled) && !neverAsk) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const BiometricSetupPage()),
-              (route) => false,
-            );
-          } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardPage()),
-              (route) => false,
-            );
-          }
+          // Navigation is owned by InitialRouter — no Navigator call needed here.
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(apiMessage.isNotEmpty ? apiMessage : 'Invalid token data.'),

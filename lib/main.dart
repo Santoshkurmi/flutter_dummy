@@ -9,6 +9,7 @@ import 'pages/auth/onboarding_page.dart';
 import 'pages/auth/status_check_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/dashboard/dashboard_page.dart';
+import 'pages/settings/biometric_setup_page.dart';
 import 'package:refresh_rate/refresh_rate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -237,8 +238,11 @@ class _InitialRouterState extends State<InitialRouter> {
   Widget build(BuildContext context) {
     final store = AuthStore();
 
-    // 1. If authenticated -> Go directly to the Banking Dashboard
+    // 1. If authenticated → check if biometric setup is pending first
     if (store.isAuthenticated) {
+      if (store.pendingBiometricSetup) {
+        return const BiometricSetupPage();
+      }
       return const DashboardPage();
     }
 

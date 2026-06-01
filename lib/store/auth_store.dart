@@ -32,6 +32,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _smsAlertsEnabled = true;
   String _dailyLimit = '50000';
   String _themeMode = 'system'; // 'system', 'dark', 'light'
+  // In-memory only — true between login-success and biometric setup completion
+  bool _pendingBiometricSetup = false;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -75,6 +77,12 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get smsAlertsEnabled => _smsAlertsEnabled;
   String get dailyLimit => _dailyLimit;
   String get themeMode => _themeMode;
+  bool get pendingBiometricSetup => _pendingBiometricSetup;
+
+  void setPendingBiometricSetup(bool value) {
+    _pendingBiometricSetup = value;
+    notifyListeners();
+  }
 
   bool get isDarkMode {
     if (kDebugMode && debugBrightnessOverride != null) {

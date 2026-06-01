@@ -50,11 +50,10 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
       // 4. Register key on cooperative server
       final res = await ApiService().registerBiometric(publicKeyPem);
       if (res['response_code'] == 1) {
-        // Success
+        // Success — clear the pending flag then go to Dashboard
         await authStore.setBiometricEnabled(true);
         await authStore.setNeverAskBiometric(true);
-
-        // Detect and save biometric type
+        // ... detect and save biometric type
         try {
           final localAuth = LocalAuthentication();
           final availableBiometrics = await localAuth.getAvailableBiometrics();
@@ -64,16 +63,11 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
           await authStore.setBiometricType(type);
         } catch (_) {}
 
+        authStore.setPendingBiometricSetup(false);
         if (mounted) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardPage()),
-              (route) => false,
-            );
-          }
+          // If pushed from Settings, pop back. Otherwise InitialRouter
+          // handles the transition to Dashboard via pendingBiometricSetup=false.
+          if (Navigator.canPop(context)) Navigator.pop(context);
         }
       } else {
         throw Exception(res['message'] ?? 'Failed to register keys on cooperative server.');
@@ -87,32 +81,16 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
   }
 
   void _skipSetup() {
-    if (mounted) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      } else {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
-          (route) => false,
-        );
-      }
-    }
+    AuthStore().setPendingBiometricSetup(false);
+    // If pushed from Settings, pop back. Otherwise InitialRouter handles
+    // the transition to Dashboard via pendingBiometricSetup=false.
+    if (mounted && Navigator.canPop(context)) Navigator.pop(context);
   }
 
   void _neverAskSetup() async {
     await AuthStore().setNeverAskBiometric(true);
-    if (mounted) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      } else {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
-          (route) => false,
-        );
-      }
-    }
+    AuthStore().setPendingBiometricSetup(false);
+    if (mounted && Navigator.canPop(context)) Navigator.pop(context);
   }
 
   @override
