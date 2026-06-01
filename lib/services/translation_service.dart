@@ -233,6 +233,19 @@ class TranslationService {
     'Recharge': 'रिचार्ज',
     'Accounts': 'खाताहरू',
     'Member Register': 'सदस्य दर्ता',
+
+    // Interest Rate Logs
+    'Interest Rate Logs': 'ब्याज दर लगहरू',
+    'Ongoing': 'चालू',
+    'Before': 'अघि',
+    'From': 'देखि',
+    'To': 'सम्म',
+    'Rate': 'दर',
+    'entries': 'प्रविष्टिहरू',
+    'No rate change history found.': 'ब्याज दर परिवर्तनको इतिहास फेला परेन।',
+    'The current rate has been applied since the beginning.': 'सुरुदेखि नै हालको दर लागू गरिएको छ।',
+    'Applied Date': 'लागू मिति',
+    'Number of Days': 'दिन संख्या',
   };
 
   static String translate(String key) {

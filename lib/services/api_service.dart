@@ -675,6 +675,14 @@ class ApiService {
     return await get('/accounts');
   }
 
+  Future<Map<String, dynamic>> getSavingSchemeRateLogs(int schemeId) async {
+    return await get('/accounts/saving-scheme-rate-logs', params: {'saving_scheme_id': schemeId.toString()});
+  }
+
+  Future<Map<String, dynamic>> getLoanSchemeRateLogs(int schemeId) async {
+    return await get('/accounts/loan-scheme-rate-logs', params: {'loan_scheme_id': schemeId.toString()});
+  }
+
   Future<Map<String, dynamic>> getAccountLedger(String type, int id, {String? fromDate, String? toDate, String? preset}) async {
     final Map<String, String> params = {};
     if (fromDate != null) params['from_date'] = fromDate;

@@ -3,6 +3,7 @@ import '../../widgets/cooperative_account_card.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'account_ledger_page.dart';
+import 'rate_logs_page.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -317,7 +318,17 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       actions.add({
         'label': 'Rate Logs'.tr,
         'icon': Icons.history_rounded,
-        'onTap': () => _showNotImplementedSnackBar('Interest Rate Change Logs'),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RateLogsPage(
+                account: acc,
+                accountType: accountType,
+              ),
+            ),
+          );
+        },
       });
     }
 
