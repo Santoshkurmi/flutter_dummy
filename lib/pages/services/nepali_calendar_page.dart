@@ -619,6 +619,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                   cardBgColor: cardBgColor,
                   borderColor: borderColor,
                   primaryTextColor: primaryTextColor,
+                  isHolidayEvent: true,
                 );
               }),
             const SizedBox(height: 24),
@@ -757,6 +758,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
     required Color cardBgColor,
     required Color borderColor,
     required Color primaryTextColor,
+    bool isHolidayEvent = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -778,17 +780,19 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
+                    color: isHolidayEvent ? const Color(0xFFEF4444) : primaryTextColor,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  desc,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
+                if (!isHolidayEvent) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    desc,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -796,15 +800,17 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+              color: isHolidayEvent 
+                  ? const Color(0xFFEF4444).withValues(alpha: 0.08)
+                  : const Color(0xFF2563EB).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               dateBadge,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF2563EB),
+                color: isHolidayEvent ? const Color(0xFFEF4444) : const Color(0xFF2563EB),
               ),
             ),
           ),
