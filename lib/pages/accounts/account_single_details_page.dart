@@ -232,6 +232,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
         case 'Accrued Interest':
         case 'Accrued Interest Due':
         case 'Due Interest':
+        case 'Total Matured to Pay':
           return Icons.payments_rounded;
         case 'Minimum Balance':
           return Icons.wallet_rounded;
@@ -244,8 +245,10 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           return Icons.event_repeat_rounded;
         case 'Principal Fine':
         case 'Interest Fine':
+        case 'Fine Amount':
           return Icons.gavel_rounded;
         case 'Matured Principal':
+        case 'Principal Matured':
           return Icons.account_balance_rounded;
         case 'Share Capital Value':
           return Icons.monetization_on_rounded;
@@ -322,25 +325,30 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     // Build details list dynamically based on account type
     final List<Map<String, String>> detailsList = [];
     if (isSavings) {
+      final String maturityDate = acc['maturity_date']?.toString() ?? 'N/A';
+      final String rawPosting = acc['interest_credit_period']?.toString() ?? 'Quarterly';
+      final String interestPosting = rawPosting.isNotEmpty
+          ? '${rawPosting[0].toUpperCase()}${rawPosting.substring(1)} Capitalization'
+          : 'Quarterly Capitalization';
+
       detailsList.addAll([
         {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.'},
         {'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
         {'label': 'Minimum Balance', 'value': 'Rs. ${_formatAmount(acc['min_balance'])}'},
         {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2081-02-15'},
-        {'label': 'Maturity Date', 'value': 'N/A'},
-        {'label': 'Interest Posting Date', 'value': 'Quarterly Capitalization'},
+        {'label': 'Maturity Date', 'value': maturityDate},
+        {'label': 'Interest Posting Date', 'value': interestPosting},
       ]);
     } else if (isLoan) {
       detailsList.addAll([
         {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.'},
-        {'label': 'Accrued Interest Due', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
         {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2080-11-10'},
-        {'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? '2085-11-10'},
-        {'label': 'Principal Fine', 'value': 'Rs. ${_formatAmount(acc['principal_fine'] ?? 0.0)}'},
-        {'label': 'Interest Fine', 'value': 'Rs. ${_formatAmount(acc['interest_fine'] ?? 0.0)}'},
-        {'label': 'Matured Principal', 'value': 'Rs. ${_formatAmount(acc['matured_principal'] ?? 0.0)}'},
-        {'label': 'Due Interest', 'value': 'Rs. ${_formatAmount(acc['due_interest'] ?? 0.0)}'},
-        {'label': 'Interest Posting Date', 'value': 'Monthly Capitalization'},
+        {'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? 'N/A'},
+        {'label': 'Principal Matured', 'value': 'Rs. ${_formatAmount(acc['matured_principal'])}'},
+        {'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
+        {'label': 'Due Interest', 'value': 'Rs. ${_formatAmount(acc['due_interest'])}'},
+        {'label': 'Fine Amount', 'value': 'Rs. ${_formatAmount(acc['fine_amount'])}'},
+        {'label': 'Total Matured to Pay', 'value': 'Rs. ${_formatAmount(acc['total_matured_pay'])}'},
       ]);
     } else { // shares
       detailsList.addAll([
@@ -348,8 +356,6 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
         {'label': 'Total Share Units', 'value': '${acc['share_count'] ?? '100'} Units'},
         {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2079-05-18'},
         {'label': 'Member Status', 'value': 'Active Shareholder'},
-        {'label': 'Maturity Date', 'value': 'N/A'},
-        {'label': 'Interest Posting Date', 'value': 'Annual Dividend Cycle'},
       ]);
     }
 
