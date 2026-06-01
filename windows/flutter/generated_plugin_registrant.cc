@@ -15,6 +15,7 @@
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <printing/printing_plugin.h>
 #include <refresh_rate/refresh_rate_plugin_c_api.h>
+#include <url_launcher_windows/url_launcher_windows.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   DownloadsfolderPluginCApiRegisterWithRegistrar(
@@ -35,4 +36,6 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("PrintingPlugin"));
   RefreshRatePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("RefreshRatePluginCApi"));
+  UrlLauncherWindowsRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("UrlLauncherWindows"));
 }

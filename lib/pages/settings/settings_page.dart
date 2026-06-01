@@ -134,54 +134,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
 
             const SizedBox(height: 24),
-            
-            // Section 3: Transaction Limits
-            _buildSectionHeader('TRANSACTION LIMITS'.tr, isDarkMode),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Daily Transfer Limit'.tr,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Configure absolute limits allowed for mobile banking services'.tr,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _buildLimitPill('10000', 'Rs. 10K', authStore, isDarkMode),
-                      const SizedBox(width: 8),
-                      _buildLimitPill('50000', 'Rs. 50K', authStore, isDarkMode),
-                      const SizedBox(width: 8),
-                      _buildLimitPill('100000', 'Rs. 100K', authStore, isDarkMode),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
             // Section 4: Appearance
             _buildSectionHeader('APPEARANCE'.tr, isDarkMode),
             const SizedBox(height: 12),
