@@ -888,11 +888,10 @@ class _LoginPageState extends State<LoginPage> {
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
                     ),
-                    child: IntrinsicHeight(
-                      child: SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                          child: Form(
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1228,14 +1227,14 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                       },
                                       icon: Icon(
-                                        Icons.swap_horiz_rounded,
+                                        Icons.help_outline_rounded,
                                         size: 16,
-                                        color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
                                       ),
                                       label: Text(
                                         'Login with another phone number'.tr,
                                         style: TextStyle(
-                                          color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
                                           fontSize: 13,
                                         ),
                                       ),
@@ -1254,16 +1253,15 @@ class _LoginPageState extends State<LoginPage> {
                                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                         },
                                         icon: Icon(
-                                          Icons.account_balance_rounded,
+                                          Icons.help_outline_rounded,
                                           size: 16,
-                                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
                                         ),
                                         label: Text(
                                           'Switch Cooperative Bank'.tr,
                                           style: TextStyle(
-                                            color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
                                             fontSize: 13,
-                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         style: TextButton.styleFrom(
@@ -1273,17 +1271,16 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                                   ],
-                                  const Spacer(),
+                                  const SizedBox(height: 16),
                                   _buildImageSlider(),
                                   const SizedBox(height: 12),
                                 ],
                               ),
-                            ),
-                          ),
                         ),
                       ),
                     ),
-                  );
+                  ),
+                );
               }
             ),
           ),
