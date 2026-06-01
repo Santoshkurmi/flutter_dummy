@@ -202,11 +202,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           ),
         );
 
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushNamedAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
-          ),
+          '/',
           (route) => false,
         );
       } else {
@@ -327,11 +325,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         );
 
         // Redirect to LoginPage instead of auto-login
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushNamedAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
-          ),
+          '/',
           (route) => false,
         );
       } else if (responseCode == 4) { // RESP_DEVICE_CHANGE_APPROVAL (Awaiting Admin)

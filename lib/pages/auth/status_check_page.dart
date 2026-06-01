@@ -100,11 +100,9 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
         case 1: // RESP_SUCCESS (Authenticated / Password required)
           await AuthStore().setRegisteredMobile(mobile);
           if (!mounted) return;
-          Navigator.pushAndRemoveUntil(
+          Navigator.pushNamedAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (_) => LoginPage(mobileNumber: mobile),
-            ),
+            '/',
             (route) => false,
           );
           break;

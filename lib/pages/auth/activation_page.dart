@@ -280,11 +280,9 @@ class _ActivationPageState extends State<ActivationPage> {
           ),
         );
 
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushNamedAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => LoginPage(mobileNumber: widget.mobileNumber),
-          ),
+          '/',
           (route) => false,
         );
       } else if (responseCode == 7) { // RESP_REGISTRATION_SUBMITTED (Awaiting Admin)

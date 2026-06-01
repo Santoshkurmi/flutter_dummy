@@ -162,8 +162,8 @@ class BrightBankApp extends StatelessWidget {
         return MaterialApp(
           navigatorKey: AuthStore.navigatorKey,
           title: AuthStore().isCustomApp
-              ? (AuthStore().selectedCooperative?['name'] ?? 'Bright Sahakari')
-              : 'Bright Sahakari',
+              ? (AuthStore().selectedCooperative?['name'] ?? 'Mbright')
+              : 'Mbright',
           debugShowCheckedModeBanner: false,
           scrollBehavior: const BouncingScrollBehavior(),
           theme: ThemeData(

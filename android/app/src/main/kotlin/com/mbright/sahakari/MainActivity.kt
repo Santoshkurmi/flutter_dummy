@@ -1,4 +1,4 @@
-package com.brightbank.app.mobile_banking
+package com.mbright.sahakari
 
 import android.os.Bundle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen

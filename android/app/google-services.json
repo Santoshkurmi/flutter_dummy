@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:419453550938:android:f2e469df90f58737def363",
         "android_client_info": {
-          "package_name": "com.brightbank.app.mobile_banking"
+          "package_name": "com.mbright.sahakari"
         }
       },
       "oauth_client": [
@@ -35,7 +35,7 @@
               "client_id": "419453550938-be8qtsikjemopejic2q4nd4rr3f352al.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.brightbank.app.mobile_banking"
+                "bundle_id": "com.mbright.sahakari"
               }
             }
           ]
@@ -46,7 +46,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:419453550938:android:f2e469df90f58737def363",
         "android_client_info": {
-          "package_name": "com.brightbank.app.mobile_banking.debug"
+          "package_name": "com.mbright.sahakari.debug"
         }
       },
       "oauth_client": [
@@ -71,7 +71,7 @@
               "client_id": "419453550938-be8qtsikjemopejic2q4nd4rr3f352al.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.brightbank.app.mobile_banking.debug"
+                "bundle_id": "com.mbright.sahakari.debug"
               }
             }
           ]
