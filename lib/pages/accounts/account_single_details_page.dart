@@ -273,7 +273,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     if (!isLoan) {
       actions.add({
-        'label': 'Deposit',
+        'label': 'Deposit'.tr,
         'icon': Icons.add_circle_outline_rounded,
         'onTap': () => _showNotImplementedSnackBar('Deposit'),
       });
@@ -281,7 +281,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     if (!isShare) {
       actions.add({
-        'label': 'Payment',
+        'label': 'Payment'.tr,
         'icon': Icons.send_rounded,
         'onTap': () => _showNotImplementedSnackBar('Payment'),
       });
@@ -291,7 +291,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final String effectiveTagForStatement = widget.heroTag ?? 'ledger_$accountNoForStatement';
 
     actions.add({
-      'label': 'Statement',
+      'label': 'Statement'.tr,
       'icon': Icons.download_rounded,
       'onTap': () {
         if (AccountLedgerPage.isOpening) return;
@@ -315,7 +315,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     if (isSavings || isLoan) {
       actions.add({
-        'label': 'Rate Logs',
+        'label': 'Rate Logs'.tr,
         'icon': Icons.history_rounded,
         'onTap': () => _showNotImplementedSnackBar('Interest Rate Change Logs'),
       });
@@ -323,7 +323,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
     if (isLoan) {
       actions.add({
-        'label': 'Schedules',
+        'label': 'Schedules'.tr,
         'icon': Icons.calendar_month_rounded,
         'onTap': () => _showNotImplementedSnackBar('Schedules'),
       });
@@ -339,30 +339,30 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           : 'Quarterly Capitalization';
 
       detailsList.addAll([
-        {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.'},
-        {'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
-        {'label': 'Minimum Balance', 'value': 'Rs. ${_formatAmount(acc['min_balance'])}'},
-        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2081-02-15'},
-        {'label': 'Maturity Date', 'value': maturityDate},
-        {'label': 'Interest Posting Date', 'value': interestPosting},
+        {'label': 'Interest Rate'.tr, 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.'},
+        {'label': 'Accrued Interest'.tr, 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
+        {'label': 'Minimum Balance'.tr, 'value': 'Rs. ${_formatAmount(acc['min_balance'])}'},
+        {'label': 'Opened Date (BS)'.tr, 'value': acc['issued_date']?.toString() ?? '2081-02-15'},
+        {'label': 'Maturity Date'.tr, 'value': maturityDate},
+        {'label': 'Interest Posting Date'.tr, 'value': interestPosting},
       ]);
     } else if (isLoan) {
       detailsList.addAll([
-        {'label': 'Interest Rate', 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.'},
-        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2080-11-10'},
-        {'label': 'Maturity Date (BS)', 'value': acc['maturity_date']?.toString() ?? 'N/A'},
-        {'label': 'Principal Matured', 'value': 'Rs. ${_formatAmount(acc['matured_principal'])}'},
-        {'label': 'Accrued Interest', 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
-        {'label': 'Due Interest', 'value': 'Rs. ${_formatAmount(acc['due_interest'])}'},
-        {'label': 'Fine Amount', 'value': 'Rs. ${_formatAmount(acc['fine_amount'])}'},
-        {'label': 'Total Matured to Pay', 'value': 'Rs. ${_formatAmount(acc['total_matured_pay'])}'},
+        {'label': 'Interest Rate'.tr, 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.'},
+        {'label': 'Opened Date (BS)'.tr, 'value': acc['issued_date']?.toString() ?? '2080-11-10'},
+        {'label': 'Maturity Date (BS)'.tr, 'value': acc['maturity_date']?.toString() ?? 'N/A'},
+        {'label': 'Principal Matured'.tr, 'value': 'Rs. ${_formatAmount(acc['matured_principal'])}'},
+        {'label': 'Accrued Interest'.tr, 'value': 'Rs. ${_formatAmount(acc['accrued_interest'])}'},
+        {'label': 'Due Interest'.tr, 'value': 'Rs. ${_formatAmount(acc['due_interest'])}'},
+        {'label': 'Fine Amount'.tr, 'value': 'Rs. ${_formatAmount(acc['fine_amount'])}'},
+        {'label': 'Total Matured to Pay'.tr, 'value': 'Rs. ${_formatAmount(acc['total_matured_pay'])}'},
       ]);
     } else { // shares
       detailsList.addAll([
-        {'label': 'Share Capital Value', 'value': 'Rs. ${_formatAmount(acc['balance'])}'},
-        {'label': 'Total Share Units', 'value': '${acc['share_count'] ?? '100'} Units'},
-        {'label': 'Opened Date (BS)', 'value': acc['issued_date']?.toString() ?? '2079-05-18'},
-        {'label': 'Member Status', 'value': 'Active Shareholder'},
+        {'label': 'Share Capital Value'.tr, 'value': 'Rs. ${_formatAmount(acc['balance'])}'},
+        {'label': 'Total Share Units'.tr, 'value': '${acc['share_count'] ?? '100'} ${'Units'.tr}'},
+        {'label': 'Opened Date (BS)'.tr, 'value': acc['issued_date']?.toString() ?? '2079-05-18'},
+        {'label': 'Member Status'.tr, 'value': 'Active Shareholder'.tr},
       ]);
     }
 
@@ -530,7 +530,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                 children: [
                   // Quick Actions Grid
                   Text(
-                    'Quick Actions'.toUpperCase(),
+                    'Quick Actions'.toUpperCase().tr,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
@@ -560,7 +560,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
                   // Detailed Card
                   Text(
-                    'Account Information'.toUpperCase(),
+                    'Account Information'.toUpperCase().tr,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,

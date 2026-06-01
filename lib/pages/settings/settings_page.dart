@@ -63,7 +63,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // Push Notifications Switch
             _buildToggleItem(
               title: 'Push Notifications'.tr,
-              subtitle: 'Receive real-time transaction updates and alerts',
+              subtitle: 'Receive real-time transaction updates and alerts'.tr,
               value: authStore.pushEnabled,
               onChanged: (val) async {
                 await authStore.setPushEnabled(val);
@@ -76,7 +76,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // SMS Alerts Switch
             _buildToggleItem(
               title: 'SMS Alerts'.tr,
-              subtitle: 'Backup copy of standard messages over cellular connection',
+              subtitle: 'Backup copy of standard messages over cellular connection'.tr,
               value: authStore.smsAlertsEnabled,
               onChanged: (val) async {
                 await authStore.setSmsAlertsEnabled(val);
@@ -94,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // Biometric Switch
             _buildToggleItem(
               title: 'Biometric Login'.tr,
-              subtitle: 'Unlock account and authorise using hardware fingerprint',
+              subtitle: 'Unlock account and authorise using hardware fingerprint'.tr,
               value: authStore.isBiometricEnabled,
               onChanged: (val) async {
                 if (val) {
@@ -138,7 +138,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Configure absolute limits allowed for mobile banking services',
+                    'Configure absolute limits allowed for mobile banking services'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
@@ -186,9 +186,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text(
-                'Reset Application Settings',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              label: Text(
+                'Reset Application Settings'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -451,9 +451,9 @@ class _SettingsPageState extends State<SettingsPage> {
         return AlertDialog(
           backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Reset Settings?', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: const Text(
-            'This will revert all customization preferences, switches, limits, and authentication profiles to default state.',
+          title: Text('Reset Settings?'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            'This will revert all customization preferences, switches, limits, and authentication profiles to default state.'.tr,
           ),
           actions: [
             TextButton(
@@ -467,7 +467,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                 }
               },
-              child: const Text('Reset', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+              child: Text('Reset'.tr, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
             ),
           ],
         );

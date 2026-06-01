@@ -382,7 +382,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Custom Date Range (BS)',
+                          'Custom Date Range (BS)'.tr,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -406,7 +406,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                         Expanded(
                           child: _buildBottomSheetTextField(
                             controller: fromController,
-                            label: 'From Date',
+                            label: 'From Date'.tr,
                             errorText: fromError,
                             isDarkMode: isDarkMode,
                             accentColor: accentColor,
@@ -416,7 +416,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                         Expanded(
                           child: _buildBottomSheetTextField(
                             controller: toController,
-                            label: 'To Date',
+                            label: 'To Date'.tr,
                             errorText: toError,
                             isDarkMode: isDarkMode,
                             accentColor: accentColor,
@@ -442,7 +442,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                                   borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text('Cancel'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -459,7 +459,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text('Apply Filter'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -572,7 +572,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
 
   Widget _buildFilterChip(Color accentColor, bool isDarkMode) {
     final bool isCustomActive = _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
-    final String label = isCustomActive ? 'Filter Active' : 'Filter';
+    final String label = isCustomActive ? 'Filter Active'.tr : 'Filter'.tr;
     return InkWell(
       onTap: () => _openFilterBottomSheet(context, accentColor, isDarkMode),
       borderRadius: BorderRadius.circular(20),
@@ -906,7 +906,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
               )
             : null,
         title: Text(
-          'Account Statement',
+          'Account Statement'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
@@ -1079,11 +1079,11 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
                 child: Row(
                   children: [
-                    _buildPresetChip('7_days', '7 Days', accentColor, isDarkMode),
+                    _buildPresetChip('7_days', '7 Days'.tr, accentColor, isDarkMode),
                     const SizedBox(width: 8),
-                    _buildPresetChip('15_days', '15 Days', accentColor, isDarkMode),
+                    _buildPresetChip('15_days', '15 Days'.tr, accentColor, isDarkMode),
                     const SizedBox(width: 8),
-                    _buildPresetChip('1_month', '1 Month', accentColor, isDarkMode),
+                    _buildPresetChip('1_month', '1 Month'.tr, accentColor, isDarkMode),
                     const SizedBox(width: 8),
                     _buildFilterChip(accentColor, isDarkMode),
                     if (isFilteredAtAll) ...[
@@ -1187,7 +1187,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             ),
             const SizedBox(height: 16),
             Text(
-              'No transactions found.',
+              'No transactions found.'.tr,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 fontSize: 16,
@@ -1197,8 +1197,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             const SizedBox(height: 6),
             Text(
               _selectedPreset != null || _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty
-                  ? 'Try broadening your filter parameters.'
-                  : 'This account has no recent activity.',
+                  ? 'Try broadening your filter parameters.'.tr
+                  : 'This account has no recent activity.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
@@ -1210,13 +1210,13 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       );
     }
 
-    String listTitle = 'Showing last 20';
+    String listTitle = 'Showing last 20'.tr;
     if (_selectedPreset != null) {
-      if (_selectedPreset == '7_days') listTitle = 'Last 7 Days';
-      if (_selectedPreset == '15_days') listTitle = 'Last 15 Days';
-      if (_selectedPreset == '1_month') listTitle = 'Last Month';
+      if (_selectedPreset == '7_days') listTitle = 'Last 7 Days'.tr;
+      if (_selectedPreset == '15_days') listTitle = 'Last 15 Days'.tr;
+      if (_selectedPreset == '1_month') listTitle = 'Last Month'.tr;
     } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
-      listTitle = 'Filtered Range';
+      listTitle = 'Filtered Range'.tr;
     }
 
     return Column(

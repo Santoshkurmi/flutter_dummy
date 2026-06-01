@@ -146,7 +146,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           onPressed: () => Navigator.pop(context),
         ) : null,
         title: Text(
-          'My Accounts',
+          'My Accounts'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
@@ -176,13 +176,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 20.0),
                             child: Row(
                               children: [
-                                _buildFilterPill('all', 'All', totalCount, isDarkMode),
+                                _buildFilterPill('all', 'All'.tr, totalCount, isDarkMode),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('savings', 'Savings', _savingsAccounts.length, isDarkMode),
+                                _buildFilterPill('savings', 'Savings'.tr, _savingsAccounts.length, isDarkMode),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('loans', 'Loans', _loanAccounts.length, isDarkMode),
+                                _buildFilterPill('loans', 'Loans'.tr, _loanAccounts.length, isDarkMode),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('shares', 'Share Capital', _shareAccounts.length, isDarkMode),
+                                _buildFilterPill('shares', 'Share Capital'.tr, _shareAccounts.length, isDarkMode),
                               ],
                             ),
                           ),
@@ -255,7 +255,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'savings') {
       if (_savingsAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Savings Accounts', const Color(0xFF2563EB), isDarkMode));
+        list.add(_buildSectionHeader('Savings Accounts'.tr, const Color(0xFF2563EB), isDarkMode));
         for (var acc in _savingsAccounts) {
           list.add(_buildAccountCardWidget(acc, 'savings', isDarkMode));
         }
@@ -266,7 +266,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'loans') {
       if (_loanAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Loan Accounts', const Color(0xFFEF4444), isDarkMode));
+        list.add(_buildSectionHeader('Loan Accounts'.tr, const Color(0xFFEF4444), isDarkMode));
         for (var acc in _loanAccounts) {
           list.add(_buildAccountCardWidget(acc, 'loans', isDarkMode));
         }
@@ -277,7 +277,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'shares') {
       if (_shareAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Share Capital Accounts', const Color(0xFF10B981), isDarkMode));
+        list.add(_buildSectionHeader('Share Capital Accounts'.tr, const Color(0xFF10B981), isDarkMode));
         for (var acc in _shareAccounts) {
           list.add(_buildAccountCardWidget(acc, 'shares', isDarkMode));
         }
@@ -290,7 +290,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           padding: const EdgeInsets.only(top: 80, left: 20, right: 20),
           child: Center(
             child: Text(
-              'No accounts found in this category.',
+              'No accounts found in this category.'.tr,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
                 fontSize: 14,

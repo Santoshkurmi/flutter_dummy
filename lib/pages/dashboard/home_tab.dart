@@ -328,7 +328,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Namaste, 🙏',
+                    'Namaste, 🙏'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
@@ -649,7 +649,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           widget.isLoadingSummary
               ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)))))
               : recentTransactions == null || recentTransactions.isEmpty
-                  ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.', style: TextStyle(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4), fontSize: 13))))
+                  ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.'.tr, style: TextStyle(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4), fontSize: 13))))
                   : Column(
                       children: recentTransactions.map((tx) {
                         final typeStr = (tx['type'] ?? '').toString().toUpperCase();
@@ -666,19 +666,19 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         Color badgeText;
                         String typeLabel;
                         if (accountType == 'savings') {
-                          typeLabel = 'Savings';
+                          typeLabel = 'Savings'.tr;
                           badgeBg = widget.isDarkMode ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF);
                           badgeText = widget.isDarkMode ? const Color(0xFF818CF8) : const Color(0xFF4F46E5);
                         } else if (accountType == 'loans') {
-                          typeLabel = 'Loan';
+                          typeLabel = 'Loan'.tr;
                           badgeBg = widget.isDarkMode ? const Color(0xFF451A03) : const Color(0xFFFEF2F2);
                           badgeText = widget.isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626);
                         } else if (accountType == 'shares') {
-                          typeLabel = 'Shares';
+                          typeLabel = 'Shares'.tr;
                           badgeBg = widget.isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
                           badgeText = widget.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
                         } else {
-                          typeLabel = 'Account';
+                          typeLabel = 'Account'.tr;
                           badgeBg = widget.isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
                           badgeText = widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
                         }
