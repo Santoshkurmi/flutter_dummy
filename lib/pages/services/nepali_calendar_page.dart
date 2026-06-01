@@ -31,12 +31,32 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
 
     // Select today's date by default ONLY on initial page load
     final todayDayNum = todayBs[2];
-    _selectedDayInfo = _calendarDays.firstWhere(
-      (dayData) => dayData['day'] == todayDayNum,
-      orElse: () => null,
-    );
+    final initialMatches = _calendarDays.where((dayData) => dayData['day'] == todayDayNum);
+    _selectedDayInfo = initialMatches.isNotEmpty ? initialMatches.first : null;
 
-    _fetchCalendarData();     // call api in background to fetch holidays/events
+    // Fetch calendar data after page transition is fully completed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route != null && route.animation != null) {
+        if (route.animation!.isCompleted) {
+          _fetchCalendarData();
+        } else {
+          late final void Function(AnimationStatus) listener;
+          listener = (status) {
+            if (status == AnimationStatus.completed) {
+              if (mounted) {
+                _fetchCalendarData();
+              }
+              route.animation!.removeStatusListener(listener);
+            }
+          };
+          route.animation!.addStatusListener(listener);
+        }
+      } else {
+        _fetchCalendarData();
+      }
+    });
   }
 
   Future<void> _fetchCalendarData() async {
@@ -59,10 +79,8 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
           // Keep current selection but update its holiday information from API response
           if (_selectedDayInfo != null) {
             final selectedDayNum = _selectedDayInfo!['day'];
-            _selectedDayInfo = _calendarDays.firstWhere(
-              (dayData) => dayData['day'] == selectedDayNum,
-              orElse: () => null,
-            );
+            final matches = _calendarDays.where((dayData) => dayData['day'] == selectedDayNum);
+            _selectedDayInfo = matches.isNotEmpty ? matches.first : null;
           }
           _isEventsLoading = false;
         });
