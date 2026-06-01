@@ -254,6 +254,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       );
       setState(() {
         _ledgerItems = res['data'] ?? [];
+        if (res['current_balance'] != null) {
+          _activeAccount['balance'] = res['current_balance'];
+        }
         _isLoading = false;
         _hasError = false;
       });
