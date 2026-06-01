@@ -60,20 +60,53 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     }
     try {
-      final Future<Map<String, dynamic>> summaryFuture = ApiService().getDashboardSummary();
-      final Future<Map<String, dynamic>> accountsFuture = ApiService().getAccounts().catchError((_) => <String, dynamic>{});
+      final Future<Map<String, dynamic>> accountsFuture = ApiService().getAccounts();
       final Future<Map<String, dynamic>> ledgerFuture = ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
 
-      final results = await Future.wait([summaryFuture, accountsFuture, ledgerFuture]);
+      final results = await Future.wait([accountsFuture, ledgerFuture]);
       
-      final Map<String, dynamic> summaryRes = results[0];
-      final Map<String, dynamic> accountsRes = results[1];
-      final Map<String, dynamic> ledgerRes = results[2];
+      final Map<String, dynamic> accountsRes = results[0];
+      final Map<String, dynamic> ledgerRes = results[1];
 
       if (mounted) {
         setState(() {
-          _summaryData = summaryRes['data'];
           _accountsData = accountsRes.isNotEmpty ? accountsRes['data'] : null;
+          
+          if (_accountsData != null) {
+            double totalSavings = 0.0;
+            double totalLoans = 0.0;
+            double totalShares = 0.0;
+
+            final savingsList = _accountsData!['savings'] as List<dynamic>?;
+            if (savingsList != null) {
+              for (final item in savingsList) {
+                totalSavings += (item['balance'] as num?)?.toDouble() ?? 0.0;
+              }
+            }
+
+            final loansList = _accountsData!['loans'] as List<dynamic>?;
+            if (loansList != null) {
+              for (final item in loansList) {
+                totalLoans += (item['balance'] as num?)?.toDouble() ?? 0.0;
+              }
+            }
+
+            final sharesList = _accountsData!['shares'] as List<dynamic>?;
+            if (sharesList != null) {
+              for (final item in sharesList) {
+                totalShares += (item['balance'] as num?)?.toDouble() ?? 0.0;
+              }
+            }
+
+            _summaryData = {
+              'savings_balance': totalSavings,
+              'loan_balance': totalLoans,
+              'share_balance': totalShares,
+            };
+          } else {
+            _summaryData = null;
+          }
+
           if (ledgerRes['data'] != null) {
             _cachedLedgerItems = ledgerRes['data'];
             _lastLedgerFetchTime = DateTime.now();

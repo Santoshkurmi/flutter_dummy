@@ -671,10 +671,6 @@ class ApiService {
     return await post('/delete-registration', {'phone_number': phoneNumber, 'device_id': devId});
   }
 
-  Future<Map<String, dynamic>> getDashboardSummary() async {
-    return await get('/dashboard-summary');
-  }
-
   Future<Map<String, dynamic>> getAccounts() async {
     return await get('/accounts');
   }
