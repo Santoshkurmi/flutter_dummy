@@ -914,7 +914,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       );
     }
 
-    String listTitle = 'Showing last 50';
+    String listTitle = 'Showing last 30';
     if (_selectedPreset != null) {
       if (_selectedPreset == '7_days') listTitle = 'Last 7 Days';
       if (_selectedPreset == '15_days') listTitle = 'Last 15 Days';
