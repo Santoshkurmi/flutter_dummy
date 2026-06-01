@@ -311,7 +311,9 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           ),
         ).then((_) {
           AccountLedgerPage.isOpening = false;
-          setState(() {});
+          if (mounted) {
+            setState(() {});
+          }
         });
       },
     });
@@ -718,7 +720,9 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           ),
         ).then((_) {
           AccountLedgerPage.isOpening = false;
-          setState(() {});
+          if (mounted) {
+            setState(() {});
+          }
         });
       },
     );

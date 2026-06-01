@@ -97,6 +97,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
       final res = await ApiService().getAccounts();
       final data = res['data'] ?? {};
       
+      if (!mounted) return;
       setState(() {
         _savingsAccounts = data['savings'] ?? [];
         _loanAccounts = data['loans'] ?? [];
@@ -105,6 +106,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         _hasError = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _savingsAccounts = [];
         _loanAccounts = [];
@@ -338,7 +340,6 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     final balance = 'Rs. ${_formatAmount(rawBalance)}';
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final name = acc['name'] ?? 'Account';
-    final heroTag = 'card_$accountNo';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -355,7 +356,6 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           maturityDate: acc['maturity_date'],
           showBalance: true,
           isDarkMode: isDarkMode,
-          heroTag: heroTag,
           onTap: () {
             final List<Map<String, dynamic>> swipable = [];
             List<dynamic> list = [];
@@ -382,7 +382,6 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,
-                  heroTag: heroTag,
                   swipableAccounts: swipable,
                   initialIndex: index >= 0 ? index : 0,
                 ),
