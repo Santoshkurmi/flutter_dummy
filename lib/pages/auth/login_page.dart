@@ -15,6 +15,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../services/location_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../services/slider_image_cache_service.dart';
 
 class LoginPage extends StatefulWidget {
   final String mobileNumber;
@@ -41,33 +42,96 @@ class _LoginPageState extends State<LoginPage> {
   Timer? _sliderTimer;
   bool _isAutoplayEnabled = true;
 
-  List<String> _sliderImages = [
+  static const List<String> _defaultFallbackUrls = [
     'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=60',
     'https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=800&auto=format&fit=crop&q=60',
     'https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=800&auto=format&fit=crop&q=60',
   ];
 
+  List<String> _sliderImages = List.from(_defaultFallbackUrls);
+  Map<String, String> _cachedPaths = {};
+
   bool get _isDarkMode => AuthStore().isDarkMode;
+
+  Future<void> _loadCachedSlider() async {
+    try {
+      final savedUrls = await SliderImageCacheService.getSavedUrls();
+      final List<String> urlsToLoad = savedUrls.isNotEmpty ? savedUrls : _defaultFallbackUrls;
+      
+      final Map<String, String> localPaths = {};
+      for (final url in urlsToLoad) {
+        final path = await SliderImageCacheService.getLocalPath(url);
+        if (File(path).existsSync()) {
+          localPaths[url] = path;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _sliderImages = urlsToLoad;
+          _cachedPaths = localPaths;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _downloadSliderImages(List<String> urls) async {
+    for (final url in urls) {
+      if (!_cachedPaths.containsKey(url)) {
+        final path = await SliderImageCacheService.cacheImage(url);
+        if (path != null && mounted) {
+          setState(() {
+            _cachedPaths[url] = path;
+          });
+        }
+      }
+    }
+  }
 
   Future<void> _fetchSliderImages() async {
     try {
       final res = await ApiService().get('/mobile-app-slides');
+      List<String> newUrls = [];
       if (res != null && res['response_code'] == 1 && res['data'] != null) {
         final List<dynamic> slides = res['data'] as List<dynamic>;
         if (slides.isNotEmpty) {
-          final List<String> urls = slides
+          newUrls = slides
               .map((slide) => slide['image_path']?.toString() ?? '')
               .where((url) => url.isNotEmpty)
               .toList();
-          if (urls.isNotEmpty && mounted) {
-            setState(() {
-              _sliderImages = urls;
-            });
+        }
+      }
+
+      if (newUrls.isEmpty) {
+        newUrls = _defaultFallbackUrls;
+      }
+
+      // Check if urls list actually changed
+      bool listChanged = newUrls.length != _sliderImages.length;
+      if (!listChanged) {
+        for (int i = 0; i < newUrls.length; i++) {
+          if (newUrls[i] != _sliderImages[i]) {
+            listChanged = true;
+            break;
           }
         }
       }
+
+      if (listChanged && mounted) {
+        setState(() {
+          _sliderImages = newUrls;
+        });
+        await SliderImageCacheService.saveUrls(newUrls);
+      }
+
+      // Pre-fetch in background
+      await _downloadSliderImages(newUrls);
+
+      // Cleanup unused files
+      await SliderImageCacheService.cleanUnusedCache(newUrls);
     } catch (_) {
-      // Keep using default fallback images
+      // Fallback: prefetch current offline/default images
+      await _downloadSliderImages(_sliderImages);
     }
   }
 
@@ -91,7 +155,11 @@ class _LoginPageState extends State<LoginPage> {
     _checkBiometrics();
     _requestPermissionsAndWarmUp();
     AuthStore().addListener(_onStoreChange);
-    _fetchSliderImages();
+    
+    // Load local cached images instantly before hitting API
+    _loadCachedSlider().then((_) {
+      _fetchSliderImages();
+    });
   }
 
   Future<void> _requestPermissionsAndWarmUp() async {
@@ -168,6 +236,7 @@ class _LoginPageState extends State<LoginPage> {
             opacity: animation,
             child: FullScreenImagePage(
               imageUrls: _sliderImages,
+              cachedPaths: _cachedPaths,
               initialIndex: index,
               isDark: _isDarkMode,
             ),
@@ -237,6 +306,10 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   itemBuilder: (context, index) {
                     final int imageIndex = index % _sliderImages.length;
+                    final String url = _sliderImages[imageIndex];
+                    final String? localPath = _cachedPaths[url];
+                    final bool hasLocal = localPath != null && File(localPath).existsSync();
+
                     return GestureDetector(
                       onTap: () => _openFullScreenImage(context, index),
                       child: Padding(
@@ -248,40 +321,59 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             Hero(
                               tag: 'slider_image_$index',
-                              child: Image.network(
-                                _sliderImages[imageIndex],
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(16),
+                              child: hasLocal
+                                  ? Image.file(
+                                      File(localPath),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.image_not_supported_outlined,
+                                              color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Image.network(
+                                      url,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: const Center(
+                                            child: SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.image_not_supported_outlined,
+                                              color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                    child: const Center(
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
                             ),
                             Container(
                               decoration: BoxDecoration(
@@ -1162,12 +1254,14 @@ class _LoginPageState extends State<LoginPage> {
 
 class FullScreenImagePage extends StatefulWidget {
   final List<String> imageUrls;
+  final Map<String, String> cachedPaths;
   final int initialIndex;
   final bool isDark;
 
   const FullScreenImagePage({
     super.key,
     required this.imageUrls,
+    required this.cachedPaths,
     required this.initialIndex,
     required this.isDark,
   });
@@ -1352,6 +1446,9 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                     itemBuilder: (context, index) {
                       final int imageIndex = index % widget.imageUrls.length;
                       final controller = _getTransformationController(index);
+                      final url = widget.imageUrls[imageIndex];
+                      final localPath = widget.cachedPaths[url];
+                      final hasLocal = localPath != null && File(localPath).existsSync();
                       
                       return InteractiveViewer(
                         transformationController: controller,
@@ -1360,10 +1457,21 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                         child: Center(
                           child: Hero(
                             tag: 'slider_image_$index',
-                            child: Image.network(
-                              widget.imageUrls[imageIndex],
-                              fit: BoxFit.contain,
-                            ),
+                            child: hasLocal
+                                ? Image.file(
+                                    File(localPath),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.network(
+                                        url,
+                                        fit: BoxFit.contain,
+                                      );
+                                    },
+                                  )
+                                : Image.network(
+                                    url,
+                                    fit: BoxFit.contain,
+                                  ),
                           ),
                         ),
                       );
