@@ -411,7 +411,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 8.0, bottom: 20.0),
           physics: _isDraggingCard ? const NeverScrollableScrollPhysics() : null,
           children: [
             // Card swipe deck

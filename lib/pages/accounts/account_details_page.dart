@@ -338,6 +338,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     final balance = 'Rs. ${_formatAmount(rawBalance)}';
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final name = acc['name'] ?? 'Account';
+    final heroTag = 'card_$accountNo';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -354,6 +355,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           maturityDate: acc['maturity_date'],
           showBalance: true,
           isDarkMode: isDarkMode,
+          heroTag: heroTag,
           onTap: () {
             final List<Map<String, dynamic>> swipable = [];
             List<dynamic> list = [];
@@ -380,7 +382,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,
-                  heroTag: null,
+                  heroTag: heroTag,
                   swipableAccounts: swipable,
                   initialIndex: index >= 0 ? index : 0,
                 ),

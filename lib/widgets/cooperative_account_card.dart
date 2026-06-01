@@ -195,6 +195,22 @@ class CooperativeAccountCard extends StatelessWidget {
                               size: 20,
                             ),
                             onPressed: onTap,
+                          )
+                        else
+                          Opacity(
+                            opacity: 0.0,
+                            child: IgnorePointer(
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: null,
+                              ),
+                            ),
                           ),
                       ],
                     ),
