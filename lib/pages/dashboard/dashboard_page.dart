@@ -320,6 +320,27 @@ class _DashboardPageState extends State<DashboardPage> {
     _pageController.jumpToPage(newIndex);
   }
 
+  Map<String, dynamic>? get _localizedAccountsData {
+    if (_accountsData == null) return null;
+    final isNepali = AuthStore().language == 'ne';
+    final localized = <String, dynamic>{};
+    for (final key in ['savings', 'loans', 'shares']) {
+      final list = _accountsData![key] as List<dynamic>?;
+      if (list != null) {
+        localized[key] = list.map((item) {
+          final acc = Map<String, dynamic>.from(item as Map);
+          final String displayName = isNepali
+              ? (acc['scheme_name_nepali'] ?? acc['scheme_name'] ?? 'Account')
+              : (acc['scheme_name'] ?? 'Account');
+          acc['name'] = displayName;
+          acc['scheme'] = displayName;
+          return acc;
+        }).toList();
+      }
+    }
+    return localized;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -368,7 +389,7 @@ class _DashboardPageState extends State<DashboardPage> {
               child: HomeTab(
                 refreshIndicatorKey: _refreshIndicatorKey,
                 summaryData: _summaryData,
-                accountsData: _accountsData,
+                accountsData: _localizedAccountsData,
                 cachedLedgerItems: _cachedLedgerItems,
                 showBalance: _showBalance,
                 isDarkMode: _isDarkMode,

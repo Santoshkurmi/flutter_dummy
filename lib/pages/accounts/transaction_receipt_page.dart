@@ -43,7 +43,10 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
     final parts = str.split('.');
     final RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
     parts[0] = parts[0].replaceAllMapped(reg, (Match m) => '${m[1]},');
-    return parts.join('.');
+    final formatted = parts.join('.');
+    return AuthStore().language == 'ne'
+        ? TranslationService.toNepaliNumbers(formatted)
+        : formatted;
   }
 
   Future<void> _saveAsPng() async {

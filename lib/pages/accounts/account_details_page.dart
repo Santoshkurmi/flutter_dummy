@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
+import '../../store/auth_store.dart';
 import 'account_single_details_page.dart';
 import '../../widgets/cooperative_account_card.dart';
 
@@ -78,12 +79,17 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
 
   String _formatAmount(dynamic amt) {
     if (amt == null) return '0.00';
+    double d = 0.0;
     if (amt is num) {
-      return amt.toStringAsFixed(2);
+      d = amt.toDouble();
+    } else {
+      final str = amt.toString().replaceAll(',', '');
+      d = double.tryParse(str) ?? 0.0;
     }
-    final str = amt.toString().replaceAll(',', '');
-    final d = double.tryParse(str) ?? 0.0;
-    return d.toStringAsFixed(2);
+    final formatted = d.toStringAsFixed(2);
+    return AuthStore().language == 'ne'
+        ? TranslationService.toNepaliNumbers(formatted)
+        : formatted;
   }
 
   Future<void> _loadAccounts() async {

@@ -148,8 +148,36 @@ class TranslationService {
     }
     return key;
   }
+
+  static String toNepaliNumbers(String input) {
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const nepali = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+    String result = input;
+    for (int i = 0; i < english.length; i++) {
+      result = result.replaceAll(english[i], nepali[i]);
+    }
+    return result;
+  }
 }
 
 extension TranslationExtension on String {
   String get tr => TranslationService.translate(this);
+  String get trd {
+    final language = AuthStore().language;
+    if (language == 'ne') {
+      return TranslationService.toNepaliNumbers(this);
+    }
+    return this;
+  }
+}
+
+extension NumTranslationExtension on num {
+  String get trd {
+    final language = AuthStore().language;
+    final formatted = toString();
+    if (language == 'ne') {
+      return TranslationService.toNepaliNumbers(formatted);
+    }
+    return formatted;
+  }
 }

@@ -181,12 +181,17 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
 
   String _formatAmount(dynamic amt) {
     if (amt == null) return '0.00';
+    double d = 0.0;
     if (amt is num) {
-      return amt.toStringAsFixed(2);
+      d = amt.toDouble();
+    } else {
+      final str = amt.toString().replaceAll(',', '');
+      d = double.tryParse(str) ?? 0.0;
     }
-    final str = amt.toString().replaceAll(',', '');
-    final d = double.tryParse(str) ?? 0.0;
-    return d.toStringAsFixed(2);
+    final formatted = d.toStringAsFixed(2);
+    return AuthStore().language == 'ne'
+        ? TranslationService.toNepaliNumbers(formatted)
+        : formatted;
   }
 
   // Opens a custom date range bottom sheet modal
