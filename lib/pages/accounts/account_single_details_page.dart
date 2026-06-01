@@ -4,6 +4,7 @@ import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'account_ledger_page.dart';
 import 'rate_logs_page.dart';
+import 'loan_schedules_page.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -336,7 +337,16 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       actions.add({
         'label': 'Schedules'.tr,
         'icon': Icons.calendar_month_rounded,
-        'onTap': () => _showNotImplementedSnackBar('Schedules'),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LoanSchedulesPage(
+                account: acc,
+              ),
+            ),
+          );
+        },
       });
     }
 

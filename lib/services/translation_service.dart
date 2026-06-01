@@ -246,6 +246,27 @@ class TranslationService {
     'The current rate has been applied since the beginning.': 'सुरुदेखि नै हालको दर लागू गरिएको छ।',
     'Applied Date': 'लागू मिति',
     'Number of Days': 'दिन संख्या',
+
+    // Loan Schedules
+    'Loan Payment Schedules': 'ऋण भुक्तानी तालिका',
+    'Payment Date': 'भुक्तानी मिति',
+    'Installment': 'किस्ता',
+    'Interest': 'ब्याज',
+    'Paid Installment': 'तिरेको किस्ता',
+    'No schedules found.': 'भुक्तानी तालिका फेला परेन।',
+    'installments': 'किस्ताहरू',
+    'Show Interest Schedule': 'ब्याज तालिका देखाउनुहोस्',
+    'Days': 'दिन',
+    'Days Passed': 'नाघेको दिन',
+    'S.N.': 'क्र.सं.',
+    'Installment Amount': 'किस्ता रकम',
+    'Paid Principal': 'तिरेको साँवा',
+    'Interest Amount': 'ब्याज रकम',
+    'Paid': 'तिरेको',
+    'Overdue': 'भाखा नाघेको',
+    'Upcoming': 'आगामी',
+    'Period': 'अवधि',
+    'To: ': 'सम्म: ',
   };
 
   static String translate(String key) {

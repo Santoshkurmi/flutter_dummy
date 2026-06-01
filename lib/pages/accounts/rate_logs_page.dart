@@ -152,10 +152,8 @@ class _RateLogsPageState extends State<RateLogsPage> {
   }
 
   Widget _buildBody(bool isDarkMode, String schemeName) {
-    final isSavings = widget.accountType == 'savings';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
       children: [
         // Scheme header card
         Container(
@@ -207,103 +205,18 @@ class _RateLogsPageState extends State<RateLogsPage> {
           ),
         ),
 
-        // Table header
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-            border: Border.all(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-            ),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8.0),
-              topRight: Radius.circular(8.0),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Text(
-                  (isSavings ? 'From' : 'Applied Date').tr,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  (isSavings ? 'To' : 'Number of Days').tr,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Rate'.tr,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 8),
 
-        // List of entries
-        Expanded(
-          child: _rateLogs.isEmpty
-              ? _buildEmptyState(isDarkMode)
-              : Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF020617) : Colors.white,
-                    border: Border(
-                      left: BorderSide(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-                      right: BorderSide(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-                      bottom: BorderSide(color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8.0),
-                      bottomRight: Radius.circular(8.0),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8.0),
-                      bottomRight: Radius.circular(8.0),
-                    ),
-                    child: ListView.separated(
-                      padding: EdgeInsets.zero,
-                      itemCount: _rateLogs.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                      ),
-                      itemBuilder: (context, index) {
-                        final log = _rateLogs[index];
-                        final isFirst = index == 0; // newest = ongoing
-                        return _buildLogRow(log, isFirst, isDarkMode);
-                      },
-                    ),
-                  ),
-                ),
-        ),
-        const SizedBox(height: 16),
+        // List of entries (Cards)
+        if (_rateLogs.isEmpty)
+          _buildEmptyState(isDarkMode)
+        else
+          ..._rateLogs.asMap().entries.map((entry) {
+            final index = entry.key;
+            final log = entry.value;
+            final isFirst = index == 0;
+            return _buildLogRow(log, isFirst, isDarkMode);
+          }),
       ],
     );
   }
@@ -319,91 +232,106 @@ class _RateLogsPageState extends State<RateLogsPage> {
       final bool isOngoing = to.contains('Ongoing') || to.contains('🔮');
       final bool isBefore = from.contains('Before') || from.contains('⏳');
 
+      final String fromStr = isBefore ? 'Before'.tr : _formatDateField(from);
+      final String toStr = isOngoing ? 'Ongoing'.tr : _formatDateField(to);
+      final String dateRange = '$fromStr - $toStr';
+
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        color: isFirst
-            ? (isDarkMode ? const Color(0xFF2563EB).withValues(alpha: 0.06) : const Color(0xFF2563EB).withValues(alpha: 0.03))
-            : Colors.transparent,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isFirst
+              ? (isDarkMode ? const Color(0xFF2563EB).withValues(alpha: 0.1) : const Color(0xFF2563EB).withValues(alpha: 0.05))
+              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isFirst
+                ? const Color(0xFF2563EB)
+                : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            width: isFirst ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Expanded(
-              flex: 3,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isBefore) ...[
-                    Text(
-                      '⏳ ',
-                      style: TextStyle(fontSize: 12, color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                    ),
-                    Flexible(
-                      child: Text(
-                        'Before'.tr,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontStyle: FontStyle.italic,
-                          color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                        ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.date_range_rounded,
+                        size: 14,
+                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                       ),
-                    ),
-                  ] else
-                    Flexible(
-                      child: Text(
-                        _formatDateField(from),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Row(
-                children: [
-                  if (isOngoing) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.15 : 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '🔮 ${'Ongoing'.tr}',
+                      const SizedBox(width: 6),
+                      Text(
+                        'Period'.tr,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                          fontWeight: FontWeight.w600,
+                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                         ),
                       ),
-                    ),
-                  ] else
-                    Flexible(
-                      child: Text(
-                        _formatDateField(to),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          dateRange,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                          ),
                         ),
                       ),
-                    ),
+                      if (isOngoing) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.15 : 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Ongoing'.tr,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
-            Expanded(
-              flex: 2,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isFirst
+                    ? const Color(0xFF2563EB)
+                    : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Text(
                 _formatRate(rate),
-                textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: isFirst
-                      ? const Color(0xFF2563EB)
-                      : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                  color: isFirst ? Colors.white : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
                 ),
               ),
             ),
@@ -416,39 +344,77 @@ class _RateLogsPageState extends State<RateLogsPage> {
       final rate = log['interest_rate'];
 
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        color: Colors.transparent,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Expanded(
-              flex: 3,
-              child: Text(
-                _formatDateField(appliedDate),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.date_range_rounded,
+                        size: 14,
+                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Applied Date'.tr,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _formatDateField(appliedDate),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${'Number of Days'.tr}: ${AuthStore().language == 'ne' ? numberOfDays.trd : numberOfDays}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                AuthStore().language == 'ne' ? numberOfDays.trd : numberOfDays,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-            Expanded(
-              flex: 2,
               child: Text(
                 _formatRate(rate),
-                textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w900,
                   color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
                 ),
