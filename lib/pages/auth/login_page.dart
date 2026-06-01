@@ -1194,6 +1194,8 @@ class _LoginPageState extends State<LoginPage> {
                                         await store.setBiometricEnabled(false);
                                         await store.setNeverAskBiometric(false);
                                         await store.setBiometricType(null);
+                                        await store.setEnableCaching(true);
+                                        await ApiService.clearCache();
                                         await store.clearAuth();
                                         
                                         if (!mounted) return;

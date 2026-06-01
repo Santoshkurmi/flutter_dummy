@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'store/notification_store.dart';
 import 'services/location_service.dart';
+import 'services/api_service.dart';
 import 'dart:convert';
 
 @pragma('vm:entry-point')
@@ -87,6 +88,9 @@ void main() async {
   // Initialize Auth Store (persistences and initial loadings)
   final authStore = AuthStore();
   await authStore.init();
+
+  // Clear API cache periodically on startup (every 2 hours)
+  await ApiService.checkAndClearCacheOnAppStart();
 
   // Initialize Location Service
   final locationService = LocationService();

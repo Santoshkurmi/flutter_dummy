@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/api_service.dart';
 import 'biometric_setup_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -108,6 +109,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 }
               },
               icon: Icons.fingerprint_rounded,
+              isDarkMode: isDarkMode,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Section 2.5: Cache Settings
+            _buildSectionHeader('DATA & CACHE'.tr, isDarkMode),
+            
+            // Enable Caching Switch
+            _buildToggleItem(
+              title: 'Enable Caching'.tr,
+              subtitle: 'Store responses locally to reduce data usage and load pages faster'.tr,
+              value: authStore.enableCaching,
+              onChanged: (val) async {
+                await authStore.setEnableCaching(val);
+                if (!val) {
+                  await ApiService.clearCache();
+                }
+                setState(() {});
+              },
+              icon: Icons.cached_rounded,
               isDarkMode: isDarkMode,
             ),
 

@@ -491,6 +491,79 @@ class ApiService {
     return _cachedDeviceMetaData!;
   }
 
+  static String _getCacheKey(String endpoint, Map<String, String>? params) {
+    String key = 'api_cache_$endpoint';
+    if (params != null && params.isNotEmpty) {
+      final sortedKeys = params.keys.toList()..sort();
+      final query = sortedKeys.map((k) => '$k=${params[k]}').join('&');
+      key += '?$query';
+    }
+    return key;
+  }
+
+  static Future<void> saveToCache(String endpoint, Map<String, String>? params, dynamic data, int timestamp) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getCacheKey(endpoint, params);
+      final cacheData = {
+        'timestamp': timestamp,
+        'data': data,
+      };
+      await prefs.setString(key, jsonEncode(cacheData));
+    } catch (e) {
+      debugPrint('Error saving to cache: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>?> readFromCache(String endpoint, Map<String, String>? params) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getCacheKey(endpoint, params);
+      final jsonStr = prefs.getString(key);
+      if (jsonStr != null) {
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error reading cache: $e');
+    }
+    return null;
+  }
+
+  static Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      for (var key in keys) {
+        if (key.startsWith('api_cache_')) {
+          await prefs.remove(key);
+        }
+      }
+      debugPrint('✅ API cache cleared successfully.');
+    } catch (e) {
+      debugPrint('Error clearing cache: $e');
+    }
+  }
+
+  static Future<void> checkAndClearCacheOnAppStart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastCleared = prefs.getInt('api_cache_last_cleared') ?? 0;
+      final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      if (nowSeconds - lastCleared > 2 * 3600) {
+        final keys = prefs.getKeys();
+        for (var key in keys) {
+          if (key.startsWith('api_cache_')) {
+            await prefs.remove(key);
+          }
+        }
+        await prefs.setInt('api_cache_last_cleared', nowSeconds);
+        debugPrint('✅ API cache cleared on startup (2h interval)');
+      }
+    } catch (e) {
+      debugPrint('Error checking cache duration: $e');
+    }
+  }
+
   // GET Request
   Future<dynamic> get(String endpoint, {Map<String, String>? params}) async {
     String urlStr = '$_baseUrl$endpoint';
@@ -502,12 +575,44 @@ class ApiService {
     reqHeaders['X-Device-Id'] = await getDeviceId();
     final meta = await getDeviceMetaData();
     reqHeaders.addAll(meta);
+
+    final bool isCacheEnabled = AuthStore().enableCaching;
+    Map<String, dynamic>? cachedEntry;
+    if (isCacheEnabled) {
+      cachedEntry = await readFromCache(endpoint, params);
+      if (cachedEntry != null && cachedEntry['timestamp'] != null) {
+        reqHeaders['X-Last-Updated'] = cachedEntry['timestamp'].toString();
+      }
+    }
+
     final response = await http.get(Uri.parse(urlStr), headers: reqHeaders);
-    return await _handleResponse(response, () => get(endpoint, params: params));
+
+    if (isCacheEnabled && response.statusCode == 304) {
+      if (cachedEntry != null && cachedEntry['data'] != null) {
+        return cachedEntry['data'];
+      }
+    }
+
+    if (response.statusCode == 401) {
+      return await _handleResponse(response, () => get(endpoint, params: params));
+    }
+
+    final body = jsonDecode(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (isCacheEnabled) {
+        final tsHeader = response.headers['x-server-timestamp'] ?? response.headers['X-Server-Timestamp'];
+        final int serverTimestamp = int.tryParse(tsHeader ?? '') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+        await saveToCache(endpoint, params, body, serverTimestamp);
+      }
+      return body;
+    } else {
+      throw Exception(body['message'] ?? 'Network API Error: ${response.statusCode}');
+    }
   }
 
   // POST Request
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+    final reqHeaders = Map<String, String>.from(_headers);
     final payload = Map<String, dynamic>.from(data);
     if (!payload.containsKey('device_id') ||
         payload['device_id'] == null ||
@@ -524,7 +629,6 @@ class ApiService {
       payload['device_os'] = meta['X-Device-Os'];
       payload['device_version'] = meta['X-Device-Os'];
     }
-    final reqHeaders = Map<String, String>.from(_headers);
     reqHeaders['X-Device-Id'] = await getDeviceId();
     reqHeaders.addAll(meta);
     final response = await http.post(

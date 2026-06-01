@@ -34,6 +34,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String _themeMode = 'system'; // 'system', 'dark', 'light'
   // In-memory only — true between login-success and biometric setup completion
   bool _pendingBiometricSetup = false;
+  bool _enableCaching = true;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -78,6 +79,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String get dailyLimit => _dailyLimit;
   String get themeMode => _themeMode;
   bool get pendingBiometricSetup => _pendingBiometricSetup;
+  bool get enableCaching => _enableCaching;
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
@@ -135,6 +137,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _themeMode = prefs.getString('themeMode') ?? 'system';
     _language = prefs.getString('language') ?? 'en';
     _preferencesSetupCompleted = prefs.getBool('preferences_setup_completed') ?? false;
+    _enableCaching = prefs.getBool('enableCaching') ?? true;
 
     notifyListeners();
   }
@@ -212,6 +215,13 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _smsAlertsEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('smsAlertsEnabled', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setEnableCaching(bool value) async {
+    _enableCaching = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('enableCaching', value);
     notifyListeners();
   }
 
@@ -294,6 +304,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _dailyLimit = '50000';
     _themeMode = 'system';
     _preferencesSetupCompleted = false;
+    _enableCaching = true;
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();

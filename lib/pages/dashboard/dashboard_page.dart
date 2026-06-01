@@ -127,24 +127,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  void _logout() async {
-    final confirm = await _showLogoutConfirmation();
-    if (confirm != true) return;
-
-    // Trigger API call in the background without awaiting it
-    ApiService().logout().catchError((_) => <String, dynamic>{});
-    
-    final store = AuthStore();
-    await store.clearAuth();
-    
-    if (!mounted) return;
-    
-    // Pop all screens on top of the root route to avoid duplicate LoginPage
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  void _logoutAndExit() async {
-    // Show a loading progress dialog
+  void _showLoggingOutDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -185,6 +168,35 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       },
     );
+  }
+
+  void _logout() async {
+    final confirm = await _showLogoutConfirmation();
+    if (confirm != true) return;
+
+    _showLoggingOutDialog();
+
+    // Call logout API and wait
+    try {
+      await ApiService().logout();
+    } catch (_) {}
+    
+    final store = AuthStore();
+    await store.clearAuth();
+    
+    // Close loading dialog if mounted
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    
+    if (!mounted) return;
+    
+    // Pop all screens on top of the root route to avoid duplicate LoginPage
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  void _logoutAndExit() async {
+    _showLoggingOutDialog();
 
     // Call logout API and wait
     try {
