@@ -1228,14 +1228,14 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                       },
                                       icon: Icon(
-                                        Icons.help_outline_rounded,
+                                        Icons.phone_android_rounded,
                                         size: 16,
-                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                        color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
                                       ),
                                       label: Text(
                                         'Login with another phone number'.tr,
                                         style: TextStyle(
-                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                          color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5),
                                           fontSize: 13,
                                         ),
                                       ),
@@ -1254,14 +1254,14 @@ class _LoginPageState extends State<LoginPage> {
                                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                         },
                                         icon: Icon(
-                                          Icons.help_outline_rounded,
+                                          Icons.account_balance_rounded,
                                           size: 16,
-                                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                                         ),
                                         label: Text(
                                           'Switch Cooperative Bank'.tr,
                                           style: TextStyle(
-                                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                                            color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                                             fontSize: 13,
                                           ),
                                         ),

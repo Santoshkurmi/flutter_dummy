@@ -186,15 +186,24 @@ class BrightBankApp extends StatelessWidget {
           ),
           home: const InitialRouter(),
           builder: (context, child) {
-            return Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: (event) {
-                FlyingHeroTracker.handlePointerDown(event.position);
-              },
-              onPointerUp: (event) {
-                FlyingHeroTracker.handlePointerUp(event.position);
-              },
-              child: child!,
+            final MediaQueryData data = MediaQuery.of(context);
+            return MediaQuery(
+              data: data.copyWith(
+                textScaler: data.textScaler.clamp(
+                  minScaleFactor: 0.85,
+                  maxScaleFactor: 1.06,
+                ),
+              ),
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (event) {
+                  FlyingHeroTracker.handlePointerDown(event.position);
+                },
+                onPointerUp: (event) {
+                  FlyingHeroTracker.handlePointerUp(event.position);
+                },
+                child: child!,
+              ),
             );
           },
         );
