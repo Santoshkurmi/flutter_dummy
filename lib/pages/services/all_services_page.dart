@@ -25,7 +25,7 @@ class AllServicesPage extends StatelessWidget {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
-    } else if (label == 'Self Register') {
+    } else if (label == 'Member Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
@@ -44,23 +44,17 @@ class AllServicesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final allActions = [
-      {'icon': Icons.send_rounded, 'label': 'Send Money'},
-      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive'},
+      {'icon': Icons.send_rounded, 'label': 'Pay'}, 
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Deposit'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Internet'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Electricity'},
+      {'icon': Icons.phone_android_rounded, 'label': 'TopUp'},
       {'icon': Icons.account_balance_wallet_rounded, 'label': 'Accounts'},
-      {'icon': Icons.receipt_long_rounded, 'label': 'Statement'},
-      {'icon': Icons.qr_code_scanner_rounded, 'label': 'Scan QR'},
-      {'icon': Icons.phone_android_rounded, 'label': 'Recharge'},
       {'icon': Icons.bolt_rounded, 'label': 'Utility'},
       {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
       {'icon': Icons.newspaper_rounded, 'label': 'Notice'},
-      {'icon': Icons.calculate_rounded, 'label': 'Calculator'},
-      {'icon': Icons.app_registration_rounded, 'label': 'Self Register'},
+      {'icon': Icons.app_registration_rounded, 'label': 'Member Register'},
       {'icon': Icons.support_agent_rounded, 'label': 'Support'},
-      {'icon': Icons.history_rounded, 'label': 'History'},
-      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer'},
-      {'icon': Icons.trending_up_rounded, 'label': 'Growth'},
-      {'icon': Icons.shield_rounded, 'label': 'Security'},
-      {'icon': Icons.card_giftcard_rounded, 'label': 'Rewards'},
       {'icon': Icons.public_rounded, 'label': 'Remittance'},
     ];
 

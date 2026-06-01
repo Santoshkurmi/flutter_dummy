@@ -217,20 +217,14 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Statement') {
       widget.onTabChange(1); // Switches to the Statement bottom tab
-    } else if (label == 'Savings' || label == 'Ledger') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Calendar') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
-    } else if (label == 'Self Register') {
+    } else if (label == 'Member Register') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
-    } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
-    } else if (label == 'Scan QR' || label == 'QR Scan') {
-      widget.onTabChange(2); // Scan QR Tab
-    } else {
+    }  else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$label service initialized.'),
+          content: Text('$label service not implemented yet.'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -257,7 +251,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     // Card 1: Overview
     cardsList.add({
       'isOverview': true,
-      'title': 'Bright Savings Account'.tr,
+      'title': 'Account Summary'.tr,
       'balance': savingsBalance,
       'savingsBalance': savingsBalance,
       'loanBalance': loanBalance,
@@ -893,18 +887,19 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   Widget _buildQuickActions(BuildContext context) {
     final actions = [
-      {'icon': Icons.send_rounded, 'label': 'Send Money'},
-      {'icon': Icons.arrow_downward_rounded, 'label': 'Receive'},
-      {'icon': Icons.account_balance_wallet_rounded, 'label': 'Accounts'},
-      {'icon': Icons.receipt_long_rounded, 'label': 'Statement'},
-      {'icon': Icons.qr_code_scanner_rounded, 'label': 'QR Scan'},
+      {'icon': Icons.send_rounded, 'label': 'Pay'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Deposit'},
+       {'icon': Icons.arrow_downward_rounded, 'label': 'Internet'},
+      {'icon': Icons.arrow_downward_rounded, 'label': 'Electricity'},
+      {'icon': Icons.phone_android_rounded, 'label': 'TopUp'},
       {'icon': Icons.phone_android_rounded, 'label': 'Recharge'},
+      {'icon': Icons.account_balance_wallet_rounded, 'label': 'Accounts'},
       {'icon': Icons.bolt_rounded, 'label': 'Utility'},
       {'icon': Icons.calendar_month_rounded, 'label': 'Calendar'},
       {'icon': Icons.newspaper_rounded, 'label': 'Notice'},
-      {'icon': Icons.calculate_rounded, 'label': 'Calculator'},
-      {'icon': Icons.app_registration_rounded, 'label': 'Self Register'},
-      {'icon': Icons.support_agent_rounded, 'label': 'Support'},
+      {'icon': Icons.app_registration_rounded, 'label': 'Member Register'},
+      {'icon': Icons.public_rounded, 'label': 'Remittance'},
+
     ];
 
     final Color containerColor = widget.isDarkMode 
