@@ -540,15 +540,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     ),
                                   ),
                                   Container(
-                                    width: 77,
-                                    height: 77,
+                                    width: 68,
+                                    height: 68,
                                     decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
                                       gradient: LinearGradient(
                                         colors: gradientColors,
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       ),
-                                      borderRadius: BorderRadius.circular(22),
                                       boxShadow: [
                                         BoxShadow(
                                           color: (slide['iconBg'] as Color).withValues(alpha: 0.2),
@@ -559,7 +559,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     ),
                                     child: Icon(
                                       slide['icon'] as IconData,
-                                      size: 36,
+                                      size: 32,
                                       color: Colors.white,
                                     ),
                                   ),
