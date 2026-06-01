@@ -1270,7 +1270,7 @@ class FullScreenImagePage extends StatefulWidget {
   State<FullScreenImagePage> createState() => _FullScreenImagePageState();
 }
 
-class _FullScreenImagePageState extends State<FullScreenImagePage> {
+class _FullScreenImagePageState extends State<FullScreenImagePage> with SingleTickerProviderStateMixin {
   PageController? _fullscreenPageController;
   double? _lastScreenWidth;
   late int _currentPageIndex;
@@ -1284,10 +1284,27 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
   bool _isVerticalDrag = false;
   bool _isHorizontalDrag = false;
 
+  late AnimationController _zoomAnimationController;
+  Animation<Matrix4>? _zoomAnimation;
+  int? _zoomingPageIndex;
+  TapDownDetails? _doubleTapDownDetails;
+
   @override
   void initState() {
     super.initState();
     _currentPageIndex = widget.initialIndex;
+    _zoomAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _zoomAnimationController.addListener(() {
+      if (_zoomAnimation != null && _zoomingPageIndex != null) {
+        final controller = _transformationControllers[_zoomingPageIndex];
+        if (controller != null) {
+          controller.value = _zoomAnimation!.value;
+        }
+      }
+    });
   }
 
   @override
@@ -1306,10 +1323,55 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
   @override
   void dispose() {
     _fullscreenPageController?.dispose();
+    _zoomAnimationController.dispose();
     for (final controller in _transformationControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  void _handleDoubleTap(TapDownDetails details, int index) {
+    final controller = _getTransformationController(index);
+    final currentMatrix = controller.value;
+    final currentScale = currentMatrix.entry(0, 0);
+
+    double targetScale;
+    if (currentScale <= 1.05) {
+      targetScale = 2.2;
+    } else if (currentScale <= 2.5) {
+      targetScale = 4.0;
+    } else {
+      targetScale = 1.0;
+    }
+
+    final Matrix4 targetMatrix;
+    if (targetScale == 1.0) {
+      targetMatrix = Matrix4.identity();
+    } else {
+      // C is the tapped point in child coordinate space
+      final Offset C = details.localPosition;
+      
+      // V is the tapped point in viewport coordinate space
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset V = renderBox.globalToLocal(details.globalPosition);
+
+      targetMatrix = Matrix4.translationValues(V.dx, V.dy, 0.0)
+        ..multiply(Matrix4.diagonal3Values(targetScale, targetScale, 1.0))
+        ..multiply(Matrix4.translationValues(-C.dx, -C.dy, 0.0));
+    }
+
+    _zoomingPageIndex = index;
+    _zoomAnimation = Matrix4Tween(
+      begin: currentMatrix,
+      end: targetMatrix,
+    ).animate(CurvedAnimation(
+      parent: _zoomAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _zoomAnimationController.stop();
+    _zoomAnimationController.reset();
+    _zoomAnimationController.forward();
   }
 
   TransformationController _getTransformationController(int index) {
@@ -1449,29 +1511,40 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                       final url = widget.imageUrls[imageIndex];
                       final localPath = widget.cachedPaths[url];
                       final hasLocal = localPath != null && File(localPath).existsSync();
-                      
+
                       return InteractiveViewer(
                         transformationController: controller,
                         maxScale: 4.0,
                         minScale: 1.0,
-                        child: Center(
-                          child: Hero(
-                            tag: 'slider_image_$index',
-                            child: hasLocal
-                                ? Image.file(
-                                    File(localPath),
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.network(
-                                        url,
-                                        fit: BoxFit.contain,
-                                      );
-                                    },
-                                  )
-                                : Image.network(
-                                    url,
-                                    fit: BoxFit.contain,
-                                  ),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onDoubleTapDown: (details) {
+                            _doubleTapDownDetails = details;
+                          },
+                          onDoubleTap: () {
+                            if (_doubleTapDownDetails != null) {
+                              _handleDoubleTap(_doubleTapDownDetails!, index);
+                            }
+                          },
+                          child: Center(
+                            child: Hero(
+                              tag: 'slider_image_$index',
+                              child: hasLocal
+                                  ? Image.file(
+                                      File(localPath),
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.network(
+                                          url,
+                                          fit: BoxFit.contain,
+                                        );
+                                      },
+                                    )
+                                  : Image.network(
+                                      url,
+                                      fit: BoxFit.contain,
+                                    ),
+                            ),
                           ),
                         ),
                       );
