@@ -59,35 +59,35 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           children: [
             // Section 1: Notifications
-            _buildSectionHeader('NOTIFICATIONS'.tr, isDarkMode),
+            // _buildSectionHeader('NOTIFICATIONS'.tr, isDarkMode),
             
             // Push Notifications Switch
-            _buildToggleItem(
-              title: 'Push Notifications'.tr,
-              subtitle: 'Receive real-time transaction updates and alerts'.tr,
-              value: authStore.pushEnabled,
-              onChanged: (val) async {
-                await authStore.setPushEnabled(val);
-                setState(() {});
-              },
-              icon: Icons.notifications_active_rounded,
-              isDarkMode: isDarkMode,
-            ),
+            // _buildToggleItem(
+            //   title: 'Push Notifications'.tr,
+            //   subtitle: 'Receive real-time transaction updates and alerts'.tr,
+            //   value: authStore.pushEnabled,
+            //   onChanged: (val) async {
+            //     await authStore.setPushEnabled(val);
+            //     setState(() {});
+            //   },
+            //   icon: Icons.notifications_active_rounded,
+            //   isDarkMode: isDarkMode,
+            // ),
             
             // SMS Alerts Switch
-            _buildToggleItem(
-              title: 'SMS Alerts'.tr,
-              subtitle: 'Backup copy of standard messages over cellular connection'.tr,
-              value: authStore.smsAlertsEnabled,
-              onChanged: (val) async {
-                await authStore.setSmsAlertsEnabled(val);
-                setState(() {});
-              },
-              icon: Icons.sms_rounded,
-              isDarkMode: isDarkMode,
-            ),
+            // _buildToggleItem(
+            //   title: 'SMS Alerts'.tr,
+            //   subtitle: 'Backup copy of standard messages over cellular connection'.tr,
+            //   value: authStore.smsAlertsEnabled,
+            //   onChanged: (val) async {
+            //     await authStore.setSmsAlertsEnabled(val);
+            //     setState(() {});
+            //   },
+            //   icon: Icons.sms_rounded,
+            //   isDarkMode: isDarkMode,
+            // ),
 
-            const SizedBox(height: 24),
+            // const SizedBox(height: 24),
 
             // Section 2: Security
             _buildSectionHeader('SECURITY'.tr, isDarkMode),
