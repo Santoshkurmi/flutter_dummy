@@ -25,7 +25,7 @@ import Security
     
     let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "BiometricSignaturePlugin")
     let channel = FlutterMethodChannel(name: "com.brightbank.app/biometrics",
-                                      binaryMessenger: registrar.messenger())
+                                      binaryMessenger: registrar!.messenger())
     channel.setMethodCallHandler({
       [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
       self?.handle(call, result: result)

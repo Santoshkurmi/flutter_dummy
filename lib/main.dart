@@ -10,7 +10,7 @@ import 'pages/auth/status_check_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/dashboard/dashboard_page.dart';
 import 'pages/settings/biometric_setup_page.dart';
-import 'package:refresh_rate/refresh_rate.dart';
+// import 'package:refresh_rate/refresh_rate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
@@ -76,7 +76,7 @@ void main() async {
   
   try {
     // Unlocks peak rate (90Hz / 120Hz / 144Hz) on supported Android and iOS devices
-     RefreshRate.enable();
+    //  RefreshRate.enable();
   } catch (e) {
     debugPrint("Failed to set high refresh rate: $e");
   }

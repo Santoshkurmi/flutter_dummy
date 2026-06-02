@@ -1,0 +1,40 @@
+PODS:
+  - downloadsfolder (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - open_filex (0.0.2):
+    - Flutter
+  - permission_handler_apple (9.3.0):
+    - Flutter
+  - printing (1.0.0):
+    - Flutter
+
+DEPENDENCIES:
+  - downloadsfolder (from `.symlinks/plugins/downloadsfolder/ios`)
+  - Flutter (from `Flutter`)
+  - open_filex (from `.symlinks/plugins/open_filex/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - printing (from `.symlinks/plugins/printing/ios`)
+
+EXTERNAL SOURCES:
+  downloadsfolder:
+    :path: ".symlinks/plugins/downloadsfolder/ios"
+  Flutter:
+    :path: Flutter
+  open_filex:
+    :path: ".symlinks/plugins/open_filex/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+  printing:
+    :path: ".symlinks/plugins/printing/ios"
+
+SPEC CHECKSUMS:
+  downloadsfolder: 7d5c7b5d23e3c4dded522ff2a2ef14a56846378a
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
+
+PODFILE CHECKSUM: ae9e65fc23486119b8e977fd41d9213f251e537a
+
+COCOAPODS: 1.16.2
