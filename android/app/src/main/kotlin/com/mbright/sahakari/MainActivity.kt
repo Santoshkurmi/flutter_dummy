@@ -1,6 +1,8 @@
 package com.mbright.sahakari
 
+import android.os.Build
 import android.os.Bundle
+import android.view.Surface
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -24,10 +26,84 @@ class MainActivity: FlutterFragmentActivity() {
         installSplashScreen()
         
         super.onCreate(savedInstanceState)
+        
+        // Request the highest refresh rate supported by the display on startup
+        setHighRefreshRate()
+    }
+
+    private fun setHighRefreshRate() {
+        // 1. Handle Modern Android Devices (Android 11 / API 30 and newer)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val currentDisplay = this.display
+                val modes = currentDisplay?.supportedModes
+                
+                if (modes != null && modes.isNotEmpty()) {
+                    val activeMode = currentDisplay.mode
+                    var highestMode = activeMode
+                    
+                    // Scan hardware profiles matching current layout boundaries
+                    for (mode in modes) {
+                        if (mode.physicalWidth == activeMode.physicalWidth && mode.physicalHeight == activeMode.physicalHeight) {
+                            if (mode.refreshRate > highestMode.refreshRate) {
+                                highestMode = mode
+                            }
+                        }
+                    }
+                    
+                    val layoutParams = window.attributes
+                    // Unlocks physical max refresh ceiling
+                    layoutParams.preferredDisplayModeId = highestMode.modeId 
+                    window.attributes = layoutParams
+                    
+                    // 2. Prevent modern LTPO panels from aggressively throttling down
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12+
+                        try {
+                            // Look for the method on the official base class directly
+                            val setFrameRateMethod = android.view.Window::class.java.getMethod(
+                                "setFrameRate",
+                                Float::class.java,
+                                Int::class.java,
+                                Int::class.java
+                            )
+                            // Pass 'window', target 120.0f, FIXED_SOURCE (1), and SEAMLESS (0)
+                            setFrameRateMethod.invoke(window, 120.0f, 1, 0)
+                        } catch (reflectionException: Exception) {
+                            // Fallback or ignore safely
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Safe silent fallback if unusual vendor skins throw exceptions
+            }
+        } 
+        // 3. Handle Legacy Android Profiles (Android 5.1 to 10)
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                val layoutParams = window.attributes
+                @Suppress("DEPRECATION")
+                layoutParams.preferredRefreshRate = 120.0f
+                window.attributes = layoutParams
+            } catch (e: Exception) {
+                // Fallback
+            }
+        }
     }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        
+        // Register Refresh Rate MethodChannel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.channel.refresh").setMethodCallHandler { call, result ->
+            if (call.method == "setHighRefreshRate") {
+                setHighRefreshRate()
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
+
+        // Register Biometrics MethodChannel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "createKeyPair" -> {

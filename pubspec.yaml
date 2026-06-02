@@ -48,7 +48,7 @@ dependencies:
   qr_flutter: ^4.1.0
   path_provider: ^2.1.5
   gal: ^2.3.2
-  flutter_displaymode: ^0.7.0
+  # flutter_displaymode: ^0.7.0
   # refresh_rate: ^1.0.0
   pdf: ^3.12.0
   printing: ^5.13.1
