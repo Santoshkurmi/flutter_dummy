@@ -1,5 +1,8 @@
 package com.mbright.sahakari
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.Surface
@@ -29,6 +32,24 @@ class MainActivity: FlutterFragmentActivity() {
         
         // Request the highest refresh rate supported by the display on startup
         setHighRefreshRate()
+        
+        // Create the default notification channel for Android 8.0+
+        createNotificationChannel()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "notice_channel"
+            val channelName = "General Notification"
+            val descriptionText = "Notification for saving,loan,share, login transactions"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
     private fun setHighRefreshRate() {

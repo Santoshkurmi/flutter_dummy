@@ -1,78 +1,64 @@
 {
   "project_info": {
-    "project_number": "419453550938",
-    "firebase_url": "https://loksewa-app-testing-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "loksewa-app-testing",
-    "storage_bucket": "loksewa-app-testing.appspot.com"
+    "project_number": "1053668060799",
+    "firebase_url": "https://brightnotify.firebaseio.com",
+    "project_id": "brightnotify",
+    "storage_bucket": "brightnotify.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:419453550938:android:f2e469df90f58737def363",
+        "mobilesdk_app_id": "1:1053668060799:android:1436f1f85335cacc",
         "android_client_info": {
           "package_name": "com.mbright.sahakari"
         }
       },
       "oauth_client": [
         {
-          "client_id": "419453550938-ontumkica1ha3cgqnlvqsapmv23g2lh8.apps.googleusercontent.com",
+          "client_id": "1053668060799-q6avn4duuenk7m0cuj60r7qkja8l2b4u.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAYkiq8Hn6VO2PlDgoMLiLi_OFmXJ3Wr2k"
+          "current_key": "AIzaSyANXPanL8caVBRHT_f_OyZ7gyoZv_jVCAI"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "419453550938-ontumkica1ha3cgqnlvqsapmv23g2lh8.apps.googleusercontent.com",
+              "client_id": "1053668060799-q6avn4duuenk7m0cuj60r7qkja8l2b4u.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "419453550938-be8qtsikjemopejic2q4nd4rr3f352al.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.mbright.sahakari"
-              }
             }
           ]
         }
       }
     },
-    {
+     {
       "client_info": {
-        "mobilesdk_app_id": "1:419453550938:android:f2e469df90f58737def363",
+        "mobilesdk_app_id": "1:1053668060799:android:1436f1f85335cacc",
         "android_client_info": {
           "package_name": "com.mbright.sahakari.debug"
         }
       },
       "oauth_client": [
         {
-          "client_id": "419453550938-ontumkica1ha3cgqnlvqsapmv23g2lh8.apps.googleusercontent.com",
+          "client_id": "1053668060799-q6avn4duuenk7m0cuj60r7qkja8l2b4u.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAYkiq8Hn6VO2PlDgoMLiLi_OFmXJ3Wr2k"
+          "current_key": "AIzaSyANXPanL8caVBRHT_f_OyZ7gyoZv_jVCAI"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "419453550938-ontumkica1ha3cgqnlvqsapmv23g2lh8.apps.googleusercontent.com",
+              "client_id": "1053668060799-q6avn4duuenk7m0cuj60r7qkja8l2b4u.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "419453550938-be8qtsikjemopejic2q4nd4rr3f352al.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.mbright.sahakari.debug"
-              }
             }
           ]
         }
