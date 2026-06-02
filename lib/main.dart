@@ -208,7 +208,9 @@ class BrightBankApp extends StatelessWidget {
                   onPointerUp: (event) {
                     FlyingHeroTracker.handlePointerUp(event.position);
                   },
-                  child: child!,
+                  child: KeyboardRefreshRateTracer(
+                    child: child!,
+                  ),
                 ),
               ),
             );
@@ -288,5 +290,41 @@ class _InitialRouterState extends State<InitialRouter> {
 
     // 5. Fallback: Go to Onboarding Page
     return const OnboardingPage();
+  }
+}
+
+class KeyboardRefreshRateTracer extends StatefulWidget {
+  final Widget child;
+  const KeyboardRefreshRateTracer({super.key, required this.child});
+
+  @override
+  State<KeyboardRefreshRateTracer> createState() => _KeyboardRefreshRateTracerState();
+}
+
+class _KeyboardRefreshRateTracerState extends State<KeyboardRefreshRateTracer> {
+  static const _channel = MethodChannel('app.channel.refresh');
+  bool _wasKeyboardShowing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isKeyboardShowing = MediaQuery.of(context).viewInsets.bottom > 0;
+    
+    if (isKeyboardShowing != _wasKeyboardShowing) {
+      _wasKeyboardShowing = isKeyboardShowing;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setRate(isKeyboardShowing ? 120.0 : 60.0);
+      });
+    }
+
+    return widget.child;
+  }
+
+  Future<void> _setRate(double rate) async {
+    if (kIsWeb || !Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod('updateRefreshRate', {'rate': rate});
+    } catch (e) {
+      debugPrint('Error setting refresh rate: $e');
+    }
   }
 }
