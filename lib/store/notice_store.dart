@@ -8,9 +8,11 @@ class NoticeStore extends ChangeNotifier {
 
   List<dynamic> _notices = [];
   Set<int> _readNoticeIds = {};
+  Set<int> _initiallyReadNoticeIds = {};
 
   List<dynamic> get notices => _notices;
   Set<int> get readNoticeIds => _readNoticeIds;
+  Set<int> get initiallyReadNoticeIds => _initiallyReadNoticeIds;
 
   // Calculates the count of unread notices (ID not in _readNoticeIds)
   int get unreadCount {
@@ -26,6 +28,7 @@ class NoticeStore extends ChangeNotifier {
     final readIdsList = prefs.getStringList('read_notice_ids') ?? [];
     _readNoticeIds = readIdsList.map((s) => int.tryParse(s) ?? 0).toSet();
     _readNoticeIds.remove(0); // Clean up any invalid parses
+    _initiallyReadNoticeIds = Set<int>.from(_readNoticeIds);
     notifyListeners();
   }
 

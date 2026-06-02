@@ -1,14 +1,17 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationStore extends ChangeNotifier {
   static final NotificationStore _instance = NotificationStore._internal();
   factory NotificationStore() => _instance;
   NotificationStore._internal();
+
+  final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   List<Map<String, dynamic>> _notifications = [];
   List<Map<String, dynamic>> get notifications => _notifications;
@@ -21,6 +24,43 @@ class NotificationStore extends ChangeNotifier {
     // Listen to foreground FCM messages
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       try {
+        const AndroidInitializationSettings initializationSettingsAndroid =
+            AndroidInitializationSettings('@mipmap/ic_launcher');
+
+        const DarwinInitializationSettings initializationSettingsDarwin =
+            DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+        const InitializationSettings initializationSettings = InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsDarwin,
+        );
+
+        await _localNotificationsPlugin.initialize(
+          settings: initializationSettings,
+        );
+
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          'high_importance_channel',
+          'General Notification',
+          description: 'This is for saving,loan,share etc transaction notification of member',
+          importance: Importance.max,
+        );
+
+        await _localNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(channel);
+
+        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
           final notification = message.notification;
           if (notification != null) {
@@ -28,6 +68,24 @@ class NotificationStore extends ChangeNotifier {
               title: notification.title ?? 'Alert',
               body: notification.body ?? '',
             );
+
+            if (Platform.isAndroid) {
+              _localNotificationsPlugin.show(
+                id: notification.hashCode,
+                title: notification.title,
+                body: notification.body,
+                notificationDetails: NotificationDetails(
+                  android: AndroidNotificationDetails(
+                    channel.id,
+                    channel.name,
+                    channelDescription: channel.description,
+                    importance: Importance.max,
+                    priority: Priority.high,
+                    icon: '@mipmap/ic_launcher',
+                  ),
+                ),
+              );
+            }
           }
         });
       } catch (_) {}

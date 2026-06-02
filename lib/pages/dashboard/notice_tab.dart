@@ -476,6 +476,23 @@ class _NoticeTabState extends State<NoticeTab> {
                       ],
                     ),
                   ),
+                  if (!isRead) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        size: 22,
+                      ),
+                      onPressed: () {
+                        NoticeStore().markAsRead(id);
+                      },
+                      tooltip: 'Mark as read'.tr,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                      splashRadius: 20,
+                    ),
+                  ],
                 ],
               ),
             ),

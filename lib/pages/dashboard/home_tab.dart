@@ -10,6 +10,8 @@ import '../../widgets/cooperative_account_card.dart';
 import '../../store/notification_store.dart';
 import 'notifications_tab.dart';
 import '../accounts/transaction_receipt_page.dart';
+import '../../store/notice_store.dart';
+import 'notice_detail_page.dart';
 
 class HomeTab extends StatefulWidget {
   final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
@@ -49,6 +51,7 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   int _currentPageIndex = 0;
+  int _currentNoticeIndex = 0;
   double _dragOffset = 0.0;
   late AnimationController _swipeController;
   double _animationStartOffset = 0.0;
@@ -63,6 +66,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   DateTime? _touchStartTime;
   DateTime? _lastHorizontalSwipeTime;
   late ScrollController _scrollController;
+  Offset? _sliderDownPos;
+  DateTime? _sliderDownTime;
 
   int get _totalCardsCount {
     int count = 1; // Overview card
@@ -77,6 +82,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    NoticeStore().addListener(_onNoticeStoreChange);
     _scrollController = ScrollController();
     _swipeController = AnimationController(
       vsync: this,
@@ -112,9 +118,14 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
+    NoticeStore().removeListener(_onNoticeStoreChange);
     _swipeController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onNoticeStoreChange() {
+    if (mounted) setState(() {});
   }
 
   void _animateDismiss(int direction) {
@@ -581,7 +592,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 }),
               ),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            _buildNoticeSlider(context),
+            const SizedBox(height: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -952,6 +965,292 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
       }).toList(),
+    );
+  }
+
+  int _lastNoticeTapTime = 0;
+
+  void _handleNoticeTap(Map<String, dynamic> notice, int id) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastNoticeTapTime < 500) {
+      return;
+    }
+    _lastNoticeTapTime = now;
+    NoticeStore().markAsRead(id);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NoticeDetailPage(
+          notice: notice,
+          isDarkMode: widget.isDarkMode,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoticeSlider(BuildContext context) {
+    // Helper to determine if notice should show in the slider
+    bool shouldShowNotice(Map n) {
+      final id = n['id'] as int? ?? 0;
+      if (id <= 0) return false;
+
+      // Show if not read in previous sessions
+      if (!NoticeStore().initiallyReadNoticeIds.contains(id)) {
+        return true;
+      }
+
+      // Or show if created today (even if already read)
+      final createdAtStr = n['created_at']?.toString();
+      if (createdAtStr != null) {
+        try {
+          final dateTime = DateTime.parse(createdAtStr).toLocal();
+          final now = DateTime.now();
+          if (dateTime.year == now.year &&
+              dateTime.month == now.month &&
+              dateTime.day == now.day) {
+            return true;
+          }
+        } catch (_) {}
+      }
+      return false;
+    }
+
+    // Combine notices from both NoticeStore and profile
+    final List<dynamic> profileSliderNotices = AuthStore().profile?['slider_notices'] as List? ?? [];
+    final Map<int, dynamic> uniqueNotices = {};
+    for (var n in profileSliderNotices) {
+      if (n is Map && shouldShowNotice(n)) {
+        uniqueNotices[n['id'] as int] = n;
+      }
+    }
+    for (var n in NoticeStore().notices) {
+      if (n is Map && (n['show_in_slider'] == true || n['show_in_slider'] == 1) && shouldShowNotice(n)) {
+        uniqueNotices[n['id'] as int] = n;
+      }
+    }
+    final sliderNotices = uniqueNotices.values.toList();
+
+    if (sliderNotices.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'NOTICES'.tr,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 150,
+          child: Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: (event) {
+              _sliderDownPos = event.position;
+              _sliderDownTime = DateTime.now();
+            },
+            onPointerUp: (event) {
+              if (_sliderDownPos != null && _sliderDownTime != null) {
+                final distance = (event.position - _sliderDownPos!).distance;
+                final duration = DateTime.now().difference(_sliderDownTime!);
+                if (distance < 12.0 && duration.inMilliseconds < 250) {
+                  if (_currentNoticeIndex >= 0 && _currentNoticeIndex < sliderNotices.length) {
+                    final notice = Map<String, dynamic>.from(sliderNotices[_currentNoticeIndex] as Map);
+                    _handleNoticeTap(notice, notice['id'] as int? ?? 0);
+                  }
+                }
+              }
+            },
+            child: PageView.builder(
+              controller: PageController(),
+              itemCount: sliderNotices.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentNoticeIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final notice = Map<String, dynamic>.from(sliderNotices[index] as Map);
+                final title = notice['title'] ?? '';
+                final description = notice['description'] ?? '';
+                final id = notice['id'] as int? ?? 0;
+
+                final List<Color> gradientColors = index % 3 == 0
+                    ? [const Color(0xFF2563EB), const Color(0xFF8B5CF6)]
+                    : index % 3 == 1
+                        ? [const Color(0xFFEC4899), const Color(0xFFF59E0B)]
+                        : [const Color(0xFF10B981), const Color(0xFF3B82F6)];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _handleNoticeTap(notice, id),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: widget.isDarkMode
+                              ? Colors.white.withValues(alpha: 0.04)
+                              : Colors.black.withValues(alpha: 0.04),
+                        ),
+                        boxShadow: widget.isDarkMode
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                )
+                              ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Top-right background ambient glow circle
+                          Positioned(
+                            right: -24,
+                            top: -24,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    gradientColors.first.withValues(alpha: 0.15),
+                                    gradientColors.first.withValues(alpha: 0.0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Content layout
+                          Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Title Header Row with small campaign icon
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.campaign_rounded,
+                                      size: 16,
+                                      color: gradientColors.first,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Right chevron icon
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: widget.isDarkMode ? const Color(0xFF475569) : Colors.grey.shade400,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                // Description (takes up most of the space)
+                                Expanded(
+                                  child: Text(
+                                    description,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                // BS date capsule
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: widget.isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.black.withValues(alpha: 0.035),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 10,
+                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        (notice['start_date_bs']?.toString() ?? '').trd,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+        if (sliderNotices.length > 1) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(sliderNotices.length, (idx) {
+              final isActive = idx == _currentNoticeIndex;
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 6,
+                width: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive
+                      ? (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B))
+                      : (widget.isDarkMode
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : Colors.black.withValues(alpha: 0.15)),
+                ),
+              );
+            }),
+          ),
+        ],
+        const SizedBox(height: 2),
+      ],
     );
   }
 

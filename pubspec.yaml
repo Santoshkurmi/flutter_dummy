@@ -57,6 +57,7 @@ dependencies:
   flutter_dotenv: ^5.2.1
   url_launcher: ^6.2.0
   flutter_markdown: ^0.7.3
+  flutter_local_notifications: ^21.0.0
 
 dev_dependencies:
   flutter_test:

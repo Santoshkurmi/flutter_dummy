@@ -16,6 +16,8 @@ class TranslationService {
     'Verify': 'प्रमाणित गर्नुहोस्',
     'Search': 'खोज्नुहोस्',
     'Close': 'बन्द गर्नुहोस्',
+    'Mark as read': 'पढेको चिन्ह लगाउनुहोस्',
+    'Mark all as read': 'सबै पढेको चिन्ह लगाउनुहोस्',
 
     // Onboarding
     'Smart Banking': 'स्मार्ट बैंकिङ्ग',

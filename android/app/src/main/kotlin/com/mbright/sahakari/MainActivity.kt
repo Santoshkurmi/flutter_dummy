@@ -34,7 +34,7 @@ class MainActivity: FlutterFragmentActivity() {
         setHighRefreshRate()
         
         // Create the default notification channel for Android 8.0+
-        createNotificationChannel()
+        // createNotificationChannel()
     }
 
     private fun createNotificationChannel() {
