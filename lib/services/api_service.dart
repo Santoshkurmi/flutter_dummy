@@ -871,4 +871,11 @@ class ApiService {
     await Future.delayed(const Duration(milliseconds: 300));
     return list;
   }
+
+  Future<Map<String, dynamic>> getNotices({int page = 1, int perPage = 20}) async {
+    return await get('/notices', params: {
+      'page': page.toString(),
+      'perPage': perPage.toString(),
+    });
+  }
 }

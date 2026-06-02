@@ -8,6 +8,7 @@ import '../accounts/combined_statement_page.dart';
 import 'qr_tab.dart';
 import 'notice_tab.dart';
 import 'profile_tab.dart';
+import '../../store/notice_store.dart';
 
 
 class DashboardPage extends StatefulWidget {
@@ -40,12 +41,14 @@ class _DashboardPageState extends State<DashboardPage> {
       _refreshIndicatorKey.currentState?.show();
     });
     AuthStore().addListener(_onStateChange);
+    NoticeStore().addListener(_onStateChange);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     AuthStore().removeListener(_onStateChange);
+    NoticeStore().removeListener(_onStateChange);
     super.dispose();
   }
 
@@ -62,11 +65,24 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final Future<Map<String, dynamic>> accountsFuture = ApiService().getAccounts();
       final Future<Map<String, dynamic>> ledgerFuture = ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
+      final Future<Map<String, dynamic>> noticesFuture = ApiService().getNotices(page: 1, perPage: 20).catchError((_) => <String, dynamic>{});
 
-      final results = await Future.wait([accountsFuture, ledgerFuture]);
+      final results = await Future.wait([accountsFuture, ledgerFuture, noticesFuture]);
       
       final Map<String, dynamic> accountsRes = results[0];
       final Map<String, dynamic> ledgerRes = results[1];
+      final Map<String, dynamic> noticesRes = results[2];
+
+      if (noticesRes.isNotEmpty && noticesRes['response_code'] == 1 && noticesRes['data'] != null) {
+        final listData = noticesRes['data']['list'];
+        List<dynamic> list = [];
+        if (listData is Map && listData['data'] is List) {
+          list = listData['data'];
+        } else if (listData is List) {
+          list = listData;
+        }
+        NoticeStore().setNotices(list);
+      }
 
       if (mounted) {
         setState(() {
@@ -489,7 +505,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   tooltip: '',
                 ),
                 BottomNavigationBarItem(
-                  icon: const Icon(Icons.campaign_rounded),
+                  icon: Badge(
+                    isLabelVisible: NoticeStore().unreadCount > 0,
+                    label: NoticeStore().unreadCount <= 6
+                        ? Text(NoticeStore().unreadCount.toString())
+                        : null,
+                    child: const Icon(Icons.campaign_rounded),
+                  ),
                   label: 'Notice'.tr,
                   tooltip: '',
                 ),

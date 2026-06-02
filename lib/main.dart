@@ -17,6 +17,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'store/notification_store.dart';
+import 'store/notice_store.dart';
 import 'services/location_service.dart';
 import 'services/api_service.dart';
 import 'dart:convert';
@@ -85,6 +86,10 @@ void main() async {
   // Initialize Notification Store
   final notificationStore = NotificationStore();
   await notificationStore.init();
+
+  // Initialize Notice Store
+  final noticeStore = NoticeStore();
+  await noticeStore.init();
 
   // Initialize Auth Store (persistences and initial loadings)
   final authStore = AuthStore();
