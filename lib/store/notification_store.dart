@@ -104,45 +104,9 @@ class NotificationStore extends ChangeNotifier {
         _notifications = [];
       }
     } else {
-      // If no notifications exist, populate dummy ones
-      _notifications = _getDummyNotifications();
-      await saveNotifications();
+      _notifications = [];
     }
     notifyListeners();
-  }
-
-  List<Map<String, dynamic>> _getDummyNotifications() {
-    final now = DateTime.now();
-    return [
-      {
-        'id': 'dummy-1',
-        'title': 'Cooperative Board Update',
-        'body': 'Notice: The Annual General Meeting (AGM) has been scheduled for next Saturday at 11:00 AM. Please make sure to attend.',
-        'timestamp': now.subtract(const Duration(hours: 2)).toIso8601String(),
-        'isRead': false,
-      },
-      {
-        'id': 'dummy-2',
-        'title': 'Interest Accrued Alert',
-        'body': 'Your savings account Acc. *4839 has been credited with Rs. 1,450.00 interest for the fourth quarter.',
-        'timestamp': now.subtract(const Duration(days: 1)).toIso8601String(),
-        'isRead': true,
-      },
-      {
-        'id': 'dummy-3',
-        'title': 'Security Login Alert',
-        'body': 'Successful login detected on a new Android device (Samsung S21) at 10:45 AM. If this wasn\'t you, please secure your account.',
-        'timestamp': now.subtract(const Duration(days: 2)).toIso8601String(),
-        'isRead': true,
-      },
-      {
-        'id': 'dummy-4',
-        'title': 'Loan Repayment Success',
-        'body': 'Payment of Rs. 15,000.00 received towards Loan Account *2930. Thank you for your timely payment.',
-        'timestamp': now.subtract(const Duration(days: 3)).toIso8601String(),
-        'isRead': true,
-      },
-    ];
   }
 
   Future<void> saveNotifications() async {
