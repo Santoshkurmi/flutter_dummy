@@ -195,15 +195,21 @@ class BrightBankApp extends StatelessWidget {
                   maxScaleFactor: 1.06,
                 ),
               ),
-              child: Listener(
+              child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (event) {
-                  FlyingHeroTracker.handlePointerDown(event.position);
+                onTap: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
                 },
-                onPointerUp: (event) {
-                  FlyingHeroTracker.handlePointerUp(event.position);
-                },
-                child: child!,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (event) {
+                    FlyingHeroTracker.handlePointerDown(event.position);
+                  },
+                  onPointerUp: (event) {
+                    FlyingHeroTracker.handlePointerUp(event.position);
+                  },
+                  child: child!,
+                ),
               ),
             );
           },
