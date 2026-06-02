@@ -1,14 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class NotificationStore extends ChangeNotifier {
+class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
   static final NotificationStore _instance = NotificationStore._internal();
   factory NotificationStore() => _instance;
-  NotificationStore._internal();
+  NotificationStore._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      loadNotifications();
+    }
+  }
 
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -67,6 +77,7 @@ class NotificationStore extends ChangeNotifier {
             addNotification(
               title: notification.title ?? 'Alert',
               body: notification.body ?? '',
+              messageId: message.messageId,
             );
 
             if (Platform.isAndroid) {
@@ -88,12 +99,37 @@ class NotificationStore extends ChangeNotifier {
             }
           }
         });
+
+        FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+          final notification = message.notification;
+          if (notification != null) {
+            addNotification(
+              title: notification.title ?? 'Alert',
+              body: notification.body ?? '',
+              messageId: message.messageId,
+            );
+          }
+        });
+
+        FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+          if (message != null) {
+            final notification = message.notification;
+            if (notification != null) {
+              addNotification(
+                title: notification.title ?? 'Alert',
+                body: notification.body ?? '',
+                messageId: message.messageId,
+              );
+            }
+          }
+        });
       } catch (_) {}
     }
   }
 
   Future<void> loadNotifications() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final listStr = prefs.getString('local_notifications');
     
     if (listStr != null) {
@@ -114,9 +150,19 @@ class NotificationStore extends ChangeNotifier {
     await prefs.setString('local_notifications', jsonEncode(_notifications));
   }
 
-  Future<void> addNotification({required String title, required String body, DateTime? timestamp}) async {
+  Future<void> addNotification({
+    required String title,
+    required String body,
+    String? messageId,
+    DateTime? timestamp,
+  }) async {
+    if (messageId != null && _notifications.any((n) => n['messageId'] == messageId)) {
+      return;
+    }
+
     final newItem = {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'messageId': messageId,
       'title': title,
       'body': body,
       'timestamp': (timestamp ?? DateTime.now()).toIso8601String(),

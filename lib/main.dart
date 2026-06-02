@@ -30,14 +30,21 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final body = notification.body ?? '';
     
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final listStr = prefs.getString('local_notifications') ?? '[]';
     List<dynamic> list = [];
     try {
       list = jsonDecode(listStr);
     } catch (_) {}
     
+    final msgId = message.messageId;
+    if (msgId != null && list.any((item) => item is Map && item['messageId'] == msgId)) {
+      return;
+    }
+    
     final newItem = {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'messageId': msgId,
       'title': title,
       'body': body,
       'timestamp': DateTime.now().toIso8601String(),
