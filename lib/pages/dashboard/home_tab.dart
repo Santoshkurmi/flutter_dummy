@@ -63,8 +63,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   Offset? _startPointerPos;
   double _dragStartOffset = 0.0;
   bool _isPointerDragging = false;
-  DateTime? _touchStartTime;
-  DateTime? _lastHorizontalSwipeTime;
   late ScrollController _scrollController;
   Offset? _sliderDownPos;
   DateTime? _sliderDownTime;
@@ -178,12 +176,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     
     if (_dragOffset.abs() > 80.0 || (didSwipe && velocity > 400.0)) {
       _animateDismiss(_dragOffset > 0 ? -1 : 1);
-      _lastHorizontalSwipeTime = DateTime.now();
     } else {
       _animateSnapBack();
-      if (didSwipe) {
-        _lastHorizontalSwipeTime = DateTime.now();
-      }
     }
     
     _startPointerPos = null;
@@ -500,7 +494,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                 });
                                 _startPointerPos = details.globalPosition;
                                 _dragStartOffset = _dragOffset;
-                                _touchStartTime = DateTime.now();
                                 _isPointerDragging = true;
                               },
                               onHorizontalDragUpdate: (details) {
@@ -553,8 +546,18 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(cardsList.length, (index) {
-                  double difference = index - _currentPage;
-                  double activeRatio = (1.0 - difference.abs().clamp(0.0, 1.0));
+                  double page = _currentPage % cardsList.length;
+                  if (page < 0) {
+                    page += cardsList.length;
+                  }
+                  double diff = index - page;
+                  if (diff > cardsList.length / 2.0) {
+                    diff -= cardsList.length;
+                  } else if (diff < -cardsList.length / 2.0) {
+                    diff += cardsList.length;
+                  }
+                  double distance = diff.abs();
+                  double activeRatio = (1.0 - distance.clamp(0.0, 1.0));
                   double width = 6.0 + (14.0 * activeRatio);
 
                   // Color based on the card gradient
