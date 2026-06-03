@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:android_id/android_id.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -19,6 +20,10 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
+
+  late final http.Client _client = kIsWeb
+      ? http.Client()
+      : IOClient(HttpClient()..idleTimeout = const Duration(seconds: 20));
 
   static String? _cachedDeviceId;
   static Map<String, String>? _cachedDeviceMetaData;
@@ -612,7 +617,7 @@ class ApiService {
       }
     }
 
-    final response = await http.get(Uri.parse(urlStr), headers: reqHeaders);
+    final response = await _client.get(Uri.parse(urlStr), headers: reqHeaders);
 
     if (isCacheEnabled && response.statusCode == 304) {
       if (metadata != null) {
@@ -661,7 +666,7 @@ class ApiService {
     }
     reqHeaders['X-Device-Id'] = await getDeviceId();
     reqHeaders.addAll(meta);
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$_baseUrl$endpoint'),
       headers: reqHeaders,
       body: jsonEncode(payload),
