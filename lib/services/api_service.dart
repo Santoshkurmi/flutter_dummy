@@ -775,6 +775,14 @@ class ApiService {
     return await get('/profile');
   }
 
+  Future<Map<String, dynamic>> getMemberDetails() async {
+    return await get('/member-details');
+  }
+
+  Future<Map<String, dynamic>> getCooperativeDetails() async {
+    return await get('/cooperative-details');
+  }
+
   Future<Map<String, dynamic>> getBiometricChallenge(String mobile) async {
     return await post('/biometric/challenge', {'mobile': mobile});
   }

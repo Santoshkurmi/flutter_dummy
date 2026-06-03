@@ -7,6 +7,8 @@ import '../services/nepali_calendar_page.dart';
 import '../services/date_conversion_page.dart';
 import '../settings/about_us_page.dart';
 import '../services/qr_generator_page.dart';
+import '../settings/member_details_page.dart';
+import '../settings/cooperative_details_page.dart';
 
 class ProfileTab extends StatelessWidget {
   final bool isDarkMode;
@@ -22,9 +24,23 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = AuthStore().profile;
     final coop = AuthStore().selectedCooperative;
-    final name = profile?['member_name'] ?? 'Sahakari User';
+    final String currentLang = AuthStore().language;
+
+    final String name = currentLang == 'ne'
+        ? (profile?['member_name_nepali'] ?? profile?['member_name'] ?? 'Sahakari User')
+        : (profile?['member_name'] ?? 'Sahakari User');
+
     final mobile = profile?['mobile'] ?? AuthStore().mobile ?? '98XXXXXXXX';
-    final coopName = coop?['name'] ?? 'Bright Saving & Credit Co-operative';
+    
+    final coopName = currentLang == 'ne'
+        ? (coop?['name_nepali'] ?? coop?['name'] ?? 'Bright Saving & Credit Co-operative')
+        : (coop?['name'] ?? 'Bright Saving & Credit Co-operative');
+
+    final profileImagePath = profile?['profile_image_path'];
+    final bool hasValidImage = profileImagePath != null && profileImagePath.toString().isNotEmpty;
+
+    final String memberDetailsLabel = 'Member Details'.tr;
+    final String memberDetailsSubtitle = 'View personal specifications, address and nominee details'.tr;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -55,14 +71,37 @@ class ProfileTab extends StatelessWidget {
                 height: 72,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
                 ),
-                child: Center(
-                  child: Text(
-                    name.isEmpty ? 'S' : name.substring(0, 1),
-                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                ),
+                clipBehavior: Clip.antiAlias,
+                child: hasValidImage
+                    ? Image.network(
+                        profileImagePath,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+                            ),
+                            child: Center(
+                              child: Text(
+                                name.isEmpty ? 'S' : name.substring(0, 1),
+                                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+                        ),
+                        child: Center(
+                          child: Text(
+                            name.isEmpty ? 'S' : name.substring(0, 1),
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -80,7 +119,7 @@ class ProfileTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'COOPERATIVE IDENTITY'.tr,
+          'MEMBER & COOPERATIVE IDENTITY'.tr,
           style: TextStyle(
             color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
             fontSize: 11,
@@ -89,7 +128,8 @@ class ProfileTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _profileOption(Icons.account_balance_rounded, 'Cooperative Bank'.tr, coopName),
+        _profileActionOption(context, Icons.person_outline_rounded, memberDetailsLabel, memberDetailsSubtitle, const MemberDetailsPage()),
+        _profileActionOption(context, Icons.account_balance_rounded, 'Cooperative Bank'.tr, coopName, const CooperativeDetailsPage()),
         const SizedBox(height: 24),
         Text(
           'UTILITY SERVICES & PREFERENCES'.tr,
@@ -131,46 +171,6 @@ class ProfileTab extends StatelessWidget {
         ),
         const SizedBox(height: 30),
       ],
-    );
-  }
-
-  Widget _profileOption(IconData icon, String title, String subtitle) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
