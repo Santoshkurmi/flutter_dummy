@@ -123,10 +123,12 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: hasProfileImg
-                              ? Image.network(
-                                  profileImg,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => _buildInitialsPlaceholder(name),
+                              ? ClipOval(
+                                  child: Image.network(
+                                    profileImg,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => _buildInitialsPlaceholder(name),
+                                  ),
                                 )
                               : _buildInitialsPlaceholder(name),
                         ),

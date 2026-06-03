@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:path_provider/path_provider.dart';
+import 'translation_service.dart';
 
 
 class ApiService {
@@ -848,31 +850,40 @@ class ApiService {
     return await get('/accounts/all-ledger', params: params);
   }
 
-  Future<List<Map<String, dynamic>>> fetchCooperatives() async {
-    final List<String> firstNames = [
-      "Bright", "Everest", "Lali Gurans", "Subha Laxmi", "Sajha", "Hamro", "Janakalyan", 
-      "Unnatisheel", "Suryodaya", "Manaslu", "Annapurna", "Pathibhara", "Gaurishankar", 
-      "Sayapatri", "Ganga Jamuna", "Budhanilkantha", "Panchakanya", "Mahila Kalyan",
-      "Ujyaalo", "Samriddhi", "Swabalamban", "Pragati", "Nabodit", "Swarnim", "Navaratna",
-      "Kamana", "Kalyan", "Shikhar", "Kalyankari", "Bishwas", "Sagarmatha", "Janata", 
-      "Citizen", "Sahas", "Miteri", "Lumbini", "Sewa", "Gati", "Manakamana", "Kankai"
-    ];
+  Future<void> saveCooperativesToFile(List<Map<String, dynamic>> list) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/cooperatives_list.json');
+      await file.writeAsString(jsonEncode(list));
+    } catch (e) {
+      debugPrint('Failed to save cooperatives to file: $e');
+    }
+  }
 
-    final List<String> coopTypes = [
-      "Saving & Credit Co-operative Ltd.",
-      "Multipurpose Co-operative Ltd.",
-      "Agricultural Co-operative Ltd.",
-      "Consumer Co-operative Ltd."
-    ];
+  Future<List<Map<String, dynamic>>?> loadCooperativesFromFile() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/cooperatives_list.json');
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final List<dynamic> decoded = jsonDecode(content);
+        return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (e) {
+      debugPrint('Failed to load cooperatives from file: $e');
+    }
+    return null;
+  }
 
-    final List<String> nepalPlaces = [
-      "New Baneshwor, Kathmandu", "Lalitpur Metro, Lalitpur", "Chipledhunga, Pokhara", 
-      "Dharan Bazar, Sunsari", "Butwal Sub-Metro, Rupandehi", "Biratnagar, Morang", 
-      "Hetauda, Makwanpur", "Bharatpur, Chitwan", "Nepalgunj, Banke", "Dhangadhi, Kailali",
-      "Bhaktapur City, Bhaktapur", "Banepa, Kavre", "Damak, Jhapa", "Birtamode, Jhapa",
-      "Ghorahi, Dang", "Itahari, Sunsari", "Janakpurdham, Dhanusha", "Tansen, Palpa"
-    ];
+  Future<List<Map<String, dynamic>>> fetchCooperatives({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      final cachedList = await loadCooperativesFromFile();
+      if (cachedList != null && cachedList.isNotEmpty) {
+        return cachedList;
+      }
+    }
 
+    final apiUrl = dotenv.env['COOPERATIVE_LIST_API'] ?? 'https://erp.bright-gps.com.np/sahakari-clients?token=IVYF623EYEROP0LGHRXOXYHIDIMJ9F';
     final List<String> gradients = [
       "bg-blue-600",
       "bg-emerald-600",
@@ -884,33 +895,52 @@ class ApiService {
       "bg-teal-600"
     ];
 
-    final List<Map<String, dynamic>> list = [];
-    list.add({
-      'id': 1,
-      'name': "Bright Saving & Credit Co-operative Ltd.",
-      'address': "New Baneshwor, Kathmandu",
-      'gradient': "bg-blue-600",
-      'url': defaultBaseUrl
-    });
+    String? networkError;
 
-    for (int i = 2; i <= 150; i++) {
-      final firstName = firstNames[i % firstNames.length];
-      final coopType = coopTypes[i % coopTypes.length];
-      final name = "$firstName $coopType";
-      final address = nepalPlaces[i % nepalPlaces.length];
-      final gradient = gradients[i % gradients.length];
-      list.add({
-        'id': i,
-        'name': name,
-        'address': address,
-        'gradient': gradient,
-        'url': defaultBaseUrl
-      });
+    try {
+      final response = await http.get(Uri.parse(apiUrl)).timeout(const Duration(seconds: 20));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final List<dynamic> data = decoded['data'] ?? [];
+        final List<Map<String, dynamic>> mappedList = [];
+        
+        for (int i = 0; i < data.length; i++) {
+          final client = data[i];
+          final String name = client['name'] ?? 'Unnamed Sahakari';
+          
+          mappedList.add({
+            'id': i + 1,
+            'name': name,
+            'address': client['address'] ?? 'Nepal',
+            'url': client['api_url'] ?? '',
+            'api_url': client['api_url'] ?? '',
+            'logoUrl': client['logo_img_path'] ?? '',
+            'logo_url': client['logo_img_path'] ?? '',
+            'logo_name': client['logo_name'] ?? '',
+            'gradient': gradients[i % gradients.length],
+          });
+        }
+        
+        if (mappedList.isNotEmpty) {
+          await saveCooperativesToFile(mappedList);
+          return mappedList;
+        } else {
+          networkError = 'Empty client list returned from API';
+        }
+      } else {
+        networkError = 'Server returned status code: ${response.statusCode}';
+      }
+    } catch (e) {
+      networkError = e.toString();
+      debugPrint('Failed to fetch cooperatives from network: $e');
     }
 
-    // Simulate network delay just like React's mock fetch API
-    await Future.delayed(const Duration(milliseconds: 300));
-    return list;
+    final cachedFallback = await loadCooperativesFromFile();
+    if (cachedFallback != null && cachedFallback.isNotEmpty) {
+      return cachedFallback;
+    }
+
+    throw Exception('${"Failed to load cooperatives".tr}: $networkError. ${"Please pull down to refresh again.".tr}');
   }
 
   Future<Map<String, dynamic>> getNotices({int page = 1, int perPage = 20}) async {

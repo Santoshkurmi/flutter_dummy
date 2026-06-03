@@ -12,6 +12,7 @@ import 'notifications_tab.dart';
 import '../accounts/transaction_receipt_page.dart';
 import '../../store/notice_store.dart';
 import 'notice_detail_page.dart';
+import '../settings/member_details_page.dart';
 
 class HomeTab extends StatefulWidget {
   final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
@@ -329,25 +330,36 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Namaste, 🙏'.tr,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MemberDetailsPage(),
                     ),
-                  ),
-                  Text(
-                    firstName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  );
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Namaste, 🙏'.tr,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
-                ],
+                    Text(
+                      firstName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Row(
                 children: [

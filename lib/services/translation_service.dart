@@ -48,6 +48,17 @@ class TranslationService {
     'Choose your cooperative to proceed': 'अगाडि बढ्नको लागि आफ्नो सहकारी रोज्नुहोस्',
     'Search Cooperative...': 'सहकारी खोज्नुहोस्...',
     'Enter custom URL gateway...': 'कस्टम URL गेटवे प्रविष्ट गर्नुहोस्...',
+    'Failed to load cooperatives. Please pull down to refresh again.': 'सहकारीहरू लोड गर्न असफल भयो। कृपया पुन: प्रयास गर्न तल तान्नुहोस्।',
+    'Failed to load cooperatives. Please refresh again.': 'सहकारीहरू लोड गर्न असफल भयो। कृपया फेरि रिफ्रेस गर्नुहोस्।',
+    'Failed to load cooperatives': 'सहकारीहरू लोड गर्न असफल भयो',
+    'Please pull down to refresh again.': 'कृपया पुन: प्रयास गर्न तल तान्नुहोस्।',
+    'Failed to Load': 'लोड गर्न असफल',
+    'Refresh Again': 'फेरि रिफ्रेस गर्नुहोस्',
+    'No cooperatives found.': 'कुनै सहकारी फेला परेन।',
+    'Development Mode': 'डेभलपमेन्ट मोड',
+    'Do you want to proceed with the current API URL or configure/change it?': 'के तपाईं हालको API URL सँग अगाडि बढ्न चाहनुहुन्छ वा यसलाई परिवर्तन गर्न चाहनुहुन्छ?',
+    'Proceed': 'अगाडि बढ्नुहोस्',
+    'Change': 'परिवर्तन गर्नुहोस्',
 
     // Status check
     'Mobile Banking Verification': 'मोबाइल बैंकिङ्ग प्रमाणीकरण',
