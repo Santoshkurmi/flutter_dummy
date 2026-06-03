@@ -793,7 +793,6 @@ class _LoginPageState extends State<LoginPage> {
         'signed_data': signature,
         'device_id': devId,
         'fcm_token': extraData['fcm_token'],
-        'firebase_token': extraData['fcm_token'],
         'latitude': extraData['latitude'],
         'longitude': extraData['longitude'],
       });

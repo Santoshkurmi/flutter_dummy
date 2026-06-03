@@ -278,7 +278,6 @@ class ApiService {
                                 'signed_data': signature,
                                 'device_id': devId,
                                 'fcm_token': extraData['fcm_token'],
-                                'firebase_token': extraData['fcm_token'],
                                 'latitude': extraData['latitude'],
                                 'longitude': extraData['longitude'],
                               });
@@ -657,7 +656,7 @@ class ApiService {
     final meta = await getDeviceMetaData();
     if (!payload.containsKey('device_model')) {
       payload['device_model'] = meta['X-Device-Model'];
-      payload['device_modal'] = meta['X-Device-Model'];
+      // payload['device_modal'] = meta['X-Device-Model'];
       payload['device_name'] = meta['X-Device-Model'];
     }
     if (!payload.containsKey('device_os')) {
@@ -748,7 +747,6 @@ class ApiService {
     };
     if (fcmToken != null && fcmToken.isNotEmpty) {
       payload['fcm_token'] = fcmToken;
-      payload['firebase_token'] = fcmToken;
     }
     if (latitude != null && latitude.isNotEmpty) {
       payload['latitude'] = latitude;
