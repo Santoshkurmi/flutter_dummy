@@ -94,23 +94,9 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       }
 
       if (accountsRes == null || ledgerRes == null || noticesRes == null) {
-        final Future<Map<String, dynamic>> accountsFuture = accountsRes != null 
-            ? Future.value(accountsRes) 
-            : ApiService().getAccounts();
-
-        final Future<Map<String, dynamic>> ledgerFuture = ledgerRes != null 
-            ? Future.value(ledgerRes) 
-            : ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
-
-        final Future<Map<String, dynamic>> noticesFuture = noticesRes != null 
-            ? Future.value(noticesRes) 
-            : ApiService().getNotices(page: 1, perPage: 20).catchError((_) => <String, dynamic>{});
-
-        final results = await Future.wait([accountsFuture, ledgerFuture, noticesFuture]);
-        
-        accountsRes = results[0];
-        ledgerRes = results[1];
-        noticesRes = results[2];
+        accountsRes ??= await ApiService().getAccounts();
+        ledgerRes ??= await ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
+        noticesRes ??= await ApiService().getNotices(page: 1, perPage: 20).catchError((_) => <String, dynamic>{});
       }
 
       if (noticesRes.isNotEmpty && noticesRes['response_code'] == 1 && noticesRes['data'] != null) {
