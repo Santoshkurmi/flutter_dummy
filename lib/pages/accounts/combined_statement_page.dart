@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
@@ -48,16 +49,10 @@ class DateMaskTextInputFormatter extends TextInputFormatter {
 
 class CombinedStatementPage extends StatefulWidget {
   final int? currentIndex;
-  final List<dynamic>? cachedLedgerItems;
-  final DateTime? lastLedgerFetchTime;
-  final ValueChanged<List<dynamic>>? onLedgerFetched;
 
   const CombinedStatementPage({
     super.key,
     this.currentIndex,
-    this.cachedLedgerItems,
-    this.lastLedgerFetchTime,
-    this.onLedgerFetched,
   });
 
   @override
@@ -65,10 +60,6 @@ class CombinedStatementPage extends StatefulWidget {
 }
 
 class _CombinedStatementPageState extends State<CombinedStatementPage> {
-  bool get _shouldRefetchLedger =>
-      widget.cachedLedgerItems == null ||
-      widget.lastLedgerFetchTime == null ||
-      DateTime.now().difference(widget.lastLedgerFetchTime!) >= const Duration(minutes: 4);
   bool _isLoading = true;
   bool _hasError = false;
   List<dynamic> _ledgerItems = [];
@@ -79,11 +70,18 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   
   // Active Preset: '7_days', '15_days', '1_month', or null
   String? _selectedPreset;
+  StreamSubscription? _ledgerSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadLedger();
+  }
+
+  @override
+  void dispose() {
+    _ledgerSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -105,56 +103,45 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     return month >= 1 && month <= 12 && day >= 1 && day <= 32;
   }
 
-  Future<void> _loadLedger({bool forceRefetch = false}) async {
-    final hasFilters = _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty || _selectedPreset != null;
-
-    if (!hasFilters && !forceRefetch && !_shouldRefetchLedger) {
-      if (widget.cachedLedgerItems != null) {
-        if (mounted) {
+  Future<void> _loadLedger({bool forceRefetch = false}) {
+    final completer = Completer<void>();
+    _ledgerSubscription?.cancel();
+    _ledgerSubscription = ApiService().getAllAccountsLedgerStream(
+      fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
+      toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
+      preset: _selectedPreset,
+      forceRefresh: forceRefetch,
+    ).listen((response) {
+      if (mounted) {
+        if (response.isCacheNotModified) {
           setState(() {
-            _ledgerItems = widget.cachedLedgerItems!;
-            _isLoading = false;
-            _hasError = false;
+            _isLoading = response.isLoading;
+            _hasError = response.hasError;
+            if (_ledgerItems.isEmpty && response.data != null) {
+              _ledgerItems = response.data?['data'] ?? [];
+            }
+          });
+        } else {
+          setState(() {
+            if (response.data != null) {
+              _ledgerItems = response.data?['data'] ?? [];
+            }
+            _isLoading = response.isLoading;
+            _hasError = response.hasError;
           });
         }
-        return;
       }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
-    }
-
-    try {
-      final res = await ApiService().getAllAccountsLedger(
-        fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
-        toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
-        preset: _selectedPreset,
-      );
-      final items = res['data'] ?? [];
-
-      if (!hasFilters && widget.onLedgerFetched != null) {
-        widget.onLedgerFetched!(items);
+    }, onError: (e) {
+      if (!completer.isCompleted) {
+        completer.complete();
       }
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
 
-      if (mounted) {
-        setState(() {
-          _ledgerItems = items;
-          _isLoading = false;
-          _hasError = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
-    }
+    return completer.future;
   }
 
   void _selectPreset(String preset) {
@@ -797,7 +784,9 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => _loadLedger(forceRefetch: true),
+          onRefresh: () async {
+            await _loadLedger(forceRefetch: true);
+          },
           color: const Color(0xFF2563EB),
           backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
           child: ListView(

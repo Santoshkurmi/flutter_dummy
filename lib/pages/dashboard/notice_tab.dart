@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
@@ -6,10 +7,12 @@ import '../../store/notice_store.dart';
 
 class NoticeTab extends StatefulWidget {
   final bool isDarkMode;
+  final int? currentIndex;
 
   const NoticeTab({
     super.key,
     required this.isDarkMode,
+    this.currentIndex,
   });
 
   @override
@@ -25,6 +28,7 @@ class _NoticeTabState extends State<NoticeTab> {
   bool _isLoading = false;
   bool _isLoadMore = false;
   String? _errorMessage;
+  StreamSubscription? _noticesSubscription;
 
   @override
   void initState() {
@@ -35,7 +39,16 @@ class _NoticeTabState extends State<NoticeTab> {
   }
 
   @override
+  void didUpdateWidget(NoticeTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentIndex == 3 && oldWidget.currentIndex != 3) {
+      _fetchNotices(1);
+    }
+  }
+
+  @override
   void dispose() {
+    _noticesSubscription?.cancel();
     NoticeStore().removeListener(_onStoreChange);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -56,65 +69,118 @@ class _NoticeTabState extends State<NoticeTab> {
     }
   }
 
-  Future<void> _fetchNotices(int page, {bool isRefresh = false}) async {
-    if (isRefresh) {
+  Future<void> _fetchNotices(int page, {bool isRefresh = false}) {
+    if (page > 1) {
       setState(() {
+        _isLoadMore = true;
         _errorMessage = null;
       });
-    } else {
-      setState(() {
-        if (page == 1) {
-          _isLoading = true;
+      return ApiService().getNotices(page: page, perPage: 20).then((response) {
+        final responseCode = response['response_code'];
+        if (responseCode == 1 && response['data'] != null) {
+          final listData = response['data']['list'];
+          List<dynamic> newNotices = [];
+          int lastPage = 1;
+          int currentPage = page;
+
+          if (listData is Map) {
+            final dataList = listData['data'];
+            if (dataList is List) {
+              newNotices = dataList;
+            }
+            currentPage = listData['current_page'] ?? page;
+            lastPage = listData['last_page'] ?? 1;
+          } else if (listData is List) {
+            newNotices = listData;
+          }
+
+          if (mounted) {
+            setState(() {
+              _notices.addAll(newNotices);
+              _currentPage = currentPage;
+              _lastPage = lastPage;
+              _isLoadMore = false;
+            });
+          }
         } else {
-          _isLoadMore = true;
+          throw Exception(response['message'] ?? 'Failed to load notices'.tr);
         }
-        _errorMessage = null;
+      }).catchError((e) {
+        if (mounted) {
+          setState(() {
+            _isLoadMore = false;
+            _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+          });
+        }
       });
     }
 
-    try {
-      final response = await ApiService().getNotices(page: page, perPage: 20);
-      final responseCode = response['response_code'];
-      
-      if (responseCode == 1 && response['data'] != null) {
-        final listData = response['data']['list'];
-        List<dynamic> newNotices = [];
-        int lastPage = 1;
-        int currentPage = page;
+    _noticesSubscription?.cancel();
+    final completer = Completer<void>();
+    _noticesSubscription = ApiService().getNoticesStream(
+      page: 1,
+      perPage: 20,
+      forceRefresh: isRefresh,
+    ).listen((response) {
+      if (mounted) {
+        if (response.isCacheNotModified) {
+          setState(() {
+            _isLoading = response.isLoading;
+            _errorMessage = response.hasError ? response.error : null;
+            if (_notices.isEmpty && response.data != null && response.data!['data'] != null) {
+              final listData = response.data!['data']['list'];
+              if (listData is Map && listData['data'] is List) {
+                _notices = listData['data'];
+              } else if (listData is List) {
+                _notices = listData;
+              }
+            }
+          });
+        } else {
+          setState(() {
+            if (response.data != null && response.data!['data'] != null) {
+              final listData = response.data!['data']['list'];
+              List<dynamic> newNotices = [];
+              int lastPage = 1;
+              int currentPage = 1;
 
-        if (listData is Map) {
-          final dataList = listData['data'];
-          if (dataList is List) {
-            newNotices = dataList;
-          }
-          currentPage = listData['current_page'] ?? page;
-          lastPage = listData['last_page'] ?? 1;
-        } else if (listData is List) {
-          newNotices = listData;
+              if (listData is Map) {
+                final dataList = listData['data'];
+                if (dataList is List) {
+                  newNotices = dataList;
+                }
+                currentPage = listData['current_page'] ?? 1;
+                lastPage = listData['last_page'] ?? 1;
+              } else if (listData is List) {
+                newNotices = listData;
+              }
+              _notices = newNotices;
+              NoticeStore().setNotices(newNotices);
+              _currentPage = currentPage;
+              _lastPage = lastPage;
+            }
+            _isLoading = response.isLoading;
+            _errorMessage = response.hasError ? response.error : null;
+          });
         }
-
-        setState(() {
-          if (page == 1) {
-            _notices = newNotices;
-            NoticeStore().setNotices(newNotices);
-          } else {
-            _notices.addAll(newNotices);
-          }
-          _currentPage = currentPage;
-          _lastPage = lastPage;
-          _isLoading = false;
-          _isLoadMore = false;
-        });
-      } else {
-        throw Exception(response['message'] ?? 'Failed to load notices'.tr);
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isLoadMore = false;
-        _errorMessage = e.toString().replaceAll('Exception:', '').trim();
-      });
-    }
+    }, onError: (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        });
+      }
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+
+    return completer.future;
   }
 
   Future<void> _onRefresh() async {

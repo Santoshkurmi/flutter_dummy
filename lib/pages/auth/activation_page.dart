@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
-import 'login_page.dart';
 import 'status_check_page.dart';
 
 class ActivationPage extends StatefulWidget {

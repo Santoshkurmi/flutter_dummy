@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
@@ -19,6 +20,14 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
   bool _isEventsLoading = false;
   Map<String, dynamic>? _selectedDayInfo;
   double _horizontalDragDistance = 0.0;
+
+  StreamSubscription? _calendarSubscription;
+
+  @override
+  void dispose() {
+    _calendarSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -59,40 +68,50 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
     });
   }
 
-  Future<void> _fetchCalendarData() async {
+  Future<void> _fetchCalendarData({bool forceRefresh = false}) async {
+    _calendarSubscription?.cancel();
+    final completer = Completer<void>();
+
     setState(() {
       _isEventsLoading = true;
     });
 
-    try {
-      final response = await ApiService().get(
-        '/holidays',
-        params: {
-          'year_bs': _activeYear.toString(),
-          'month_bs': _activeMonth.toString(),
-        },
-      );
-
-      if (response != null && response['calendar'] != null) {
+    _calendarSubscription = ApiService().getHolidaysStream(
+      yearBs: _activeYear,
+      monthBs: _activeMonth,
+      forceRefresh: forceRefresh,
+    ).listen((response) {
+      if (mounted) {
         setState(() {
-          _calendarDays = response['calendar'];
-          // Keep current selection but update its holiday information from API response
-          if (_selectedDayInfo != null) {
-            final selectedDayNum = _selectedDayInfo!['day'];
-            final matches = _calendarDays.where((dayData) => dayData['day'] == selectedDayNum);
-            _selectedDayInfo = matches.isNotEmpty ? matches.first : null;
+          _isEventsLoading = response.isLoading;
+          if (response.data != null && response.data!['calendar'] != null) {
+            _calendarDays = response.data!['calendar'];
+            // Keep current selection but update its holiday information from API response
+            if (_selectedDayInfo != null) {
+              final selectedDayNum = _selectedDayInfo!['day'];
+              final matches = _calendarDays.where((dayData) => dayData['day'] == selectedDayNum);
+              _selectedDayInfo = matches.isNotEmpty ? matches.first : null;
+            }
           }
+        });
+      }
+    }, onError: (e) {
+      debugPrint('Error fetching calendar from API: $e');
+      if (mounted) {
+        setState(() {
           _isEventsLoading = false;
         });
-        return;
       }
-    } catch (e) {
-      debugPrint('Error fetching calendar from API: $e');
-    }
-
-    setState(() {
-      _isEventsLoading = false;
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     });
+
+    return completer.future;
   }
 
   void _generateLocalCalendar() {
@@ -416,7 +435,12 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
+        child: RefreshIndicator(
+          onRefresh: () => _fetchCalendarData(forceRefresh: true),
+          color: const Color(0xFF2563EB),
+          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           children: [
             // Month Navigation Row
@@ -625,6 +649,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
             const SizedBox(height: 24),
           ],
         ),
+      ),
       ),
     );
   }

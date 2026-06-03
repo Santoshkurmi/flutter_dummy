@@ -5,7 +5,6 @@ import '../../services/location_service.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import 'status_check_page.dart';
-import 'login_page.dart';
 
 class DeviceLinkingPage extends StatefulWidget {
   final String mobileNumber;

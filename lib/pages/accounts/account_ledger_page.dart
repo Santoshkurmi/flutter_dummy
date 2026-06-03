@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
@@ -148,6 +149,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
 
   @override
   void dispose() {
+    _ledgerSubscription?.cancel();
     _swipeController.dispose();
     super.dispose();
   }
@@ -238,34 +240,50 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     return month >= 1 && month <= 12 && day >= 1 && day <= 32;
   }
 
-  Future<void> _loadLedger() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
+  StreamSubscription? _ledgerSubscription;
+
+  Future<void> _loadLedger({bool forceRefresh = false}) async {
+    _ledgerSubscription?.cancel();
+    final completer = Completer<void>();
+
+    _ledgerSubscription = ApiService().getAccountLedgerStream(
+      _activeType,
+      _activeAccount['id'] ?? 0,
+      fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
+      toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
+      preset: _selectedPreset,
+      forceRefresh: forceRefresh,
+    ).listen((response) {
+      if (mounted) {
+        setState(() {
+          _isLoading = response.isLoading;
+          _hasError = response.hasError;
+          if (response.data != null) {
+            final dataMap = response.data!;
+            _ledgerItems = dataMap['data'] ?? [];
+            if (dataMap['current_balance'] != null) {
+              _activeAccount['balance'] = dataMap['current_balance'];
+            }
+          }
+        });
+      }
+    }, onError: (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     });
 
-    try {
-      final res = await ApiService().getAccountLedger(
-        _activeType,
-        _activeAccount['id'] ?? 0,
-        fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
-        toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
-        preset: _selectedPreset,
-      );
-      setState(() {
-        _ledgerItems = res['data'] ?? [];
-        if (res['current_balance'] != null) {
-          _activeAccount['balance'] = res['current_balance'];
-        }
-        _isLoading = false;
-        _hasError = false;
-      });
-    } catch (_) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
-    }
+    return completer.future;
   }
 
   void _selectPreset(String preset) {
@@ -937,7 +955,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadLedger,
+          onRefresh: () => _loadLedger(forceRefresh: true),
           color: const Color(0xFF2563EB),
           backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
           child: ListView(

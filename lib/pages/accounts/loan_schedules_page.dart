@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
@@ -27,7 +28,18 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
     _fetchSchedules();
   }
 
-  Future<void> _fetchSchedules() async {
+  StreamSubscription? _schedulesSubscription;
+
+  @override
+  void dispose() {
+    _schedulesSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchSchedules({bool forceRefresh = false}) async {
+    _schedulesSubscription?.cancel();
+    final completer = Completer<void>();
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -38,26 +50,53 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
       if (accountId == null) {
         throw Exception('Account ID not available.');
       }
-      final res = await ApiService().getLoanPaymentSchedules(
-          accountId is int ? accountId : int.parse(accountId.toString()));
-      if (res['response_code'] == 1 && res['data'] != null) {
-        final List<dynamic> data = res['data'];
-        setState(() {
-          _schedules = data.map((e) => Map<String, dynamic>.from(e)).toList();
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _schedules = [];
-          _isLoading = false;
-        });
-      }
+      final int parsedAccountId = accountId is int ? accountId : int.parse(accountId.toString());
+
+      _schedulesSubscription = ApiService().getLoanPaymentSchedulesStream(
+        parsedAccountId,
+        forceRefresh: forceRefresh,
+      ).listen((response) {
+        if (mounted) {
+          setState(() {
+            _isLoading = response.isLoading;
+            _errorMessage = response.hasError ? response.error : null;
+            if (response.data != null) {
+              final res = response.data!;
+              if (res['response_code'] == 1 && res['data'] != null) {
+                final List<dynamic> data = res['data'];
+                _schedules = data.map((e) => Map<String, dynamic>.from(e)).toList();
+              } else {
+                _schedules = [];
+              }
+            }
+          });
+        }
+      }, onError: (e) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = e.toString().replaceAll('Exception: ', '');
+            _isLoading = false;
+          });
+        }
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }, onDone: () {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      });
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
       });
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
+
+    return completer.future;
   }
 
   String _formatAmount(dynamic amt) {
@@ -110,11 +149,16 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
-          : _errorMessage != null
-              ? _buildErrorState(isDarkMode)
-              : _buildBody(isDarkMode, schemeName),
+      body: RefreshIndicator(
+        onRefresh: () => _fetchSchedules(forceRefresh: true),
+        color: const Color(0xFF2563EB),
+        backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        child: _isLoading && _errorMessage == null
+            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
+            : _errorMessage != null
+                ? _buildErrorState(isDarkMode)
+                : _buildBody(isDarkMode, schemeName),
+      ),
     );
   }
 

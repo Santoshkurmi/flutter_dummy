@@ -22,6 +22,8 @@ class ApiService {
 
   static String? _cachedDeviceId;
   static Map<String, String>? _cachedDeviceMetaData;
+  static final Map<String, Map<String, dynamic>> _ramCache = {};
+  static int _latestCacheTimestamp = 0;
 
   // Retrieve native device identifier dynamically, or fallback to generated UUID
   static Future<String> getDeviceId() async {
@@ -502,34 +504,54 @@ class ApiService {
   }
 
   static Future<void> saveToCache(String endpoint, Map<String, String>? params, dynamic data, int timestamp) async {
+    final key = _getCacheKey(endpoint, params);
+    final cacheData = {
+      'timestamp': timestamp,
+      'data': data,
+    };
+    _ramCache[key] = cacheData;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = _getCacheKey(endpoint, params);
-      final cacheData = {
-        'timestamp': timestamp,
-        'data': data,
-      };
       await prefs.setString(key, jsonEncode(cacheData));
+      if (timestamp > _latestCacheTimestamp) {
+        _latestCacheTimestamp = timestamp;
+        await prefs.setInt('latest_cache_timestamp', timestamp);
+      }
     } catch (e) {
       debugPrint('Error saving to cache: $e');
     }
   }
 
   static Future<Map<String, dynamic>?> readFromCache(String endpoint, Map<String, String>? params) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = _getCacheKey(endpoint, params);
-      final jsonStr = prefs.getString(key);
-      if (jsonStr != null) {
-        return jsonDecode(jsonStr) as Map<String, dynamic>;
+    final key = _getCacheKey(endpoint, params);
+    Map<String, dynamic>? cachedEntry;
+    if (_ramCache.containsKey(key)) {
+      cachedEntry = _ramCache[key];
+    } else {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final jsonStr = prefs.getString(key);
+        if (jsonStr != null) {
+          cachedEntry = jsonDecode(jsonStr) as Map<String, dynamic>;
+          _ramCache[key] = cachedEntry;
+        }
+      } catch (e) {
+        debugPrint('Error reading cache: $e');
       }
-    } catch (e) {
-      debugPrint('Error reading cache: $e');
+    }
+
+    if (cachedEntry != null) {
+      final cachedTs = cachedEntry['timestamp'] as int? ?? 0;
+      if (cachedTs == _latestCacheTimestamp) {
+        return cachedEntry;
+      }
     }
     return null;
   }
 
   static Future<void> clearCache() async {
+    _ramCache.clear();
+    _latestCacheTimestamp = 0;
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
@@ -547,9 +569,11 @@ class ApiService {
   static Future<void> checkAndClearCacheOnAppStart() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      _latestCacheTimestamp = prefs.getInt('latest_cache_timestamp') ?? 0;
       final lastCleared = prefs.getInt('api_cache_last_cleared') ?? 0;
       final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      if (nowSeconds - lastCleared > 2 * 3600) {
+      if (nowSeconds - lastCleared > 24 * 3600) {
+        _ramCache.clear();
         final keys = prefs.getKeys();
         for (var key in keys) {
           if (key.startsWith('api_cache_')) {
@@ -557,7 +581,7 @@ class ApiService {
           }
         }
         await prefs.setInt('api_cache_last_cleared', nowSeconds);
-        debugPrint('✅ API cache cleared on startup (2h interval)');
+        debugPrint('✅ API cache cleared on startup (24h interval)');
       }
     } catch (e) {
       debugPrint('Error checking cache duration: $e');
@@ -565,7 +589,10 @@ class ApiService {
   }
 
   // GET Request
-  Future<dynamic> get(String endpoint, {Map<String, String>? params}) async {
+  Future<dynamic> get(String endpoint, {
+    Map<String, String>? params,
+    Map<String, dynamic>? metadata,
+  }) async {
     String urlStr = '$_baseUrl$endpoint';
     if (params != null && params.isNotEmpty) {
       final queryStr = Uri(queryParameters: params).query;
@@ -588,13 +615,16 @@ class ApiService {
     final response = await http.get(Uri.parse(urlStr), headers: reqHeaders);
 
     if (isCacheEnabled && response.statusCode == 304) {
+      if (metadata != null) {
+        metadata['is304'] = true;
+      }
       if (cachedEntry != null && cachedEntry['data'] != null) {
         return cachedEntry['data'];
       }
     }
 
     if (response.statusCode == 401) {
-      return await _handleResponse(response, () => get(endpoint, params: params));
+      return await _handleResponse(response, () => get(endpoint, params: params, metadata: metadata));
     }
 
     final body = jsonDecode(response.body);
@@ -878,4 +908,221 @@ class ApiService {
       'perPage': perPage.toString(),
     });
   }
+
+  Stream<ApiStreamResponse<T>> streamGet<T>(
+    String endpoint, {
+    Map<String, String>? params,
+    required T Function(dynamic json) parser,
+    bool forceRefresh = false,
+  }) async* {
+    final bool isCacheEnabled = AuthStore().enableCaching;
+    Map<String, dynamic>? cachedEntry;
+
+    if (isCacheEnabled) {
+      cachedEntry = await readFromCache(endpoint, params);
+      if (!forceRefresh && cachedEntry != null && cachedEntry['data'] != null) {
+        try {
+          final parsed = parser(cachedEntry['data']);
+          yield ApiStreamResponse<T>(data: parsed, isLoading: false);
+        } catch (_) {}
+      }
+    }
+
+    bool isNetworkDone = false;
+    Timer? loadingTimer;
+    
+    final controller = StreamController<ApiStreamResponse<T>>(
+      onCancel: () {
+        loadingTimer?.cancel();
+      },
+    );
+
+    final bool hasCache = cachedEntry != null && cachedEntry['data'] != null;
+    if (forceRefresh) {
+      controller.add(ApiStreamResponse<T>(isLoading: true));
+    } else if (hasCache) {
+      loadingTimer = Timer(const Duration(seconds: 1), () {
+        if (!isNetworkDone) {
+          try {
+            final parsed = parser(cachedEntry!['data']);
+            controller.add(ApiStreamResponse<T>(data: parsed, isLoading: true));
+          } catch (_) {
+            controller.add(ApiStreamResponse<T>(isLoading: true));
+          }
+        }
+      });
+    } else {
+      controller.add(ApiStreamResponse<T>(isLoading: true));
+    }
+
+    final Map<String, dynamic> networkMetadata = {};
+    get(endpoint, params: params, metadata: networkMetadata).then((freshData) {
+      isNetworkDone = true;
+      loadingTimer?.cancel();
+      try {
+        final parsed = parser(freshData);
+        final is304 = networkMetadata['is304'] == true;
+        controller.add(ApiStreamResponse<T>(
+          data: parsed,
+          isLoading: false,
+          isCacheNotModified: is304,
+        ));
+      } catch (e) {
+        controller.add(ApiStreamResponse<T>(
+          isLoading: false,
+          hasError: true,
+          error: e.toString(),
+        ));
+      }
+      controller.close();
+    }).catchError((e) {
+      isNetworkDone = true;
+      loadingTimer?.cancel();
+      if (hasCache) {
+        try {
+          final parsed = parser(cachedEntry!['data']);
+          controller.add(ApiStreamResponse<T>(data: parsed, isLoading: false));
+        } catch (_) {
+          controller.add(ApiStreamResponse<T>(
+            isLoading: false,
+            hasError: true,
+            error: e.toString(),
+          ));
+        }
+      } else {
+        controller.add(ApiStreamResponse<T>(
+          isLoading: false,
+          hasError: true,
+          error: e.toString(),
+        ));
+      }
+      controller.close();
+    });
+
+    yield* controller.stream;
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getAllAccountsLedgerStream({
+    String? fromDate,
+    String? toDate,
+    String? preset,
+    bool forceRefresh = false,
+  }) {
+    final Map<String, String> params = {};
+    if (fromDate != null) params['from_date'] = fromDate;
+    if (toDate != null) params['to_date'] = toDate;
+    if (preset != null) params['preset'] = preset;
+
+    return streamGet<Map<String, dynamic>>(
+      '/accounts/all-ledger',
+      params: params,
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getNoticesStream({
+    int page = 1,
+    int perPage = 20,
+    bool forceRefresh = false,
+  }) {
+    return streamGet<Map<String, dynamic>>(
+      '/notices',
+      params: {
+        'page': page.toString(),
+        'perPage': perPage.toString(),
+      },
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getAccountLedgerStream(
+    String type,
+    int id, {
+    String? fromDate,
+    String? toDate,
+    String? preset,
+    bool forceRefresh = false,
+  }) {
+    final Map<String, String> params = {};
+    if (fromDate != null) params['from_date'] = fromDate;
+    if (toDate != null) params['to_date'] = toDate;
+    if (preset != null) params['preset'] = preset;
+
+    return streamGet<Map<String, dynamic>>(
+      '/accounts/$type/$id/ledger',
+      params: params,
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getSavingSchemeRateLogsStream(
+    int schemeId, {
+    bool forceRefresh = false,
+  }) {
+    return streamGet<Map<String, dynamic>>(
+      '/accounts/saving-scheme-rate-logs',
+      params: {'saving_scheme_id': schemeId.toString()},
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getLoanSchemeRateLogsStream(
+    int schemeId, {
+    bool forceRefresh = false,
+  }) {
+    return streamGet<Map<String, dynamic>>(
+      '/accounts/loan-scheme-rate-logs',
+      params: {'loan_scheme_id': schemeId.toString()},
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getLoanPaymentSchedulesStream(
+    int accountId, {
+    bool forceRefresh = false,
+  }) {
+    return streamGet<Map<String, dynamic>>(
+      '/accounts/loan-payment-schedules',
+      params: {'loan_account_id': accountId.toString()},
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Stream<ApiStreamResponse<Map<String, dynamic>>> getHolidaysStream({
+    required int yearBs,
+    required int monthBs,
+    bool forceRefresh = false,
+  }) {
+    return streamGet<Map<String, dynamic>>(
+      '/holidays',
+      params: {
+        'year_bs': yearBs.toString(),
+        'month_bs': monthBs.toString(),
+      },
+      parser: (json) => json as Map<String, dynamic>,
+      forceRefresh: forceRefresh,
+    );
+  }
+}
+
+class ApiStreamResponse<T> {
+  final T? data;
+  final bool isLoading;
+  final bool hasError;
+  final String? error;
+  final bool isCacheNotModified;
+
+  ApiStreamResponse({
+    this.data,
+    required this.isLoading,
+    this.hasError = false,
+    this.error,
+    this.isCacheNotModified = false,
+  });
 }

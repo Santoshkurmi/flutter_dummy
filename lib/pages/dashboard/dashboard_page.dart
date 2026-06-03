@@ -8,6 +8,7 @@ import '../accounts/combined_statement_page.dart';
 import 'qr_tab.dart';
 import 'notice_tab.dart';
 import 'profile_tab.dart';
+import '../../main.dart';
 import '../../store/notice_store.dart';
 
 
@@ -18,7 +19,7 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with RouteAware {
   int _currentIndex = 0;
   bool _showBalance = false;
   bool _isLoadingSummary = true;
@@ -26,7 +27,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _summaryData;
   Map<String, dynamic>? _accountsData;
   List<dynamic>? _cachedLedgerItems;
-  DateTime? _lastLedgerFetchTime;
   late PageController _pageController;
   bool get _isDarkMode => AuthStore().isDarkMode;
 
@@ -37,41 +37,81 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshIndicatorKey.currentState?.show();
-    });
+    _loadSummary(forceRefresh: false);
     AuthStore().addListener(_onStateChange);
     NoticeStore().addListener(_onStateChange);
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      BrightBankApp.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    BrightBankApp.routeObserver.unsubscribe(this);
     _pageController.dispose();
     AuthStore().removeListener(_onStateChange);
     NoticeStore().removeListener(_onStateChange);
     super.dispose();
   }
 
+  @override
+  void didPopNext() {
+    if (_currentIndex == 0) {
+      _checkCacheAndSilentRefresh();
+    }
+  }
+
   void _onStateChange() {
     if (mounted) setState(() {});
   }
 
-  Future<void> _loadSummary() async {
+  Future<void> _loadSummary({bool forceRefresh = false}) async {
     if (mounted) {
       setState(() {
         _isLoadingSummary = true;
       });
     }
     try {
-      final Future<Map<String, dynamic>> accountsFuture = ApiService().getAccounts();
-      final Future<Map<String, dynamic>> ledgerFuture = ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
-      final Future<Map<String, dynamic>> noticesFuture = ApiService().getNotices(page: 1, perPage: 20).catchError((_) => <String, dynamic>{});
+      Map<String, dynamic>? accountsRes;
+      Map<String, dynamic>? ledgerRes;
+      Map<String, dynamic>? noticesRes;
 
-      final results = await Future.wait([accountsFuture, ledgerFuture, noticesFuture]);
-      
-      final Map<String, dynamic> accountsRes = results[0];
-      final Map<String, dynamic> ledgerRes = results[1];
-      final Map<String, dynamic> noticesRes = results[2];
+      if (!forceRefresh) {
+        final cachedAcc = await ApiService.readFromCache('/accounts', null);
+        if (cachedAcc != null) accountsRes = cachedAcc['data'];
+
+        final cachedLedger = await ApiService.readFromCache('/accounts/all-ledger', null);
+        if (cachedLedger != null) ledgerRes = cachedLedger['data'];
+
+        final cachedNotices = await ApiService.readFromCache('/notices', {'page': '1', 'perPage': '20'});
+        if (cachedNotices != null) noticesRes = cachedNotices['data'];
+      }
+
+      if (accountsRes == null || ledgerRes == null || noticesRes == null) {
+        final Future<Map<String, dynamic>> accountsFuture = accountsRes != null 
+            ? Future.value(accountsRes) 
+            : ApiService().getAccounts();
+
+        final Future<Map<String, dynamic>> ledgerFuture = ledgerRes != null 
+            ? Future.value(ledgerRes) 
+            : ApiService().getAllAccountsLedger().catchError((_) => <String, dynamic>{});
+
+        final Future<Map<String, dynamic>> noticesFuture = noticesRes != null 
+            ? Future.value(noticesRes) 
+            : ApiService().getNotices(page: 1, perPage: 20).catchError((_) => <String, dynamic>{});
+
+        final results = await Future.wait([accountsFuture, ledgerFuture, noticesFuture]);
+        
+        accountsRes = results[0];
+        ledgerRes = results[1];
+        noticesRes = results[2];
+      }
 
       if (noticesRes.isNotEmpty && noticesRes['response_code'] == 1 && noticesRes['data'] != null) {
         final listData = noticesRes['data']['list'];
@@ -86,7 +126,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (mounted) {
         setState(() {
-          _accountsData = accountsRes.isNotEmpty ? accountsRes['data'] : null;
+          _accountsData = (accountsRes != null && accountsRes.isNotEmpty) ? accountsRes['data'] : null;
           
           if (_accountsData != null) {
             double totalSavings = 0.0;
@@ -123,9 +163,8 @@ class _DashboardPageState extends State<DashboardPage> {
             _summaryData = null;
           }
 
-          if (ledgerRes['data'] != null) {
+          if (ledgerRes != null && ledgerRes['data'] != null) {
             _cachedLedgerItems = ledgerRes['data'];
-            _lastLedgerFetchTime = DateTime.now();
           }
           _isLoadingSummary = false;
           _hasError = false;
@@ -348,6 +387,16 @@ class _DashboardPageState extends State<DashboardPage> {
     _pageController.jumpToPage(newIndex);
   }
 
+  Future<void> _checkCacheAndSilentRefresh() async {
+    final cachedAcc = await ApiService.readFromCache('/accounts', null);
+    final cachedLedger = await ApiService.readFromCache('/accounts/all-ledger', null);
+    final cachedNotices = await ApiService.readFromCache('/notices', {'page': '1', 'perPage': '20'});
+
+    if (cachedAcc == null || cachedLedger == null || cachedNotices == null) {
+      _loadSummary(forceRefresh: false);
+    }
+  }
+
   Map<String, dynamic>? get _localizedAccountsData {
     if (_accountsData == null) return null;
     final isNepali = AuthStore().language == 'ne';
@@ -411,6 +460,9 @@ class _DashboardPageState extends State<DashboardPage> {
             setState(() {
               _currentIndex = index;
             });
+            if (index == 0 && oldIndex != 0) {
+              _checkCacheAndSilentRefresh();
+            }
           },
           children: [
             KeepAliveWrapper(
@@ -423,7 +475,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 isDarkMode: _isDarkMode,
                 isLoadingSummary: _isLoadingSummary,
                 hasError: _hasError,
-                onRefresh: _loadSummary,
+                onRefresh: () => _loadSummary(forceRefresh: true),
                 onThemeToggle: _cycleTheme,
                 onLogout: _logout,
                 onTabChange: (index) {
@@ -443,21 +495,16 @@ class _DashboardPageState extends State<DashboardPage> {
             KeepAliveWrapper(
               child: CombinedStatementPage(
                 currentIndex: _currentIndex,
-                cachedLedgerItems: _cachedLedgerItems,
-                lastLedgerFetchTime: _lastLedgerFetchTime,
-                onLedgerFetched: (items) {
-                  setState(() {
-                    _cachedLedgerItems = items;
-                    _lastLedgerFetchTime = DateTime.now();
-                  });
-                },
               ),
             ),
             KeepAliveWrapper(
               child: QRTab(key: _qrKey, isDarkMode: _isDarkMode),
             ),
             KeepAliveWrapper(
-              child: NoticeTab(isDarkMode: _isDarkMode),
+              child: NoticeTab(
+                isDarkMode: _isDarkMode,
+                currentIndex: _currentIndex,
+              ),
             ),
             KeepAliveWrapper(
               child: ProfileTab(

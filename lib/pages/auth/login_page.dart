@@ -6,10 +6,8 @@ import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
-import '../dashboard/dashboard_page.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
-import '../settings/biometric_setup_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -35,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isFaceId = false;
   bool _obscurePassword = true;
   bool _deviceHasBiometricHardware = false;
+  bool _isHeroEnabled = true;
 
   late final PageController _pageController;
   int _currentImageIndex = 0;
@@ -139,6 +138,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _passwordController.addListener(_onPasswordChanged);
+    _passwordFocusNode.addListener(_onPasswordFocusChanged);
     final int initialPage = 999 - (999 % _sliderImages.length);
     _currentPageViewIndex = initialPage;
     _pageController = PageController(initialPage: initialPage);
@@ -192,6 +192,7 @@ class _LoginPageState extends State<LoginPage> {
     _sliderTimer?.cancel();
     _pageController.dispose();
     _passwordController.removeListener(_onPasswordChanged);
+    _passwordFocusNode.removeListener(_onPasswordFocusChanged);
     _passwordController.dispose();
     _passwordFocusNode.dispose();
     AuthStore().removeListener(_onStoreChange);
@@ -206,9 +207,27 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {});
   }
 
+  void _onPasswordFocusChanged() {
+    if (_passwordFocusNode.hasFocus) {
+      _sliderTimer?.cancel();
+      _sliderTimer = null;
+    } else {
+      if (_isAutoplayEnabled) {
+        _startSliderTimer();
+      }
+    }
+  }
+
   void _startSliderTimer() {
-    _sliderTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+    if (_passwordFocusNode.hasFocus) return;
+    _sliderTimer?.cancel();
+    _sliderTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
       if (mounted && _pageController.hasClients && (ModalRoute.of(context)?.isCurrent ?? false)) {
+        if (_passwordFocusNode.hasFocus) {
+          timer.cancel();
+          _sliderTimer = null;
+          return;
+        }
         int nextPage = _pageController.page!.round() + 1;
         _pageController.animateToPage(
           nextPage,
@@ -220,9 +239,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _openFullScreenImage(BuildContext context, int index) {
+    _isAutoplayEnabled = false;
     _passwordFocusNode.unfocus();
     FocusScope.of(context).unfocus();
-    _isAutoplayEnabled = false;
     _sliderTimer?.cancel();
     _sliderTimer = null;
 
@@ -548,6 +567,10 @@ class _LoginPageState extends State<LoginPage> {
     switch (responseCode) {
       case 1: // RESP_SUCCESS
         if (token != null) {
+          // Immediately hide keyboard
+          FocusManager.instance.primaryFocus?.unfocus();
+          FocusScope.of(context).unfocus();
+
           // ── Biometric decision BEFORE setToken ─────────────────────────────
           // setToken() calls notifyListeners() which causes InitialRouter to
           // rebuild and return DashboardPage(), unmounting LoginPage before we
@@ -671,29 +694,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  LinearGradient _getGradient(String? gradientClass) {
-    switch (gradientClass) {
-      case 'bg-blue-600':
-        return const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]);
-      case 'bg-emerald-600':
-        return const LinearGradient(colors: [Color(0xFF059669), Color(0xFF047857)]);
-      case 'bg-purple-600':
-        return const LinearGradient(colors: [Color(0xFF9333EA), Color(0xFF7E22CE)]);
-      case 'bg-rose-600':
-        return const LinearGradient(colors: [Color(0xFFE11D48), Color(0xFFBE123C)]);
-      case 'bg-cyan-600':
-        return const LinearGradient(colors: [Color(0xFF0891B2), Color(0xFF0E7490)]);
-      case 'bg-amber-600':
-        return const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]);
-      case 'bg-indigo-600':
-        return const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF4338CA)]);
-      case 'bg-teal-600':
-        return const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)]);
-      default:
-        return const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]);
-    }
-  }
-
   Color _getSolidColor(String? gradientClass) {
     switch (gradientClass) {
       case 'bg-blue-600':
@@ -720,6 +720,10 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _submitPassword() async {
     final password = _passwordController.text.trim();
     if (password.isEmpty) return;
+    
+    // Immediately hide keyboard when login button is pressed
+    _passwordFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
     
     setState(() => _isLoading = true);
 
@@ -850,6 +854,7 @@ class _LoginPageState extends State<LoginPage> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
         body: Stack(
           children: [
@@ -878,12 +883,14 @@ class _LoginPageState extends State<LoginPage> {
 
           // 2. Content Screen
           Scaffold(
+            resizeToAvoidBottomInset: false,
             backgroundColor: Colors.transparent,
             appBar: null,
             body: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
@@ -906,11 +913,10 @@ class _LoginPageState extends State<LoginPage> {
                                       final String sahakariAddress = selectedSahakari?['address'] ?? '';
                                       final String? logoUrl = selectedSahakari?['logo_url'];
                                       final String? gradientClass = selectedSahakari?['gradient'];
-                                      final gradient = _getGradient(gradientClass);
                                       final solidColor = _getSolidColor(gradientClass);
                                       final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
 
-                                      return Card(
+                                      final cardWidget = Card(
                                         elevation: 0,
                                         color: isDark ? const Color(0xFF2A1C1D) : const Color(0xFFFFF5F4),
                                         shape: RoundedRectangleBorder(
@@ -1018,6 +1024,13 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                       );
+
+                                      return _isHeroEnabled
+                                          ? Hero(
+                                              tag: 'cooperative_branding_card',
+                                              child: cardWidget,
+                                            )
+                                          : cardWidget;
                                     },
                                   ),
                                   const SizedBox(height: 12),
@@ -1172,6 +1185,7 @@ class _LoginPageState extends State<LoginPage> {
                                             ),
                                     ),
                                   ),
+                                  const SizedBox(height: 20),
                                   
                                   // Quick Biometric login trigger
                                   if (_canAuthenticate) ...[
@@ -1214,6 +1228,49 @@ class _LoginPageState extends State<LoginPage> {
                                   Center(
                                     child: TextButton.icon(
                                       onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                            title: Text(
+                                              'Change Phone Number'.tr,
+                                              style: TextStyle(
+                                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            content: Text(
+                                              'Are you sure you want to log in with another phone number? This will clear your cache, biometrics/fingerprint registration, and saved credentials.'.tr,
+                                              style: TextStyle(
+                                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: Text(
+                                                  'Cancel'.tr,
+                                                  style: TextStyle(
+                                                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: Text(
+                                                  'Proceed'.tr,
+                                                  style: const TextStyle(
+                                                    color: Color(0xFFEF4444),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (confirm != true) return;
+
                                         final store = AuthStore();
                                         await store.setRegisteredMobile(null);
                                         await store.setMobile(null);
@@ -1225,6 +1282,9 @@ class _LoginPageState extends State<LoginPage> {
                                         await store.clearAuth();
                                         
                                         if (!mounted) return;
+                                        setState(() {
+                                          _isHeroEnabled = false;
+                                        });
                                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                       },
                                       icon: Icon(
@@ -1246,20 +1306,69 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                   if (!AuthStore().isCustomApp) ...[
-                                    // Switch cooperative option
+                                    // Reset App Data option
                                     Center(
                                       child: TextButton.icon(
-                                        onPressed: () {
-                                          AuthStore().clearAll();
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                              title: Text(
+                                                'Reset App Data'.tr,
+                                                style: TextStyle(
+                                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              content: Text(
+                                                'Are you sure you want to reset all app data? This will clear your cache, biometrics/fingerprint registration, saved credentials, and selected cooperative bank.'.tr,
+                                                style: TextStyle(
+                                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, false),
+                                                  child: Text(
+                                                    'Cancel'.tr,
+                                                    style: TextStyle(
+                                                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                                    ),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: Text(
+                                                    'Proceed'.tr,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFEF4444),
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (confirm != true) return;
+
+                                          await ApiService.clearCache();
+                                          await SliderImageCacheService.clearAllCache();
+                                          await AuthStore().clearAll();
+                                          if (!mounted) return;
+                                          setState(() {
+                                            _isHeroEnabled = false;
+                                          });
                                           Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                         },
                                         icon: Icon(
-                                          Icons.account_balance_rounded,
+                                          Icons.delete_forever_rounded,
                                           size: 16,
                                           color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                                         ),
                                         label: Text(
-                                          'Switch Cooperative Bank'.tr,
+                                          'Reset App Data'.tr,
                                           style: TextStyle(
                                             color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                                             fontSize: 13,

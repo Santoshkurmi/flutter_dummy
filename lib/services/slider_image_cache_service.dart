@@ -82,4 +82,17 @@ class SliderImageCacheService {
       // Safely ignore file system errors during cleanup
     }
   }
+
+  /// Completely deletes all files in the slider_cache directory.
+  static Future<void> clearAllCache() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${directory.path}/slider_cache');
+      if (await cacheDir.exists()) {
+        await cacheDir.delete(recursive: true);
+      }
+    } catch (_) {
+      // Safely ignore file system errors during cleanup
+    }
+  }
 }

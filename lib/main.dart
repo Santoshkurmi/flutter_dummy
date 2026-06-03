@@ -163,6 +163,8 @@ class BouncingScrollBehavior extends MaterialScrollBehavior {
 }
 
 class BrightBankApp extends StatelessWidget {
+  static final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
   const BrightBankApp({super.key});
 
   @override
@@ -173,6 +175,7 @@ class BrightBankApp extends StatelessWidget {
         final isDark = AuthStore().isDarkMode;
         return MaterialApp(
           navigatorKey: AuthStore.navigatorKey,
+          navigatorObservers: [routeObserver],
           title: AuthStore().isCustomApp
               ? (AuthStore().selectedCooperative?['name'] ?? 'Mbright')
               : 'Mbright',

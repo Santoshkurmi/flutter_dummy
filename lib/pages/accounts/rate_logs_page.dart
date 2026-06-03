@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
@@ -28,7 +29,18 @@ class _RateLogsPageState extends State<RateLogsPage> {
     _fetchRateLogs();
   }
 
-  Future<void> _fetchRateLogs() async {
+  StreamSubscription? _rateLogsSubscription;
+
+  @override
+  void dispose() {
+    _rateLogsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchRateLogs({bool forceRefresh = false}) async {
+    _rateLogsSubscription?.cancel();
+    final completer = Completer<void>();
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -39,27 +51,54 @@ class _RateLogsPageState extends State<RateLogsPage> {
       if (schemeId == null) {
         throw Exception('Scheme ID not available for this account.');
       }
-      final res = widget.accountType == 'savings'
-          ? await ApiService().getSavingSchemeRateLogs(schemeId is int ? schemeId : int.parse(schemeId.toString()))
-          : await ApiService().getLoanSchemeRateLogs(schemeId is int ? schemeId : int.parse(schemeId.toString()));
-      if (res['response_code'] == 1 && res['data'] != null) {
-        final List<dynamic> data = res['data'];
-        setState(() {
-          _rateLogs = data.map((e) => Map<String, dynamic>.from(e)).toList();
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _rateLogs = [];
-          _isLoading = false;
-        });
-      }
+      final int parsedSchemeId = schemeId is int ? schemeId : int.parse(schemeId.toString());
+
+      final stream = widget.accountType == 'savings'
+          ? ApiService().getSavingSchemeRateLogsStream(parsedSchemeId, forceRefresh: forceRefresh)
+          : ApiService().getLoanSchemeRateLogsStream(parsedSchemeId, forceRefresh: forceRefresh);
+
+      _rateLogsSubscription = stream.listen((response) {
+        if (mounted) {
+          setState(() {
+            _isLoading = response.isLoading;
+            _errorMessage = response.hasError ? response.error : null;
+            if (response.data != null) {
+              final res = response.data!;
+              if (res['response_code'] == 1 && res['data'] != null) {
+                final List<dynamic> data = res['data'];
+                _rateLogs = data.map((e) => Map<String, dynamic>.from(e)).toList();
+              } else {
+                _rateLogs = [];
+              }
+            }
+          });
+        }
+      }, onError: (e) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = e.toString().replaceAll('Exception: ', '');
+            _isLoading = false;
+          });
+        }
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }, onDone: () {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      });
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
       });
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
+
+    return completer.future;
   }
 
   String _formatRate(dynamic rate) {
@@ -109,11 +148,16 @@ class _RateLogsPageState extends State<RateLogsPage> {
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
-          : _errorMessage != null
-              ? _buildErrorState(isDarkMode)
-              : _buildBody(isDarkMode, schemeName),
+      body: RefreshIndicator(
+        onRefresh: () => _fetchRateLogs(forceRefresh: true),
+        color: const Color(0xFF2563EB),
+        backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        child: _isLoading && _errorMessage == null
+            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
+            : _errorMessage != null
+                ? _buildErrorState(isDarkMode)
+                : _buildBody(isDarkMode, schemeName),
+      ),
     );
   }
 

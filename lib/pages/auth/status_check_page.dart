@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/slider_image_cache_service.dart';
 import 'activation_page.dart';
 import 'device_linking_page.dart';
 import 'register_member_page.dart';
-import 'login_page.dart';
 
 class StatusCheckPage extends StatefulWidget {
   const StatusCheckPage({super.key});
@@ -22,26 +22,28 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
   bool get _isDarkMode => AuthStore().isDarkMode;
 
-  LinearGradient _getGradient(String? gradientClass) {
+
+
+  Color _getSolidColor(String? gradientClass) {
     switch (gradientClass) {
       case 'bg-blue-600':
-        return const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]);
+        return const Color(0xFF2563EB);
       case 'bg-emerald-600':
-        return const LinearGradient(colors: [Color(0xFF059669), Color(0xFF047857)]);
+        return const Color(0xFF059669);
       case 'bg-purple-600':
-        return const LinearGradient(colors: [Color(0xFF9333EA), Color(0xFF7E22CE)]);
+        return const Color(0xFF9333EA);
       case 'bg-rose-600':
-        return const LinearGradient(colors: [Color(0xFFE11D48), Color(0xFFBE123C)]);
+        return const Color(0xFFE11D48);
       case 'bg-cyan-600':
-        return const LinearGradient(colors: [Color(0xFF0891B2), Color(0xFF0E7490)]);
+        return const Color(0xFF0891B2);
       case 'bg-amber-600':
-        return const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]);
+        return const Color(0xFFD97706);
       case 'bg-indigo-600':
-        return const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF4338CA)]);
+        return const Color(0xFF4F46E5);
       case 'bg-teal-600':
-        return const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)]);
+        return const Color(0xFF0D9488);
       default:
-        return const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]);
+        return const Color(0xFF2563EB);
     }
   }
 
@@ -72,6 +74,10 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
   Future<void> _submit() async {
     final mobile = _mobileController.text.trim();
     if (mobile.length != 10) return;
+    
+    // Immediately hide keyboard when Continue is pressed
+    FocusManager.instance.primaryFocus?.unfocus();
+    FocusScope.of(context).unfocus();
     
     // Reset biometric preferences if logging in/registering with a different phone number
     final store = AuthStore();
@@ -188,11 +194,14 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
   @override
   Widget build(BuildContext context) {
-    final coop = AuthStore().selectedCooperative;
-    final coopName = coop?['name'] ?? 'Your Cooperative';
     final isDark = _isDarkMode;
 
-    return Scaffold(
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
       backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
@@ -221,6 +230,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
 
           // 2. Content Screen
           Scaffold(
+            resizeToAvoidBottomInset: false,
             backgroundColor: Colors.transparent,
             appBar: null,
             body: LayoutBuilder(
@@ -243,123 +253,155 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const SizedBox(height: 20),
-                                  // Centered Cooperative Logo with premium design
+                                  const SizedBox(height: 10),
+                                  // Visual Logo & Sahakari Name Card in same row
                                   Builder(
                                     builder: (context) {
                                       final selectedSahakari = AuthStore().selectedCooperative;
-                                      final String sahakariName = selectedSahakari?['name'] ?? 'Bright Sahakari';
+                                      final String sahakariName = selectedSahakari?['name'] ?? '';
+                                      final String sahakariAddress = selectedSahakari?['address'] ?? '';
                                       final String? logoUrl = selectedSahakari?['logo_url'];
                                       final String? gradientClass = selectedSahakari?['gradient'];
-                                      final gradient = _getGradient(gradientClass);
+                                      final solidColor = _getSolidColor(gradientClass);
                                       final String initialLetter = sahakariName.isNotEmpty ? sahakariName.substring(0, 1) : 'B';
 
-                                      return Center(
-                                        child: Container(
-                                          width: 86,
-                                          height: 86,
-                                          padding: const EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.1)
-                                                  : Colors.black.withValues(alpha: 0.05),
+                                      return Hero(
+                                        tag: 'cooperative_branding_card',
+                                        child: Card(
+                                          elevation: 0,
+                                          color: isDark ? const Color(0xFF2A1C1D) : const Color(0xFFFFF5F4),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            side: BorderSide(
+                                              color: isDark 
+                                                  ? const Color(0xFFEF4444).withValues(alpha: 0.15) 
+                                                  : const Color(0xFFFCA5A5).withValues(alpha: 0.3),
                                               width: 1.5,
                                             ),
                                           ),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              gradient: logoUrl == null || logoUrl.isEmpty ? gradient : null,
-                                              color: logoUrl != null && logoUrl.isNotEmpty ? Colors.white : null,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: (logoUrl == null || logoUrl.isEmpty ? const Color(0xFF2563EB) : Colors.black).withValues(alpha: 0.2),
-                                                  blurRadius: 16,
-                                                  offset: const Offset(0, 6),
-                                                ),
-                                              ],
-                                            ),
-                                            child: logoUrl != null && logoUrl.isNotEmpty
-                                                ? ClipRRect(
-                                                    borderRadius: BorderRadius.circular(40),
-                                                    child: Image.network(
-                                                      logoUrl,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return Container(
-                                                          decoration: BoxDecoration(
-                                                            shape: BoxShape.circle,
-                                                            gradient: gradient,
-                                                          ),
-                                                          child: Center(
-                                                            child: Text(
-                                                              initialLetter,
-                                                              style: const TextStyle(
-                                                                fontSize: 32,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: Colors.white,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                : Center(
-                                                    child: Text(
-                                                      initialLetter,
-                                                      style: const TextStyle(
-                                                        fontSize: 32,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  padding: const EdgeInsets.all(2),
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: isDark
+                                                          ? Colors.white.withValues(alpha: 0.1)
+                                                          : Colors.black.withValues(alpha: 0.05),
+                                                      width: 1.2,
                                                     ),
                                                   ),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      color: logoUrl == null || logoUrl.isEmpty ? solidColor : Colors.white,
+                                                    ),
+                                                    child: logoUrl != null && logoUrl.isNotEmpty
+                                                        ? ClipRRect(
+                                                            borderRadius: BorderRadius.circular(20),
+                                                            child: Image.network(
+                                                              logoUrl,
+                                                              fit: BoxFit.cover,
+                                                              errorBuilder: (context, error, stackTrace) {
+                                                                return Container(
+                                                                  decoration: BoxDecoration(
+                                                                    shape: BoxShape.circle,
+                                                                    color: solidColor,
+                                                                ),
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    initialLetter,
+                                                                    style: const TextStyle(
+                                                                      fontSize: 16,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        )
+                                                      : Center(
+                                                          child: Text(
+                                                            initialLetter,
+                                                            style: const TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      sahakariName.isNotEmpty ? sahakariName : 'Cooperative Bank',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
+                                                      ),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    if (sahakariAddress.isNotEmpty) ...[
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        sahakariAddress,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: isDark ? const Color(0xFFD1A3A4) : const Color(0xFF7F5555),
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 20),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                  const SizedBox(height: 40),
                                   
-                                  // Centered Cooperative Name (Improved size and styling)
-                                  Text(
-                                    coopName,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w900,
-                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                      letterSpacing: -0.5,
+                                  // Welcome Back / Enter Mobile Number (Rhythmic alignment)
+                                  Center(
+                                    child: Text(
+                                      'Enter Mobile Number'.tr,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  
-                                  // Subtitle (Enter Mobile Number, reduced size)
-                                  Text(
-                                    'Enter Mobile Number'.tr,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                  const SizedBox(height: 4),
+                                  Center(
+                                    child: Text(
+                                      'We will check your registration status and guide you.'.tr,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  
-                                  // Description (Centered)
-                                  Text(
-                                    'We will check your registration status and guide you to the next step.'.tr,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.4,
-                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 16),
                                   
                                   // TextFormField with native borders (no wrapper Container needed)
                                   TextFormField(
@@ -478,7 +520,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                 children: [
                                   // Register New Member
                                   Center(
-                                    child: TextButton(
+                                    child: TextButton.icon(
                                       onPressed: () {
                                         Navigator.push(
                                           context,
@@ -487,9 +529,14 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                           ),
                                         );
                                       },
-                                      child: Text.rich(
+                                      icon: Icon(
+                                        Icons.person_add_alt_1_rounded,
+                                        size: 18,
+                                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                      ),
+                                      label: Text.rich(
                                         TextSpan(
-                                          text:'${'New to Sahakari?'.tr} ',
+                                          text: '${'New to Sahakari?'.tr} ',
                                           style: TextStyle(
                                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                             fontSize: 14,
@@ -509,54 +556,75 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                   ),
                                   const SizedBox(height: 10),
                                   
-                                  // Change Cooperative Bank (only if not custom app)
+                                  // Reset App Data (only if not custom app)
                                   if (!AuthStore().isCustomApp) ...[
                                     Center(
-                                      child: TextButton(
+                                      child: TextButton.icon(
                                         onPressed: () async {
-                                          // Show a confirmation dialog
                                           final confirm = await showDialog<bool>(
                                             context: context,
                                             builder: (context) => AlertDialog(
                                               backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                                               title: Text(
-                                                'Switch Cooperative'.tr,
-                                                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B)),
+                                                'Reset App Data'.tr,
+                                                style: TextStyle(
+                                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                               content: Text(
-                                                'Are you sure you want to disconnect and switch to a different cooperative bank? All local session data will be cleared.'.tr,
-                                                style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                                                'Are you sure you want to reset all app data? This will clear your cache, biometrics/fingerprint registration, saved credentials, and selected cooperative bank.'.tr,
+                                                style: TextStyle(
+                                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                                ),
                                               ),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () => Navigator.pop(context, false),
                                                   child: Text(
                                                     'Cancel'.tr,
-                                                    style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                                                    style: TextStyle(
+                                                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                                    ),
                                                   ),
                                                 ),
                                                 TextButton(
                                                   onPressed: () => Navigator.pop(context, true),
-                                                  child: Text('Switch'.tr, style: const TextStyle(color: Colors.red)),
+                                                  child: Text(
+                                                    'Proceed'.tr,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFEF4444),
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                           );
 
                                           if (confirm == true) {
+                                            await ApiService.clearCache();
+                                            await SliderImageCacheService.clearAllCache();
                                             await AuthStore().clearAll();
                                             if (!mounted) return;
                                             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                           }
                                         },
-                                        child: Text(
-                                          'Change Cooperative Bank'.tr,
+                                        icon: Icon(
+                                          Icons.delete_forever_rounded,
+                                          size: 16,
+                                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                        ),
+                                        label: Text(
+                                          'Reset App Data'.tr,
                                           style: TextStyle(
-                                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.2,
+                                            color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                            fontSize: 13,
                                           ),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                       ),
                                     ),
@@ -576,8 +644,9 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class PhoneNumberFormatter extends TextInputFormatter {
