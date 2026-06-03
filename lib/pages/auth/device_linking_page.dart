@@ -222,7 +222,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
   // STEP 3: Pin Setup / Submit OTP Request
   Future<void> _handleStep3PinSubmit(bool withOtp) async {
-    if (_needsPasswordSetup) {
+    if (_needsPasswordSetup && _step == 3) {
       if (!_step3FormKey.currentState!.validate()) return;
     }
 
@@ -351,8 +351,27 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+    return PopScope(
+      canPop: _step == 1 || (widget.directPasswordSetup && _step == 2),
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_step > 1) {
+          if (widget.directPasswordSetup && _step == 2) {
+            Navigator.pop(context);
+          } else {
+            setState(() {
+              if (_step == 3 && !_needsPasswordSetup) {
+                _step = 1;
+              } else {
+                _step--;
+              }
+              _errorMessage = '';
+            });
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -433,8 +452,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Visual Multi-Step Header Indicator
   Widget _buildStepIndicator(bool isDarkMode) {

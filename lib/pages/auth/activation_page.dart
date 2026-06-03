@@ -183,7 +183,7 @@ class _ActivationPageState extends State<ActivationPage> {
 
   // STEP 4: Submit & Request OTP
   Future<void> _handleStep4PinSubmit(bool withOtp) async {
-    if (!_step4FormKey.currentState!.validate()) return;
+    if (_step == 4 && !_step4FormKey.currentState!.validate()) return;
     
     setState(() {
       _isLoading = true;
@@ -307,8 +307,23 @@ class _ActivationPageState extends State<ActivationPage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+    return PopScope(
+      canPop: _step == 1 || _step >= 6,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_step > 1) {
+          setState(() {
+            if (_step == 3 && _chargeAmount <= 0) {
+              _step = 1;
+            } else {
+              _step--;
+            }
+            _errorMessage = '';
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -320,7 +335,11 @@ class _ActivationPageState extends State<ActivationPage> {
           onPressed: () {
             if (_step > 1) {
               setState(() {
-                _step--;
+                if (_step == 3 && _chargeAmount <= 0) {
+                  _step = 1;
+                } else {
+                  _step--;
+                }
                 _errorMessage = '';
               });
             } else {
@@ -381,8 +400,9 @@ class _ActivationPageState extends State<ActivationPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Visual Multi-Step Header Indicator
   Widget _buildStepIndicator(bool isDarkMode) {
