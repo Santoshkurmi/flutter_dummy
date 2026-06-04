@@ -21,6 +21,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
   String? _errorMessage;
   Map<String, dynamic>? _selectedDayInfo;
   double _horizontalDragDistance = 0.0;
+  bool _showDetailedGrid = false;
 
   StreamSubscription? _calendarSubscription;
 
@@ -37,12 +38,21 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
     final todayBs = NepaliCalendarService.adToBs(DateTime.now());
     _activeYear = todayBs[0];
     _activeMonth = todayBs[1];
-    _generateLocalCalendar(); // generate calendar grid instantly
 
-    // Select today's date by default ONLY on initial page load
+    // Select today's date by default ONLY on initial page load without loop/parsing
     final todayDayNum = todayBs[2];
-    final initialMatches = _calendarDays.where((dayData) => dayData['day'] == todayDayNum);
-    _selectedDayInfo = initialMatches.isNotEmpty ? initialMatches.first : null;
+    final today = DateTime.now();
+    _selectedDayInfo = {
+      'day': todayDayNum,
+      'date_bs': '$_activeYear-${_activeMonth.toString().padLeft(2, '0')}-${todayDayNum.toString().padLeft(2, '0')}',
+      'date_ad': '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}',
+      'day_of_week': today.weekday % 7,
+      'is_saturday': today.weekday == DateTime.saturday,
+      'is_holiday': today.weekday == DateTime.saturday,
+      'holiday_id': null,
+      'holiday_name': today.weekday == DateTime.saturday ? 'Saturday' : '',
+      'is_db_holiday': false,
+    };
 
     // Fetch calendar data after page transition is fully completed
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,13 +60,13 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
       final route = ModalRoute.of(context);
       if (route != null && route.animation != null) {
         if (route.animation!.isCompleted) {
-          _fetchCalendarData();
+          _startCalendarRendering();
         } else {
           late final void Function(AnimationStatus) listener;
           listener = (status) {
             if (status == AnimationStatus.completed) {
               if (mounted) {
-                _fetchCalendarData();
+                _startCalendarRendering();
               }
               route.animation!.removeStatusListener(listener);
             }
@@ -64,7 +74,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
           route.animation!.addStatusListener(listener);
         }
       } else {
-        _fetchCalendarData();
+        _startCalendarRendering();
       }
     });
   }
@@ -208,6 +218,18 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
     }
   }
 
+  void _startCalendarRendering() {
+    Future.delayed(const Duration(milliseconds: 80), () {
+      if (mounted) {
+        setState(() {
+          _generateLocalCalendar(); // generate days grid after transition
+          _showDetailedGrid = true;
+        });
+        _fetchCalendarData();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -218,12 +240,27 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
     final monthNameNe = NepaliCalendarService.nepaliMonthsDevanagari[_activeMonth - 1];
 
     // Determine start offset cells
-    int startDayOfWeek = 0;
-    if (_calendarDays.isNotEmpty) {
-      startDayOfWeek = _calendarDays.first['day_of_week'] as int;
-    } else {
-      startDayOfWeek = NepaliCalendarService.getStartingWeekdayOfBsMonth(_activeYear, _activeMonth);
-    }
+    final startDayOfWeek = _calendarDays.isNotEmpty
+        ? _calendarDays.first['day_of_week'] as int
+        : NepaliCalendarService.getStartingWeekdayOfBsMonth(_activeYear, _activeMonth);
+
+    // Compute estimated height of the calendar container to prevent layout shift without parsing
+    final daysInMonth = NepaliCalendarService.getDaysInBsMonth(_activeYear, _activeMonth);
+    final totalCells = startDayOfWeek + daysInMonth;
+    final rowCount = (totalCells / 7).ceil();
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    // ListView horizontal padding is 20 * 2 = 40.
+    // Calendar container internal padding is 16 * 2 = 32.
+    // Days GridView crossAxisSpacing is 6.0 * 6 = 36.
+    // Remaining width is divided by 7 to get cell width.
+    final cellWidth = (screenWidth - 108) / 7;
+    final weekdayHeight = cellWidth / 1.5;
+    final dividerHeight = 16.0;
+    final cardPadding = 32.0; // 16 top + 16 bottom
+    final daysGridHeight = (cellWidth * rowCount) + (6.0 * (rowCount - 1));
+    // Border adds 2px (1px top + 1px bottom).
+    final estimatedPlaceholderHeight = cardPadding + weekdayHeight + dividerHeight + daysGridHeight + 2.0;
 
     final todayBs = NepaliCalendarService.adToBs(DateTime.now());
     final isCurrentMonth = todayBs[0] == _activeYear && todayBs[1] == _activeMonth;
@@ -507,77 +544,105 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
             const SizedBox(height: 20),
 
             // Calendar Grid
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onHorizontalDragStart: (details) {
-                _horizontalDragDistance = 0.0;
-              },
-              onHorizontalDragUpdate: (details) {
-                _horizontalDragDistance += details.delta.dx;
-              },
-              onHorizontalDragEnd: (details) {
-                if (_horizontalDragDistance.abs() > 40.0) {
-                  if (_horizontalDragDistance > 0) {
-                    _prevMonth();
-                  } else {
-                    _nextMonth();
-                  }
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: borderColor),
-                  boxShadow: isDarkMode
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                ),
-                child: Column(
-                  children: [
-                    // Weekday labels
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 7,
-                      childAspectRatio: 1.5,
-                      children: List.generate(7, (idx) {
-                        const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                        final label = labels[idx];
-                        final isSat = idx == 6;
-                        return Center(
-                          child: Text(
-                            label.tr.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: isSat ? const Color(0xFFEF4444) : const Color(0xFF64748B),
-                              letterSpacing: 0.8,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _showDetailedGrid
+                  ? GestureDetector(
+                      key: const ValueKey('calendar_grid_real'),
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragStart: (details) {
+                        _horizontalDragDistance = 0.0;
+                      },
+                      onHorizontalDragUpdate: (details) {
+                        _horizontalDragDistance += details.delta.dx;
+                      },
+                      onHorizontalDragEnd: (details) {
+                        if (_horizontalDragDistance.abs() > 40.0) {
+                          if (_horizontalDragDistance > 0) {
+                            _prevMonth();
+                          } else {
+                            _nextMonth();
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: borderColor),
+                          boxShadow: isDarkMode
+                              ? []
+                              : [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.02),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Weekday labels
+                            GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 7,
+                              childAspectRatio: 1.5,
+                              children: List.generate(7, (idx) {
+                                const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                final label = labels[idx];
+                                final isSat = idx == 6;
+                                return Center(
+                                  child: Text(
+                                    label.tr.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: isSat ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
-                          ),
-                        );
-                      }),
+                            const Divider(height: 16),
+                            // Days grid
+                            GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 7,
+                              crossAxisSpacing: 6,
+                              mainAxisSpacing: 6,
+                              children: gridCells,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Container(
+                      key: const ValueKey('calendar_grid_placeholder'),
+                      height: estimatedPlaceholderHeight,
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: borderColor),
+                        boxShadow: isDarkMode
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF2563EB),
+                        ),
+                      ),
                     ),
-                    const Divider(height: 16),
-                    // Days grid
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 7,
-                      crossAxisSpacing: 6,
-                      mainAxisSpacing: 6,
-                      children: gridCells,
-                    ),
-                  ],
-                ),
-              ),
             ),
 
             // Selected Day Event Detail Sheet/Card
@@ -623,36 +688,58 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
             const SizedBox(height: 12),
 
             // Event Loading or Event Cards
-            if (_isEventsLoading)
-              Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  color: cardBgColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (holidayEvents.isEmpty)
-              _buildNoEventsCard(cardBgColor, borderColor, primaryTextColor)
-            else
-              ...holidayEvents.map((dayData) {
-                final int dayNum = dayData['day'] as int;
-                final String evTitle = dayData['holiday_name'] ?? '';
-                final isSat = dayData['is_saturday'] as bool;
-                return _buildEventCard(
-                  title: evTitle.tr,
-                  desc: isSat ? 'Weekly Holiday'.tr : 'Official Event / Holiday'.tr,
-                  dateBadge: '$monthNameNe ${_toDevanagariDigits(dayNum)}',
-                  isDarkMode: isDarkMode,
-                  cardBgColor: cardBgColor,
-                  borderColor: borderColor,
-                  primaryTextColor: primaryTextColor,
-                  isHolidayEvent: true,
-                );
-              }),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _showDetailedGrid
+                  ? Column(
+                      key: const ValueKey('events_list_real'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_isEventsLoading)
+                          Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: cardBgColor,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (holidayEvents.isEmpty)
+                          _buildNoEventsCard(cardBgColor, borderColor, primaryTextColor)
+                        else
+                          ...holidayEvents.map((dayData) {
+                            final int dayNum = dayData['day'] as int;
+                            final String evTitle = dayData['holiday_name'] ?? '';
+                            final isSat = dayData['is_saturday'] as bool;
+                            return _buildEventCard(
+                              title: evTitle.tr,
+                              desc: isSat ? 'Weekly Holiday'.tr : 'Official Event / Holiday'.tr,
+                              dateBadge: '$monthNameNe ${_toDevanagariDigits(dayNum)}',
+                              isDarkMode: isDarkMode,
+                              cardBgColor: cardBgColor,
+                              borderColor: borderColor,
+                              primaryTextColor: primaryTextColor,
+                              isHolidayEvent: true,
+                            );
+                          }),
+                      ],
+                    )
+                  : Container(
+                      key: const ValueKey('events_list_placeholder'),
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+            ),
             const SizedBox(height: 24),
           ],
         ),

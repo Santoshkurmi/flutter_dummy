@@ -26,6 +26,7 @@ class QRGeneratorPage extends StatefulWidget {
 
 class _QRGeneratorPageState extends State<QRGeneratorPage> {
   final GlobalKey _boundaryKey = GlobalKey();
+  bool _showQrCard = false;
 
   // Custom QR type configuration
   String _selectedType = 'URL';
@@ -93,6 +94,40 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
     _smsMessageController.addListener(_updatePayload);
 
     _updatePayload();
+
+    // Defer heavy QR rendering until page transition finishes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route != null && route.animation != null) {
+        if (route.animation!.isCompleted) {
+          _startQrRendering();
+        } else {
+          late final void Function(AnimationStatus) listener;
+          listener = (status) {
+            if (status == AnimationStatus.completed) {
+              if (mounted) {
+                _startQrRendering();
+              }
+              route.animation!.removeStatusListener(listener);
+            }
+          };
+          route.animation!.addStatusListener(listener);
+        }
+      } else {
+        _startQrRendering();
+      }
+    });
+  }
+
+  void _startQrRendering() {
+    Future.delayed(const Duration(milliseconds: 80), () {
+      if (mounted) {
+        setState(() {
+          _showQrCard = true;
+        });
+      }
+    });
   }
 
   @override
@@ -167,7 +202,7 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
       _latController.text = position.latitude.toString();
@@ -313,6 +348,7 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
                 label: _labelController.text,
                 themeColor: _themeColor,
                 isDark: isDark,
+                isLoading: !_showQrCard,
               ),
             ),
             const SizedBox(height: 24),

@@ -142,7 +142,7 @@ class ProfileTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _profileActionOption(context, Icons.settings_rounded, 'App Preferences'.tr, 'Configure alerts, daily limits and fingerprint setup'.tr, const SettingsPage()),
-        _profileActionOption(context, Icons.app_registration_rounded, 'Self Registration'.tr, 'Become a member by filling self-registration wizard'.tr, const RegisterMemberPage()),
+        _profileActionOption(context, Icons.app_registration_rounded, 'Member Registration'.tr, 'Become a member by filling member-registration wizard'.tr, const RegisterMemberPage()),
         _profileActionOption(context, Icons.qr_code_2_rounded, 'QR Generator'.tr, 'Generate and download custom cooperative QR codes'.tr, QRGeneratorPage(isDarkMode: isDarkMode)),
         _profileActionOption(context, Icons.calendar_month_rounded, 'Nepali Calendar'.tr, 'View Bikram Sambat dates, Nepalese holidays and board runs'.tr, const NepaliCalendarPage()),
         _profileActionOption(context, Icons.swap_horizontal_circle_outlined, 'Date Utility'.tr, 'Convert between BS and AD, calculate date difference'.tr, const DateConversionPage()),

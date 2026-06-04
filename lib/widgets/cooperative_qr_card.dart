@@ -8,6 +8,7 @@ class CooperativeQrCard extends StatelessWidget {
   final String label;
   final Color themeColor;
   final bool isDark;
+  final bool isLoading;
 
   const CooperativeQrCard({
     super.key,
@@ -16,6 +17,7 @@ class CooperativeQrCard extends StatelessWidget {
     required this.label,
     required this.themeColor,
     required this.isDark,
+    this.isLoading = false,
   });
 
   @override
@@ -117,6 +119,8 @@ class CooperativeQrCard extends StatelessWidget {
             // QR Code Container (Always White for scan reliability)
             Container(
               padding: const EdgeInsets.all(16),
+              width: 232,
+              height: 232,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -128,19 +132,35 @@ class CooperativeQrCard extends StatelessWidget {
                   )
                 ],
               ),
-              child: QrImageView(
-                data: data.isEmpty ? 'https://example.com' : data,
-                version: QrVersions.auto,
-                size: 200,
-                gapless: false,
-                eyeStyle: QrEyeStyle(
-                  eyeShape: QrEyeShape.square,
-                  color: themeColor,
-                ),
-                dataModuleStyle: const QrDataModuleStyle(
-                  dataModuleShape: QrDataModuleShape.square,
-                  color: Color(0xFF0F172A),
-                ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: isLoading
+                    ? Center(
+                        key: const ValueKey('qr_loading_indicator'),
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: themeColor,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                      )
+                    : QrImageView(
+                        key: const ValueKey('qr_image_view'),
+                        data: data.isEmpty ? 'https://example.com' : data,
+                        version: QrVersions.auto,
+                        size: 200,
+                        gapless: false,
+                        eyeStyle: QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: themeColor,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 24),

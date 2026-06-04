@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
 import '../../data/locations.dart';
+import '../../services/translation_service.dart';
 
 class RegisterMemberPage extends StatefulWidget {
   const RegisterMemberPage({super.key});
@@ -350,12 +351,14 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
 
         _clearFormFields();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Membership Self-Registration submitted successfully!'),
-            backgroundColor: Color(0xFF10B981),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Membership Registration submitted successfully!'.tr),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -574,74 +577,103 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
           _handleBackNavigation();
         }
       },
-      child: Scaffold(
-        backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Navigator.canPop(context) ? IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-            ),
-            onPressed: _handleBackNavigation,
-          ) : null,
-          title: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              _showForm ? 'Membership Application' : 'Self Registration',
-              key: ValueKey(_showForm),
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                fontSize: 20,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.easeInOutCubic,
+        switchOutCurve: Curves.easeInOutCubic,
+        transitionBuilder: (child, animation) {
+          final isFormWizard = child.key == const ValueKey('form_wizard_scaffold');
+          final double dx = isFormWizard ? 1.0 : -1.0;
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(dx, 0.0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
               ),
             ),
-          ),
-        ),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
-                switchInCurve: Curves.easeInOut,
-                switchOutCurve: Curves.easeInOut,
-                transitionBuilder: (child, animation) {
-                  final isIncoming = child.key == ValueKey(_showForm ? 'form_wizard' : 'dashboard');
-                  final double slideOffset = _showForm ? 0.05 : -0.05;
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: isIncoming ? Offset(slideOffset, 0.0) : Offset(-slideOffset, 0.0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          );
+        },
+        child: _showForm
+            ? Scaffold(
+                key: const ValueKey('form_wizard_scaffold'),
+                backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
                     ),
-                  );
-                },
-                child: _showForm
-                    ? KeyedSubtree(
-                        key: const ValueKey('form_wizard'),
-                        child: _buildFormWizard(isDarkMode),
-                      )
-                    : KeyedSubtree(
-                        key: const ValueKey('dashboard'),
-                        child: _buildDashboard(isDarkMode),
-                      ),
-              ),
-              if (_isLoading)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
-                      ),
+                    onPressed: _handleBackNavigation,
+                  ),
+                  title: Text(
+                    'Membership Application'.tr,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      fontSize: 20,
                     ),
                   ),
                 ),
-            ],
+                body: SafeArea(
+                  child: Stack(
+                    children: [
+                      _buildFormWizard(isDarkMode),
+                      if (_isLoading) _buildLoadingOverlay(),
+                    ],
+                  ),
+                ),
+              )
+            : Scaffold(
+                key: const ValueKey('dashboard_scaffold'),
+                backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: Navigator.canPop(context) ? IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ) : null,
+                  title: Text(
+                    'Member Registration'.tr,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                body: SafeArea(
+                  child: Stack(
+                    children: [
+                      _buildDashboard(isDarkMode),
+                      if (_isLoading) _buildLoadingOverlay(),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.35),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
           ),
         ),
       ),
@@ -676,9 +708,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Become a Bank Member',
-                  style: TextStyle(
+                Text(
+                  'Become a Bank Member'.tr,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -686,7 +718,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Submit your details self-registration details directly to bank board reviews.',
+                  'Submit your details member-registration details directly to bank board reviews.'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -715,9 +747,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Apply New Membership',
-                      style: TextStyle(fontWeight: FontWeight.w900),
+                    child: Text(
+                      'Apply New Membership'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
                 ),
@@ -728,7 +760,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
 
           // Heading
           Text(
-            'Submitted Applications'.toUpperCase(),
+            'Submitted Applications'.tr.toUpperCase(),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w900,
@@ -751,9 +783,9 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
                           color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'No registrations submitted yet.',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.bold),
+                        Text(
+                          'No registrations submitted yet.'.tr,
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
