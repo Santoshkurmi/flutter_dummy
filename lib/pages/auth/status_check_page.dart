@@ -9,7 +9,8 @@ import 'device_linking_page.dart';
 import 'register_member_page.dart';
 
 class StatusCheckPage extends StatefulWidget {
-  const StatusCheckPage({super.key});
+  final bool showBackButton;
+  const StatusCheckPage({super.key, this.showBackButton = false});
 
   @override
   State<StatusCheckPage> createState() => _StatusCheckPageState();
@@ -202,7 +203,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+        backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           // 1. Premium Gradient Background
@@ -232,7 +233,19 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           Scaffold(
             resizeToAvoidBottomInset: false,
             backgroundColor: Colors.transparent,
-            appBar: null,
+            appBar: widget.showBackButton
+                ? AppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  )
+                : null,
             body: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(

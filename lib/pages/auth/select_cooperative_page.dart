@@ -430,11 +430,10 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                 });
                                 if (context.mounted) {
                                   Navigator.pop(context);
-                                  navigator.pushAndRemoveUntil(
+                                  navigator.push(
                                     MaterialPageRoute(
-                                      builder: (_) => const StatusCheckPage(),
+                                      builder: (_) => const StatusCheckPage(showBackButton: true),
                                     ),
-                                    (route) => false,
                                   );
                                 }
                               }
@@ -541,9 +540,8 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                   'gradient': 'bg-rose-600',
                   'logoUrl': '',
                 });
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const StatusCheckPage()),
-                  (route) => false,
+                navigator.push(
+                  MaterialPageRoute(builder: (_) => const StatusCheckPage(showBackButton: true)),
                 );
               },
               child: Text(
@@ -794,11 +792,10 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                     } else {
                                       final navigator = Navigator.of(context);
                                       await AuthStore().setSelectedCooperative(coop);
-                                      navigator.pushAndRemoveUntil(
+                                      navigator.push(
                                         MaterialPageRoute(
-                                          builder: (_) => const StatusCheckPage(),
+                                          builder: (_) => const StatusCheckPage(showBackButton: true),
                                         ),
-                                        (route) => false,
                                       );
                                     }
                                   },
