@@ -19,6 +19,7 @@ import 'store/notification_store.dart';
 import 'store/notice_store.dart';
 import 'services/location_service.dart';
 import 'services/api_service.dart';
+import 'services/update_service.dart';
 import 'dart:convert';
 
 @pragma('vm:entry-point')
@@ -249,6 +250,8 @@ class _InitialRouterState extends State<InitialRouter> {
 
     // Schedule background location fetch when the app is idle after startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService().checkForUpdates(context);
+
       SchedulerBinding.instance.scheduleTask(
         () async {
           await LocationService().refreshLocationOnStartup();
