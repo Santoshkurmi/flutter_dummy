@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
 import '../../services/nepali_calendar_service.dart';
+import '../../store/auth_store.dart';
 import 'date_conversion_page.dart';
 
 class NepaliCalendarPage extends StatefulWidget {
-  const NepaliCalendarPage({super.key});
+  final bool isFromNotification;
+  const NepaliCalendarPage({super.key, this.isFromNotification = false});
 
   @override
   State<NepaliCalendarPage> createState() => _NepaliCalendarPageState();
@@ -80,6 +83,43 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
   }
 
   Future<void> _fetchCalendarData({bool forceRefresh = false}) async {
+    if (widget.isFromNotification && !AuthStore().isAuthenticated) {
+      _calendarSubscription?.cancel();
+      setState(() {
+        _isEventsLoading = true;
+        _errorMessage = null;
+      });
+      try {
+        final cacheEntry = await ApiService.readFromCache('/holidays', {
+          'year_bs': _activeYear.toString(),
+          'month_bs': _activeMonth.toString(),
+        });
+        if (mounted) {
+          setState(() {
+            _isEventsLoading = false;
+            if (cacheEntry != null && cacheEntry['data'] != null) {
+              _calendarDays = cacheEntry['data']['calendar'] ?? [];
+              if (_selectedDayInfo != null) {
+                final selectedDayNum = _selectedDayInfo!['day'];
+                final matches = _calendarDays.where((dayData) => dayData['day'] == selectedDayNum);
+                _selectedDayInfo = matches.isNotEmpty ? matches.first : null;
+              }
+            } else {
+              _generateLocalCalendar();
+            }
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isEventsLoading = false;
+            _generateLocalCalendar();
+          });
+        }
+      }
+      return;
+    }
+
     _calendarSubscription?.cancel();
     final completer = Completer<void>();
 
@@ -381,13 +421,19 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context)
+        leading: (Navigator.canPop(context) || widget.isFromNotification)
             ? IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   color: primaryTextColor,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    SystemNavigator.pop();
+                  }
+                },
               )
             : null,
         title: Text(
@@ -483,6 +529,60 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
             physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           children: [
+            if (widget.isFromNotification && !AuthStore().isAuthenticated) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: isDarkMode ? 0.12 : 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF59E0B),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.cloud_off_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Showing Cache'.tr,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Please login to view real-time calendar updates.'.tr,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             // Month Navigation Row
             Container(
               padding: const EdgeInsets.all(12.0),

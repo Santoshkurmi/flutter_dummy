@@ -18,11 +18,14 @@ import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import android.content.Intent
 import java.security.*
 import java.util.concurrent.Executor
 
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.brightbank.app/biometrics"
+    private var launchPayload: String? = null
+    private var myFlutterEngine: FlutterEngine? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Enable the native Android Core SplashScreen API
@@ -33,8 +36,32 @@ class MainActivity: FlutterFragmentActivity() {
         // Request the highest refresh rate supported by the display on startup
         setHighRefreshRate()
         
-        // Create the default notification channel for Android 8.0+
-        // createNotificationChannel()
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        setIntent(intent)
+        try {
+            super.onNewIntent(intent)
+        } catch (e: Exception) {
+            // Suppress crash when Flutter fragment delegate is temporarily null
+        }
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.hasExtra("payload") == true) {
+            val payload = intent.getStringExtra("payload")
+            launchPayload = payload
+            try {
+                myFlutterEngine?.let { engine ->
+                    MethodChannel(engine.dartExecutor.binaryMessenger, "app.channel.navigation")
+                        .invokeMethod("onPayloadReceived", payload)
+                }
+            } catch (e: Exception) {
+                // Prevent crashes from early channel interactions
+            }
+        }
     }
 
     private fun createNotificationChannel() {
@@ -113,12 +140,23 @@ class MainActivity: FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        this.myFlutterEngine = flutterEngine
         
         // Register Refresh Rate MethodChannel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.channel.refresh").setMethodCallHandler { call, result ->
             if (call.method == "setHighRefreshRate") {
                 setHighRefreshRate()
                 result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
+
+        // Register Navigation MethodChannel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.channel.navigation").setMethodCallHandler { call, result ->
+            if (call.method == "getLaunchPayload") {
+                result.success(launchPayload)
+                launchPayload = null
             } else {
                 result.notImplemented()
             }

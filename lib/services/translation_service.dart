@@ -489,6 +489,8 @@ class TranslationService {
     'Enter 6-digit PIN': '६-अङ्कको पिन प्रविष्ट गर्नुहोस्',
     'Incorrect password': 'गलत पासवर्ड',
     'Disable': 'असक्षम गर्नुहोस्',
+    'Showing Cache': 'अफलाइन डेटा देखाउँदै',
+    'Please login to view real-time calendar updates.': 'वास्तविक समयको पात्रो अपडेटहरू हेर्न कृपया लगइन गर्नुहोस्।',
   };
 
 

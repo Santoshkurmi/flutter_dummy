@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../services/nepali_calendar_service.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
+import '../pages/services/nepali_calendar_page.dart';
 import 'auth_store.dart';
 
 class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
@@ -35,6 +38,26 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
 
   int get unreadCount => _notifications.where((n) => n['isRead'] == false).length;
 
+  bool _launchedFromNotification = false;
+  bool get launchedFromNotification => _launchedFromNotification;
+
+  void clearLaunchedFromNotification() {
+    _launchedFromNotification = false;
+    notifyListeners();
+  }
+
+  void _handleCalendarPayload() {
+    if (AuthStore.navigatorKey.currentState != null) {
+      AuthStore.navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
+        (route) => false,
+      );
+    } else {
+      _launchedFromNotification = true;
+      notifyListeners();
+    }
+  }
+
   Future<void> init() async {
     await loadNotifications();
     
@@ -58,7 +81,42 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
 
         await _localNotificationsPlugin.initialize(
           settings: initializationSettings,
+          onDidReceiveNotificationResponse: (NotificationResponse response) {
+            if (response.payload == 'calendar') {
+              _handleCalendarPayload();
+            }
+          },
         );
+
+        final launchDetails = await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+        if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
+          if (launchDetails.notificationResponse?.payload == 'calendar') {
+            _launchedFromNotification = true;
+            notifyListeners();
+          }
+        }
+
+        const MethodChannel('app.channel.navigation').setMethodCallHandler((call) async {
+          if (call.method == 'onPayloadReceived') {
+            final payload = call.arguments as String?;
+            if (payload == 'calendar') {
+              _handleCalendarPayload();
+            }
+          }
+        });
+
+        if (Platform.isAndroid) {
+          try {
+            final String? nativePayload = await const MethodChannel('app.channel.navigation')
+                .invokeMethod<String>('getLaunchPayload');
+            if (nativePayload == 'calendar') {
+              _launchedFromNotification = true;
+              notifyListeners();
+            }
+          } catch (e) {
+            debugPrint('Error getting native launch payload: $e');
+          }
+        }
 
         const AndroidNotificationChannel channel = AndroidNotificationChannel(
           'high_importance_channel',
@@ -239,6 +297,7 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
         title: title,
         body: body,
         notificationDetails: platformChannelSpecifics,
+        payload: 'calendar',
       );
     } catch (e) {
       debugPrint('Error showing persistent notification: $e');

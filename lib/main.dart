@@ -9,6 +9,7 @@ import 'pages/auth/status_check_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/dashboard/dashboard_page.dart';
 import 'pages/settings/biometric_setup_page.dart';
+import 'pages/services/nepali_calendar_page.dart';
 // import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -259,6 +260,7 @@ class _InitialRouterState extends State<InitialRouter> {
     super.initState();
     // Listen to changes in the global state to allow fast reactive routing
     AuthStore().addListener(_onStateChange);
+    NotificationStore().addListener(_onStateChange);
 
     // Schedule background location fetch when the app is idle after startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -276,6 +278,7 @@ class _InitialRouterState extends State<InitialRouter> {
   @override
   void dispose() {
     AuthStore().removeListener(_onStateChange);
+    NotificationStore().removeListener(_onStateChange);
     super.dispose();
   }
 
@@ -286,6 +289,19 @@ class _InitialRouterState extends State<InitialRouter> {
   @override
   Widget build(BuildContext context) {
     final store = AuthStore();
+    final notificationStore = NotificationStore();
+
+    if (notificationStore.launchedFromNotification) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (notificationStore.launchedFromNotification) {
+          notificationStore.clearLaunchedFromNotification();
+          AuthStore.navigatorKey.currentState?.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
+            (route) => false,
+          );
+        }
+      });
+    }
 
     // 1. If authenticated → check if biometric setup is pending first
     if (store.isAuthenticated) {
