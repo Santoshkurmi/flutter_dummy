@@ -154,7 +154,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
         backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
         child: _isLoading && _errorMessage == null
             ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
-            : _errorMessage != null
+            : _errorMessage != null && _rateLogs.isEmpty
                 ? _buildErrorState(isDarkMode)
                 : _buildBody(isDarkMode, schemeName),
       ),
@@ -199,6 +199,8 @@ class _RateLogsPageState extends State<RateLogsPage> {
     return ListView(
       padding: const EdgeInsets.only(bottom: 16),
       children: [
+        if (_errorMessage != null && _rateLogs.isNotEmpty)
+          _buildInlineErrorBanner(_errorMessage!, isDarkMode),
         // Scheme header card
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -501,6 +503,41 @@ class _RateLogsPageState extends State<RateLogsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFEF4444),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

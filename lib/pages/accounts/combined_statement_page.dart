@@ -62,6 +62,7 @@ class CombinedStatementPage extends StatefulWidget {
 class _CombinedStatementPageState extends State<CombinedStatementPage> {
   bool _isLoading = true;
   bool _hasError = false;
+  String? _errorMessage;
   List<dynamic> _ledgerItems = [];
   
   // Date values for range filtering
@@ -117,6 +118,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           setState(() {
             _isLoading = response.isLoading;
             _hasError = response.hasError;
+            _errorMessage = response.hasError ? response.error : null;
             if (_ledgerItems.isEmpty && response.data != null) {
               _ledgerItems = response.data?['data'] ?? [];
             }
@@ -128,10 +130,18 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             }
             _isLoading = response.isLoading;
             _hasError = response.hasError;
+            _errorMessage = response.hasError ? response.error : null;
           });
         }
       }
     }, onError: (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
       if (!completer.isCompleted) {
         completer.complete();
       }
@@ -860,7 +870,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       );
     }
 
-    if (_hasError) {
+    if (_hasError && _ledgerItems.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 40.0),
         child: _buildErrorView(isDarkMode),
@@ -915,6 +925,8 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_hasError && _ledgerItems.isNotEmpty)
+          _buildInlineErrorBanner(_errorMessage ?? 'Failed to refresh statement.', isDarkMode),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           child: Row(
@@ -1183,7 +1195,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40.0),
             child: Text(
-              'We had trouble communicating with the cooperative servers. Please check your internet connection.'.tr,
+              _errorMessage ?? 'We had trouble communicating with the cooperative servers. Please check your internet connection.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -1217,6 +1229,41 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFEF4444),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

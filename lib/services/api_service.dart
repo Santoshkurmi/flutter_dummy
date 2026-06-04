@@ -31,6 +31,7 @@ class ApiService {
   static Map<String, String>? _cachedDeviceMetaData;
   static final Map<String, Map<String, dynamic>> _ramCache = {};
   static int _latestCacheTimestamp = 0;
+  static int _lastResponseTimeMs = 0;
 
   // Retrieve native device identifier dynamically, or fallback to generated UUID
   static Future<String> getDeviceId() async {
@@ -614,6 +615,15 @@ class ApiService {
     if (isCacheEnabled) {
       cachedEntry = await readFromCache(endpoint, params);
       if (cachedEntry != null && cachedEntry['timestamp'] != null) {
+        final int nowMs = DateTime.now().millisecondsSinceEpoch;
+        final int elapsedMs = nowMs - _lastResponseTimeMs;
+        if (elapsedMs < 10000) {
+          debugPrint('⚡ Caching Optimization: Bypassed GET request to $endpoint. Serving from cache. (Elapsed: ${elapsedMs}ms)');
+          if (metadata != null) {
+            metadata['is304'] = true;
+          }
+          return cachedEntry['data'];
+        }
         reqHeaders['X-Last-Updated'] = cachedEntry['timestamp'].toString();
       }
     }
@@ -621,6 +631,7 @@ class ApiService {
     final response = await _client.get(Uri.parse(urlStr), headers: reqHeaders);
 
     if (isCacheEnabled && response.statusCode == 304) {
+      _lastResponseTimeMs = DateTime.now().millisecondsSinceEpoch;
       if (metadata != null) {
         metadata['is304'] = true;
       }
@@ -635,6 +646,7 @@ class ApiService {
 
     final body = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      _lastResponseTimeMs = DateTime.now().millisecondsSinceEpoch;
       if (isCacheEnabled) {
         final tsHeader = response.headers['x-server-timestamp'] ?? response.headers['X-Server-Timestamp'];
         final int serverTimestamp = int.tryParse(tsHeader ?? '') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
@@ -1022,7 +1034,12 @@ class ApiService {
       if (hasCache) {
         try {
           final parsed = parser(cachedEntry!['data']);
-          controller.add(ApiStreamResponse<T>(data: parsed, isLoading: false));
+          controller.add(ApiStreamResponse<T>(
+            data: parsed,
+            isLoading: false,
+            hasError: true,
+            error: e.toString(),
+          ));
         } catch (_) {
           controller.add(ApiStreamResponse<T>(
             isLoading: false,

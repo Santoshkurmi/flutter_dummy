@@ -18,6 +18,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
 
   List<dynamic> _calendarDays = [];
   bool _isEventsLoading = false;
+  String? _errorMessage;
   Map<String, dynamic>? _selectedDayInfo;
   double _horizontalDragDistance = 0.0;
 
@@ -84,6 +85,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
       if (mounted) {
         setState(() {
           _isEventsLoading = response.isLoading;
+          _errorMessage = response.hasError ? response.error : null;
           if (response.data != null && response.data!['calendar'] != null) {
             _calendarDays = response.data!['calendar'];
             // Keep current selection but update its holiday information from API response
@@ -100,6 +102,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
       if (mounted) {
         setState(() {
           _isEventsLoading = false;
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
         });
       }
       if (!completer.isCompleted) {
@@ -497,6 +500,10 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                 ],
               ),
             ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              _buildInlineErrorBanner(_errorMessage!, isDarkMode),
+            ],
             const SizedBox(height: 20),
 
             // Calendar Grid
@@ -836,6 +843,41 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 color: isHolidayEvent ? const Color(0xFFEF4444) : const Color(0xFF2563EB),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFEF4444),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
