@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../store/auth_store.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
+import '../../services/nepali_calendar_service.dart';
 import 'transaction_receipt_page.dart';
 
 
@@ -73,9 +74,16 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   String? _selectedPreset;
   StreamSubscription? _ledgerSubscription;
 
+  // Selected Nepali Year and Month for '1_month' preset
+  int? _selectedNepaliYear;
+  int? _selectedNepaliMonth;
+
   @override
   void initState() {
     super.initState();
+    final todayBs = NepaliCalendarService.adToBs(DateTime.now());
+    _selectedNepaliYear = todayBs[0];
+    _selectedNepaliMonth = todayBs[1];
     _loadLedger();
   }
 
@@ -107,10 +115,25 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   Future<void> _loadLedger({bool forceRefetch = false}) {
     final completer = Completer<void>();
     _ledgerSubscription?.cancel();
+
+    String? fromDateParam = _fromDateVal.isNotEmpty ? _fromDateVal : null;
+    String? toDateParam = _toDateVal.isNotEmpty ? _toDateVal : null;
+    String? presetParam = _selectedPreset;
+
+    if (_selectedPreset == '1_month') {
+      final year = _selectedNepaliYear ?? 2083;
+      final month = _selectedNepaliMonth ?? 1;
+      final lastDay = NepaliCalendarService.getDaysInBsMonth(year, month);
+      
+      fromDateParam = '$year-${month.toString().padLeft(2, '0')}-01';
+      toDateParam = '$year-${month.toString().padLeft(2, '0')}-${lastDay.toString().padLeft(2, '0')}';
+      presetParam = null;
+    }
+
     _ledgerSubscription = ApiService().getAllAccountsLedgerStream(
-      fromDate: _fromDateVal.isNotEmpty ? _fromDateVal : null,
-      toDate: _toDateVal.isNotEmpty ? _toDateVal : null,
-      preset: _selectedPreset,
+      fromDate: fromDateParam,
+      toDate: toDateParam,
+      preset: presetParam,
       forceRefresh: forceRefetch,
     ).listen((response) {
       if (mounted) {
@@ -485,6 +508,139 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     );
   }
 
+  Widget _buildYearDropdown(bool isDarkMode) {
+    final int todayBsYear = NepaliCalendarService.adToBs(DateTime.now())[0];
+    final int startYear = 2078;
+    int currentYear = _selectedNepaliYear ?? todayBsYear;
+    if (currentYear < startYear) currentYear = startYear;
+    if (currentYear > todayBsYear) currentYear = todayBsYear;
+
+    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: currentYear,
+          icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
+          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryTextColor,
+            fontSize: 12,
+          ),
+          items: () {
+            final int yearCount = (todayBsYear >= startYear) ? (todayBsYear - startYear + 1) : 1;
+            return List.generate(yearCount, (index) => startYear + index).map((yr) {
+              final displayYear = AuthStore().language == 'ne' 
+                  ? TranslationService.toNepaliNumbers(yr.toString()) 
+                  : yr.toString();
+              return DropdownMenuItem<int>(
+                value: yr,
+                child: Text(displayYear),
+              );
+            }).toList();
+          }(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _selectedNepaliYear = val;
+              });
+              _loadLedger();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthDropdown(bool isDarkMode) {
+    final int currentMonth = _selectedNepaliMonth ?? 1;
+    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: currentMonth,
+          icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
+          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryTextColor,
+            fontSize: 12,
+          ),
+          items: List.generate(12, (index) => index + 1).map((mIdx) {
+            final mName = NepaliCalendarService.nepaliMonths[mIdx - 1];
+            return DropdownMenuItem<int>(
+              value: mIdx,
+              child: Text(mName.tr),
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _selectedNepaliMonth = val;
+              });
+              _loadLedger();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  String _getEmptyStateDescription() {
+    final language = AuthStore().language;
+    final isNepali = language == 'ne';
+
+    if (_selectedPreset != null) {
+      if (_selectedPreset == '7_days') {
+        return 'No transactions found in the last 7 days.'.tr;
+      } else if (_selectedPreset == '15_days') {
+        return 'No transactions found in the last 15 days.'.tr;
+      } else if (_selectedPreset == '1_month') {
+        final year = _selectedNepaliYear ?? 2083;
+        final month = _selectedNepaliMonth ?? 1;
+        final monthIdx = month - 1;
+        final monthName = isNepali 
+            ? NepaliCalendarService.nepaliMonthsDevanagari[monthIdx]
+            : NepaliCalendarService.nepaliMonths[monthIdx];
+        final yearStr = isNepali
+            ? TranslationService.toNepaliNumbers(year.toString())
+            : year.toString();
+        return isNepali
+            ? '$monthName $yearStr मा कुनै कारोबार फेला परेन।'
+            : 'No transactions found for $monthName $yearStr.';
+      }
+    } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
+      final fromStr = _fromDateVal.isNotEmpty ? _fromDateVal : '';
+      final toStr = _toDateVal.isNotEmpty ? _toDateVal : '';
+      final displayFrom = isNepali ? TranslationService.toNepaliNumbers(fromStr) : fromStr;
+      final displayTo = isNepali ? TranslationService.toNepaliNumbers(toStr) : toStr;
+      return isNepali
+          ? '$displayFrom देखि $displayTo सम्म कुनै कारोबार फेला परेन।'
+          : 'No transactions found between $displayFrom and $displayTo.';
+    }
+    return 'There are no transactions recorded across your accounts.'.tr;
+  }
+
   Future<pw.Document> _buildPdfDocument() async {
     final pdf = pw.Document();
     final profile = AuthStore().profile;
@@ -497,11 +653,32 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
 
     String filterDesc = 'All Transaction History';
     if (_selectedPreset != null) {
-      if (_selectedPreset == '7_days') filterDesc = 'Last 7 Days';
-      if (_selectedPreset == '15_days') filterDesc = 'Last 15 Days';
-      if (_selectedPreset == '1_month') filterDesc = 'Last Month';
+      if (_selectedPreset == '7_days') {
+        final toAd = DateTime.now();
+        final fromAd = toAd.subtract(const Duration(days: 7));
+        final fromBs = NepaliCalendarService.adToBs(fromAd);
+        final toBs = NepaliCalendarService.adToBs(toAd);
+        final fromStr = '${fromBs[0]}-${fromBs[1].toString().padLeft(2, '0')}-${fromBs[2].toString().padLeft(2, '0')}';
+        final toStr = '${toBs[0]}-${toBs[1].toString().padLeft(2, '0')}-${toBs[2].toString().padLeft(2, '0')}';
+        filterDesc = 'Range: $fromStr - $toStr';
+      } else if (_selectedPreset == '15_days') {
+        final toAd = DateTime.now();
+        final fromAd = toAd.subtract(const Duration(days: 15));
+        final fromBs = NepaliCalendarService.adToBs(fromAd);
+        final toBs = NepaliCalendarService.adToBs(toAd);
+        final fromStr = '${fromBs[0]}-${fromBs[1].toString().padLeft(2, '0')}-${fromBs[2].toString().padLeft(2, '0')}';
+        final toStr = '${toBs[0]}-${toBs[1].toString().padLeft(2, '0')}-${toBs[2].toString().padLeft(2, '0')}';
+        filterDesc = 'Range: $fromStr - $toStr';
+      } else if (_selectedPreset == '1_month') {
+        final year = _selectedNepaliYear ?? 2083;
+        final month = _selectedNepaliMonth ?? 1;
+        final lastDay = NepaliCalendarService.getDaysInBsMonth(year, month);
+        final fromStr = '$year-${month.toString().padLeft(2, '0')}-01';
+        final toStr = '$year-${month.toString().padLeft(2, '0')}-${lastDay.toString().padLeft(2, '0')}';
+        filterDesc = 'Range: $fromStr - $toStr';
+      }
     } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
-      filterDesc = 'Date Range: $_fromDateVal to $_toDateVal';
+      filterDesc = 'Range: $_fromDateVal - $_toDateVal';
     }
 
     pdf.addPage(
@@ -756,15 +933,6 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                ),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
         title: Text(
           'Statement History',
           style: TextStyle(
@@ -808,12 +976,20 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
                 child: Row(
                   children: [
-                    _buildPresetChip('7_days', '7 Days', accentColor, isDarkMode),
+                    if (_selectedPreset != '1_month') ...[
+                      _buildPresetChip('7_days', '7 Days', accentColor, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildPresetChip('15_days', '15 Days', accentColor, isDarkMode),
+                      const SizedBox(width: 8),
+                    ],
+                    _buildPresetChip('1_month', 'Monthly'.tr, accentColor, isDarkMode),
                     const SizedBox(width: 8),
-                    _buildPresetChip('15_days', '15 Days', accentColor, isDarkMode),
-                    const SizedBox(width: 8),
-                    _buildPresetChip('1_month', '1 Month', accentColor, isDarkMode),
-                    const SizedBox(width: 8),
+                    if (_selectedPreset == '1_month') ...[
+                      _buildYearDropdown(isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildMonthDropdown(isDarkMode),
+                      const SizedBox(width: 8),
+                    ],
                     _buildFilterChip(accentColor, isDarkMode),
                     if (isFilteredAtAll) ...[
                       const SizedBox(width: 12),
@@ -890,7 +1066,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No transactions found.',
+              'No transactions found.'.tr,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 fontSize: 16,
@@ -899,9 +1075,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              _selectedPreset != null || _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty
-                  ? 'Try broadening your filter parameters.'
-                  : 'There are no transactions recorded across your accounts.',
+              _getEmptyStateDescription(),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
@@ -917,10 +1091,57 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     if (_selectedPreset != null) {
       if (_selectedPreset == '7_days') listTitle = 'Last 7 Days';
       if (_selectedPreset == '15_days') listTitle = 'Last 15 Days';
-      if (_selectedPreset == '1_month') listTitle = 'Last Month';
+      if (_selectedPreset == '1_month') {
+        final monthIdx = (_selectedNepaliMonth ?? 1) - 1;
+        final monthName = AuthStore().language == 'ne' 
+            ? NepaliCalendarService.nepaliMonthsDevanagari[monthIdx]
+            : NepaliCalendarService.nepaliMonths[monthIdx];
+        final yearStr = AuthStore().language == 'ne'
+            ? TranslationService.toNepaliNumbers((_selectedNepaliYear ?? 2083).toString())
+            : (_selectedNepaliYear ?? 2083).toString();
+        listTitle = '$monthName $yearStr';
+      }
     } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
       listTitle = 'Filtered Range';
     }
+
+    String headerText = 'Statements'.tr;
+    String rangeText = '';
+
+    if (_selectedPreset != null) {
+      if (_selectedPreset == '7_days') {
+        final toAd = DateTime.now();
+        final fromAd = toAd.subtract(const Duration(days: 7));
+        final fromBs = NepaliCalendarService.adToBs(fromAd);
+        final toBs = NepaliCalendarService.adToBs(toAd);
+        final fromStr = '${fromBs[0]}-${fromBs[1].toString().padLeft(2, '0')}-${fromBs[2].toString().padLeft(2, '0')}';
+        final toStr = '${toBs[0]}-${toBs[1].toString().padLeft(2, '0')}-${toBs[2].toString().padLeft(2, '0')}';
+        rangeText = ' $fromStr - $toStr';
+      } else if (_selectedPreset == '15_days') {
+        final toAd = DateTime.now();
+        final fromAd = toAd.subtract(const Duration(days: 15));
+        final fromBs = NepaliCalendarService.adToBs(fromAd);
+        final toBs = NepaliCalendarService.adToBs(toAd);
+        final fromStr = '${fromBs[0]}-${fromBs[1].toString().padLeft(2, '0')}-${fromBs[2].toString().padLeft(2, '0')}';
+        final toStr = '${toBs[0]}-${toBs[1].toString().padLeft(2, '0')}-${toBs[2].toString().padLeft(2, '0')}';
+        rangeText = ' $fromStr - $toStr';
+      } else if (_selectedPreset == '1_month') {
+        final year = _selectedNepaliYear ?? 2083;
+        final month = _selectedNepaliMonth ?? 1;
+        final lastDay = NepaliCalendarService.getDaysInBsMonth(year, month);
+        final fromStr = '$year-${month.toString().padLeft(2, '0')}-01';
+        final toStr = '$year-${month.toString().padLeft(2, '0')}-${lastDay.toString().padLeft(2, '0')}';
+        rangeText = ' $fromStr - $toStr';
+      }
+    } else if (_fromDateVal.isNotEmpty || _toDateVal.isNotEmpty) {
+      final fromStr = _fromDateVal.isNotEmpty ? _fromDateVal : '';
+      final toStr = _toDateVal.isNotEmpty ? _toDateVal : '';
+      rangeText = ' $fromStr - $toStr';
+    }
+
+    final displayRange = AuthStore().language == 'ne'
+        ? TranslationService.toNepaliNumbers(rangeText)
+        : rangeText;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -932,13 +1153,29 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'COMBINED TRANSACTION HISTORY'.tr,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: headerText.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                      ),
+                    ),
+                    if (rangeText.isNotEmpty)
+                      TextSpan(
+                        text: '  $displayRange',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Text(
