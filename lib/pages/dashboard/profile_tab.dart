@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../settings/settings_page.dart';
+import '../settings/permissions_page.dart';
 import '../auth/register_member_page.dart';
 import '../services/nepali_calendar_page.dart';
 import '../services/date_conversion_page.dart';
@@ -142,6 +143,7 @@ class ProfileTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _profileActionOption(context, Icons.settings_rounded, 'App Preferences'.tr, 'Configure alerts, daily limits and fingerprint setup'.tr, const SettingsPage()),
+        _profileActionOption(context, Icons.security_rounded, 'Permissions'.tr, 'Manage device permissions for location, camera, storage, and notifications.'.tr, const PermissionsPage()),
         _profileActionOption(context, Icons.app_registration_rounded, 'Member Registration'.tr, 'Become a member by filling member-registration wizard'.tr, const RegisterMemberPage()),
         _profileActionOption(context, Icons.qr_code_2_rounded, 'QR Generator'.tr, 'Generate and download custom cooperative QR codes'.tr, QRGeneratorPage(isDarkMode: isDarkMode)),
         _profileActionOption(context, Icons.calendar_month_rounded, 'Nepali Calendar'.tr, 'View Bikram Sambat dates, Nepalese holidays and board runs'.tr, const NepaliCalendarPage()),
