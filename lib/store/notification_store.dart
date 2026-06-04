@@ -5,6 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../services/nepali_calendar_service.dart';
+import '../services/api_service.dart';
+import '../services/translation_service.dart';
+import 'auth_store.dart';
 
 class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
   static final NotificationStore _instance = NotificationStore._internal();
@@ -17,6 +21,9 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       loadNotifications();
+      if (AuthStore().showDateNotification) {
+        updateDateNotification(true);
+      }
     }
   }
 
@@ -124,6 +131,117 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
           }
         });
       } catch (_) {}
+    }
+    
+    if (AuthStore().showDateNotification) {
+      updateDateNotification(true);
+    }
+  }
+
+  Future<void> updateDateNotification(bool enabled) async {
+    if (!enabled) {
+      await _localNotificationsPlugin.cancel(id: 999);
+      return;
+    }
+
+    try {
+      final now = DateTime.now();
+      final todayBs = NepaliCalendarService.adToBs(now);
+      final yearBs = todayBs[0];
+      final monthBs = todayBs[1];
+      final dayBs = todayBs[2];
+
+      final isNepali = AuthStore().notificationLanguage == 'ne';
+      String title;
+      if (isNepali) {
+        final nepaliWeekdays = ['आइतबार', 'सोमबार', 'मंगलबार', 'बुधबार', 'बिहीबार', 'शुक्रबार', 'शनिबार'];
+        final monthNp = NepaliCalendarService.nepaliMonthsDevanagari[monthBs - 1];
+        final weekdayNp = nepaliWeekdays[now.weekday % 7];
+        final dayNp = TranslationService.toNepaliNumbers(dayBs.toString());
+        final yearNp = TranslationService.toNepaliNumbers(yearBs.toString());
+        title = '$monthNp $dayNp, $yearNp ($weekdayNp)';
+      } else {
+        final weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        final weekdayShort = weekdayNames[now.weekday % 7];
+        final monthEn = NepaliCalendarService.nepaliMonths[monthBs - 1];
+        title = '$monthEn $dayBs, $yearBs ($weekdayShort)';
+      }
+
+      String event = '';
+      try {
+        final cacheEntry = await ApiService.readFromCache('/holidays', {
+          'year_bs': yearBs.toString(),
+          'month_bs': monthBs.toString(),
+        });
+        if (cacheEntry != null && cacheEntry['data'] != null) {
+          final dataMap = cacheEntry['data'] as Map<String, dynamic>;
+          final calendar = dataMap['calendar'] as List?;
+          if (calendar != null) {
+            final todayEvent = calendar.firstWhere(
+              (dayData) => dayData['day'] == dayBs,
+              orElse: () => null,
+            );
+            if (todayEvent != null) {
+              final String holName = todayEvent['holiday_name'] ?? '';
+              final bool isHoliday = todayEvent['is_holiday'] as bool? ?? false;
+              if (holName.isNotEmpty && holName.toLowerCase() != 'saturday') {
+                event = holName;
+              } else if (isHoliday && holName.toLowerCase() == 'saturday') {
+                event = 'Weekly Holiday';
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error reading holidays cache for notification: $e');
+      }
+
+      if (event.isEmpty && now.weekday == DateTime.saturday) {
+        event = 'Weekly Holiday';
+      }
+
+      String body;
+      if (isNepali) {
+        if (event.isNotEmpty) {
+          final translatedEvent = TranslationService.translateToNepali(event);
+          body = 'आजको पर्व/बिदा: $translatedEvent';
+        } else {
+          body = 'आज कुनै विशेष पर्व/बिदा छैन';
+        }
+      } else {
+        if (event.isNotEmpty) {
+          body = "Today's Event: $event";
+        } else {
+          body = 'No events scheduled today';
+        }
+      }
+
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'date_notification_channel',
+        isNepali ? 'नेपाली पात्रो मिति' : 'Nepali Date Notification',
+        channelDescription: isNepali ? 'नेपाली पात्रोको मिति र पर्वहरू देखाउँछ' : 'Displays persistent current Nepali date and events',
+        importance: Importance.low,
+        priority: Priority.low,
+        ongoing: true,
+        autoCancel: false,
+        showWhen: false,
+        onlyAlertOnce: true,
+        silent: true,
+        icon: '@mipmap/ic_launcher',
+      );
+
+      final NotificationDetails platformChannelSpecifics =
+          NotificationDetails(android: androidPlatformChannelSpecifics);
+
+      await _localNotificationsPlugin.show(
+        id: 999,
+        title: title,
+        body: body,
+        notificationDetails: platformChannelSpecifics,
+      );
+    } catch (e) {
+      debugPrint('Error showing persistent notification: $e');
     }
   }
 

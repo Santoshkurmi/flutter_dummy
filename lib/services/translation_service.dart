@@ -478,6 +478,11 @@ class TranslationService {
     'DATA & CACHE': 'डाटा र क्यास',
     'Enable Caching': 'क्यासिङ सक्षम गर्नुहोस्',
     'Store responses locally to reduce data usage and load pages faster': 'डाटा खपत कम गर्न र पृष्ठहरू छिटो लोड गर्न स्थानीय रूपमा प्रतिक्रियाहरू भण्डारण गर्नुहोस्',
+    'Show Date Notification': 'मिति सूचना देखाउनुहोस्',
+    'Show persistent Nepali calendar date and events in status bar': 'स्टाटस बारमा स्थायी रूपमा नेपाली पात्रोको मिति र पर्वहरू देखाउनुहोस्',
+    'Notification Language': 'सूचनाको भाषा',
+    'English': 'अंग्रेजी',
+    'नेपाली': 'नेपाली',
   };
 
 
@@ -487,6 +492,10 @@ class TranslationService {
       return _nepaliTranslations[key] ?? key;
     }
     return key;
+  }
+
+  static String translateToNepali(String key) {
+    return _nepaliTranslations[key] ?? key;
   }
 
   static String toNepaliNumbers(String input) {

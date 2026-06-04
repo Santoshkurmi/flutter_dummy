@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../../store/auth_store.dart';
+import '../../store/notification_store.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
 import 'biometric_setup_page.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -58,36 +61,38 @@ class _SettingsPageState extends State<SettingsPage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           children: [
-            // Section 1: Notifications
-            // _buildSectionHeader('NOTIFICATIONS'.tr, isDarkMode),
-            
-            // Push Notifications Switch
-            // _buildToggleItem(
-            //   title: 'Push Notifications'.tr,
-            //   subtitle: 'Receive real-time transaction updates and alerts'.tr,
-            //   value: authStore.pushEnabled,
-            //   onChanged: (val) async {
-            //     await authStore.setPushEnabled(val);
-            //     setState(() {});
-            //   },
-            //   icon: Icons.notifications_active_rounded,
-            //   isDarkMode: isDarkMode,
-            // ),
-            
-            // SMS Alerts Switch
-            // _buildToggleItem(
-            //   title: 'SMS Alerts'.tr,
-            //   subtitle: 'Backup copy of standard messages over cellular connection'.tr,
-            //   value: authStore.smsAlertsEnabled,
-            //   onChanged: (val) async {
-            //     await authStore.setSmsAlertsEnabled(val);
-            //     setState(() {});
-            //   },
-            //   icon: Icons.sms_rounded,
-            //   isDarkMode: isDarkMode,
-            // ),
+            if (Platform.isAndroid) ...[
+              // Section 1: Notifications
+              _buildSectionHeader('NOTIFICATIONS'.tr, isDarkMode),
+              
+              _buildToggleItem(
+                title: 'Show Date Notification'.tr,
+                subtitle: 'Show persistent Nepali calendar date and events in status bar'.tr,
+                value: authStore.showDateNotification,
+                onChanged: (val) async {
+                  if (val) {
+                    final status = await Permission.notification.status;
+                    if (!status.isGranted) {
+                      await Permission.notification.request();
+                    }
+                  }
+                  await authStore.setShowDateNotification(val);
+                  await NotificationStore().updateDateNotification(val);
+                  setState(() {});
+                },
+                icon: Icons.calendar_month_rounded,
+                isDarkMode: isDarkMode,
+              ),
 
-            // const SizedBox(height: 24),
+              if (authStore.showDateNotification) ...[
+                const SizedBox(height: 16),
+                _buildSectionHeader('Notification Language'.tr, isDarkMode),
+                const SizedBox(height: 8),
+                _buildNotificationLanguageSelector(isDarkMode, authStore),
+              ],
+
+              const SizedBox(height: 24),
+            ],
 
             // Section 2: Security
             _buildSectionHeader('SECURITY'.tr, isDarkMode),
@@ -414,6 +419,74 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationLanguageSelector(bool isDarkMode, AuthStore authStore) {
+    final currentLang = authStore.notificationLanguage;
+    final langs = [
+      {'key': 'en', 'label': 'English'.tr, 'icon': Icons.language_rounded},
+      {'key': 'ne', 'label': 'नेपाली'.tr, 'icon': Icons.translate_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: langs.map((lang) {
+          final isSelected = currentLang == lang['key'];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                await authStore.setNotificationLanguage(lang['key'] as String);
+                await NotificationStore().updateDateNotification(true);
+                setState(() {});
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected && !isDarkMode
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))]
+                      : [],
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      lang['icon'] as IconData,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF64748B),
+                      size: 18,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      lang['label'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

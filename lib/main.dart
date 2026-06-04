@@ -90,6 +90,10 @@ void main() async {
   //   }
   // }
 
+  // Initialize Auth Store (persistences and initial loadings)
+  final authStore = AuthStore();
+  await authStore.init();
+
   // Initialize Notification Store
   final notificationStore = NotificationStore();
   await notificationStore.init();
@@ -97,10 +101,6 @@ void main() async {
   // Initialize Notice Store
   final noticeStore = NoticeStore();
   await noticeStore.init();
-
-  // Initialize Auth Store (persistences and initial loadings)
-  final authStore = AuthStore();
-  await authStore.init();
 
   // Clear API cache periodically on startup (every 2 hours)
   await ApiService.checkAndClearCacheOnAppStart();

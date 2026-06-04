@@ -35,6 +35,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   // In-memory only — true between login-success and biometric setup completion
   bool _pendingBiometricSetup = false;
   bool _enableCaching = true;
+  bool _showDateNotification = false;
+  String _notificationLanguage = 'ne';
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -80,6 +82,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String get themeMode => _themeMode;
   bool get pendingBiometricSetup => _pendingBiometricSetup;
   bool get enableCaching => _enableCaching;
+  bool get showDateNotification => _showDateNotification;
+  String get notificationLanguage => _notificationLanguage;
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
@@ -138,6 +142,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _language = prefs.getString('language') ?? 'en';
     _preferencesSetupCompleted = prefs.getBool('preferences_setup_completed') ?? false;
     _enableCaching = prefs.getBool('enableCaching') ?? true;
+    _showDateNotification = prefs.getBool('showDateNotification') ?? false;
+    _notificationLanguage = prefs.getString('notificationLanguage') ?? 'ne';
 
     notifyListeners();
   }
@@ -225,6 +231,20 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  Future<void> setShowDateNotification(bool enabled) async {
+    _showDateNotification = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showDateNotification', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setNotificationLanguage(String lang) async {
+    _notificationLanguage = lang;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('notificationLanguage', lang);
+    notifyListeners();
+  }
+
   Future<void> setDailyLimit(String limit) async {
     _dailyLimit = limit;
     final prefs = await SharedPreferences.getInstance();
@@ -305,6 +325,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _themeMode = 'system';
     _preferencesSetupCompleted = false;
     _enableCaching = true;
+    _showDateNotification = false;
+    _notificationLanguage = 'ne';
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();
