@@ -1234,8 +1234,18 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(_accountsList.length, (index) {
-                    double difference = index - _currentPage;
-                    double activeRatio = (1.0 - difference.abs().clamp(0.0, 1.0));
+                    double page = _currentPage % _accountsList.length;
+                    if (page < 0) {
+                      page += _accountsList.length;
+                    }
+                    double diff = index - page;
+                    if (diff > _accountsList.length / 2.0) {
+                      diff -= _accountsList.length;
+                    } else if (diff < -_accountsList.length / 2.0) {
+                      diff += _accountsList.length;
+                    }
+                    double distance = diff.abs();
+                    double activeRatio = (1.0 - distance.clamp(0.0, 1.0));
                     double width = 6.0 + (14.0 * activeRatio);
 
                     final card = _accountsList[index];
