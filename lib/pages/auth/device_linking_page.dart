@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
+import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'status_check_page.dart';
 
@@ -195,9 +196,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Credentials updated successfully! Please login.'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text('Credentials updated successfully! Please login.'.tr),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
 
@@ -248,8 +249,8 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         _startResendTimer();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Verification OTP sent successfully.'),
+            SnackBar(
+              content: Text('Verification OTP sent successfully.'.tr),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -317,9 +318,9 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Device synchronized successfully!'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text('Device synchronized successfully!'.tr),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
 
@@ -335,7 +336,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
         });
       } else {
         setState(() {
-          _errorMessage = res['message'] ?? 'Device synchronization submission failed.';
+          _errorMessage = res['message'] ?? 'Device synchronization submission failed.'.tr;
         });
       }
     } catch (e) {
@@ -903,17 +904,16 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
           ),
         ),
         const SizedBox(height: 28),
-        const Text(
-          'Sync Request Initiated',
+        Text(
+          'Sync Request Initiated'.tr,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            'Your device synchronization request has been recorded. '
-            '${_isSmsEnabled ? "Your synchronization is complete! Please login from the main screen." : "An administrator will review and authorize your device link request within 24 hours."}',
+            'Your device synchronization request has been submitted successfully. An administrator will review and authorize your device link request within 24 hours.'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B), height: 1.5),
           ),
@@ -930,7 +930,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
             );
           },
           style: _getPrimaryButtonStyle(),
-          child: const Text('Return to Home', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+          child: Text('Return to Home'.tr, style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
         ),
       ],
     );

@@ -227,6 +227,18 @@ class TranslationService {
     'View All': 'सबै हेर्नुहोस्',
     'Show More': 'थप हेर्नुहोस्',
 
+    // Activation & Device Linking Statuses
+    'Credentials updated successfully! Please login.': 'प्रमाणपत्रहरू सफलतापूर्वक अद्यावधिक गरियो! कृपया लगइन गर्नुहोस्।',
+    'Verification OTP sent successfully.': 'प्रमाणिकरण ओटीपी सफलतापूर्वक पठाइयो।',
+    'Device synchronized successfully!': 'उपकरण सफलतापूर्वक सिङ्क्रोनाइज गरियो!',
+    'Device synchronization submission failed.': 'उपकरण सिङ्क्रोनाइजेसन अनुरोध पेश गर्न असफल भयो।',
+    'Sync Request Initiated': 'सिंक अनुरोध सुरु भयो',
+    'Your device synchronization request has been submitted successfully. An administrator will review and authorize your device link request within 24 hours.': 'तपाईंको उपकरण सिङ्क्रोनाइजेसन अनुरोध सफलतापूर्वक पेश गरिएको छ। एक प्रशासकले २४ घण्टा भित्र तपाईंको उपकरण लिङ्क अनुरोध समीक्षा र प्रमाणित गर्नेछ।',
+    'Return to Home': 'गृहपृष्ठमा फर्कनुहोस्',
+    'Registration Submitted': 'दर्ता पेश गरियो',
+    'Your mobile banking activation request has been submitted successfully. An administrator will review and authorize your request within 24 hours.': 'तपाईंको मोबाइल बैंकिङ्ग सक्रियता अनुरोध सफलतापूर्वक पेश गरिएको छ। एक प्रशासकले २४ घण्टा भित्र तपाईंको अनुरोधको समीक्षा र प्रमाणीकरण गर्नेछ।',
+    'Activation request submitted successfully!': 'सक्रियकरण अनुरोध सफलतापूर्वक पेश गरियो!',
+
     // QR Scanner
     'No QR code or barcode found in the image.': 'तस्बिरमा QR कोड वा बारकोड फेला परेन।',
     'Scan Result': 'स्क्यान परिणाम',

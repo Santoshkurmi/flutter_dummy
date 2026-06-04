@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/location_service.dart';
 import '../../services/api_service.dart';
+import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'status_check_page.dart';
 
@@ -207,14 +208,14 @@ class _ActivationPageState extends State<ActivationPage> {
         final responseCode = res['response_code'];
         if (responseCode == 3) { // RESP_OTP_SENT
           _startResendTimer();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Verification OTP sent successfully.'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Verification OTP sent successfully.'.tr),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
           setState(() {
             _step = 5; // Move to final OTP confirmation step
           });
@@ -274,7 +275,7 @@ class _ActivationPageState extends State<ActivationPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(res['message'] ?? 'Activation request submitted successfully!'),
+            content: Text(res['message'] ?? 'Activation request submitted successfully!'.tr),
             backgroundColor: const Color(0xFF10B981),
           ),
         );
@@ -1029,17 +1030,16 @@ class _ActivationPageState extends State<ActivationPage> {
           ),
         ),
         const SizedBox(height: 28),
-        const Text(
-          'Registration Submitted',
+        Text(
+          'Registration Submitted'.tr,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
-            'Your mobile banking activation request has been submitted successfully. '
-            'An administrator will review and authorize your request within 24 hours.',
+            'Your mobile banking activation request has been submitted successfully. An administrator will review and authorize your request within 24 hours.'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B), height: 1.5),
           ),
@@ -1056,7 +1056,7 @@ class _ActivationPageState extends State<ActivationPage> {
             );
           },
           style: _getPrimaryButtonStyle(),
-          child: const Text('Return to Home', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+          child: Text('Return to Home'.tr, style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
         ),
       ],
     );
