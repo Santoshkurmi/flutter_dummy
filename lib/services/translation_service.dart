@@ -483,6 +483,12 @@ class TranslationService {
     'Notification Language': 'सूचनाको भाषा',
     'English': 'अंग्रेजी',
     'नेपाली': 'नेपाली',
+    'Disable Caching?': 'क्यासिङ असक्षम गर्ने?',
+    'Disabling cache is not recommended and should only be used for testing purposes.': 'क्यासिङ असक्षम गर्न सिफारिस गरिँदैन र यो केवल परीक्षण उद्देश्यका लागि मात्र प्रयोग गरिनुपर्छ।',
+    'Enter Password / PIN:': 'पासवर्ड / पिन प्रविष्ट गर्नुहोस्:',
+    'Enter 6-digit PIN': '६-अङ्कको पिन प्रविष्ट गर्नुहोस्',
+    'Incorrect password': 'गलत पासवर्ड',
+    'Disable': 'असक्षम गर्नुहोस्',
   };
 
 
