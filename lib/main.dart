@@ -198,6 +198,18 @@ class BrightBankApp extends StatelessWidget {
               brightness: isDark ? Brightness.dark : Brightness.light,
               surface: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
             ),
+            snackBarTheme: SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+              dismissDirection: DismissDirection.up,
+              contentTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w500,
+              ),
+              actionTextColor: const Color(0xFF60A5FA),
+            ),
             fontFamily: 'Roboto',
           ),
           home: const InitialRouter(),
