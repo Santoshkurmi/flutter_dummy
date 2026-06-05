@@ -10,6 +10,7 @@ import 'package:disk_space_plus/disk_space_plus.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'changelogs_page.dart';
+import 'easter_app_page.dart';
 
 class AppDiagnostics {
   final String appName;
@@ -44,9 +45,28 @@ class AboutAppPage extends StatefulWidget {
 
 class _AboutAppPageState extends State<AboutAppPage> {
   int _tapCount = 0;
+  int _appNameTapCount = 0;
+  DateTime? _lastAppNameTapTime;
   late Future<AppDiagnostics> _diagnosticsFuture;
   final GlobalKey _globalKey = GlobalKey();
   bool _isSharing = false;
+
+  void _handleAppNameTap() {
+    final now = DateTime.now();
+    if (_lastAppNameTapTime != null && now.difference(_lastAppNameTapTime!) > const Duration(seconds: 4)) {
+      _appNameTapCount = 0;
+    }
+    _lastAppNameTapTime = now;
+    _appNameTapCount++;
+
+    if (_appNameTapCount >= 10) {
+      _appNameTapCount = 0;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const EasterAppPage()),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -252,14 +272,18 @@ class _AboutAppPageState extends State<AboutAppPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: Column(
                           children: [
-                            _buildSpecRow(
-                              label: 'App Name'.tr,
-                              value: appName.tr,
-                              icon: Icons.label_important_outline_rounded,
-                              accentColor: accentColor,
-                              isDarkMode: isDarkMode,
-                              primaryTextColor: primaryTextColor,
-                              secondaryTextColor: secondaryTextColor,
+                            InkWell(
+                              onTap: _handleAppNameTap,
+                              borderRadius: BorderRadius.circular(16),
+                              child: _buildSpecRow(
+                                label: 'App Name'.tr,
+                                value: appName.tr,
+                                icon: Icons.label_important_outline_rounded,
+                                accentColor: accentColor,
+                                isDarkMode: isDarkMode,
+                                primaryTextColor: primaryTextColor,
+                                secondaryTextColor: secondaryTextColor,
+                              ),
                             ),
                             _buildDivider(isDarkMode),
                             _buildSpecRow(
