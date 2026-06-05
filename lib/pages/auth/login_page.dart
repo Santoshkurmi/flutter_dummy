@@ -820,6 +820,61 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
+      // Check if biometric changed (permanently invalidated)
+      final lowerErr = errStr.toLowerCase();
+      final isBiometricsChanged = lowerErr.contains('permanently') ||
+          lowerErr.contains('invalidated') ||
+          lowerErr.contains('database') ||
+          lowerErr.contains('modified') ||
+          lowerErr.contains('currentset') ||
+          lowerErr.contains('changed');
+
+      if (isBiometricsChanged) {
+        final store = AuthStore();
+        await store.setBiometricEnabled(false);
+        await store.setBiometricType(null);
+        await store.setNeverAskBiometric(false);
+        
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return AlertDialog(
+                backgroundColor: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: Text(
+                  'Biometrics Changed'.tr,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                content: Text(
+                  'For security reasons, biometric login has been disabled because a new biometric credential (fingerprint/Face ID) was added to this device. Please log in with your password and register biometrics again.'.tr,
+                  style: TextStyle(
+                    color: _isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'OK'.tr,
+                      style: const TextStyle(
+                        color: Color(0xFF2563EB),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        return;
+      }
+
       // If it is another biometric/network/server error, try mock fallback or show it
       try {
         final devId = await ApiService.getDeviceId();

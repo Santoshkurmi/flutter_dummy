@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'dart:io';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
 import '../../store/auth_store.dart';
@@ -15,6 +16,27 @@ class BiometricSetupPage extends StatefulWidget {
 class _BiometricSetupPageState extends State<BiometricSetupPage> {
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isFaceId = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _detectBiometricType();
+  }
+
+  Future<void> _detectBiometricType() async {
+    try {
+      final isIOS = Platform.isIOS;
+      final localAuth = LocalAuthentication();
+      final availableBiometrics = await localAuth.getAvailableBiometrics();
+      final hasFace = availableBiometrics.contains(BiometricType.face);
+      if (mounted) {
+        setState(() {
+          _isFaceId = hasFace || isIOS;
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> _enableBiometrics() async {
     setState(() {
@@ -143,10 +165,10 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                         shape: BoxShape.circle,
                         color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.15 : 0.08),
                       ),
-                      child: const Icon(
-                        Icons.fingerprint_rounded,
+                      child: Icon(
+                        _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
                         size: 56,
-                        color: Color(0xFF2563EB),
+                        color: const Color(0xFF2563EB),
                       ),
                     ),
                   ),

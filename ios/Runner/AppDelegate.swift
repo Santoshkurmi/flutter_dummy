@@ -85,7 +85,7 @@ import Security
     guard let accessControl = SecAccessControlCreateWithFlags(
         kCFAllocatorDefault,
         kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        .biometryAny,
+        .biometryCurrentSet,
         &error
     ) else {
         result(FlutterError(code: "KEY_CONTROL_ERROR", message: "Failed to create access control: \(error?.takeRetainedValue().localizedDescription ?? "Unknown error")", details: nil))
