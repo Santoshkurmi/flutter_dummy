@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LoginPage extends StatefulWidget {
   final String mobileNumber;
   static bool isAppStartup = true;
+  static bool hasFetchedSliderThisSession = false;
   const LoginPage({super.key, required this.mobileNumber});
 
   @override
@@ -51,6 +52,7 @@ class _LoginPageState extends State<LoginPage> {
 
   List<String> _sliderImages = List.from(_defaultFallbackUrls);
   Map<String, String> _cachedPaths = {};
+  bool _isCacheLoading = true;
 
   bool get _isDarkMode => AuthStore().isDarkMode;
 
@@ -71,9 +73,16 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           _sliderImages = urlsToLoad;
           _cachedPaths = localPaths;
+          _isCacheLoading = false;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isCacheLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _downloadSliderImages(List<String> urls) async {
@@ -130,6 +139,8 @@ class _LoginPageState extends State<LoginPage> {
 
       // Cleanup unused files
       await SliderImageCacheService.cleanUnusedCache(newUrls);
+
+      LoginPage.hasFetchedSliderThisSession = true;
     } catch (_) {
       // Fallback: prefetch current offline/default images
       await _downloadSliderImages(_sliderImages);
@@ -160,7 +171,9 @@ class _LoginPageState extends State<LoginPage> {
     
     // Load local cached images instantly before hitting API
     _loadCachedSlider().then((_) {
-      _fetchSliderImages();
+      if (!LoginPage.hasFetchedSliderThisSession) {
+        _fetchSliderImages();
+      }
     });
   }
 
@@ -288,6 +301,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildImageSlider() {
+    if (_isCacheLoading) {
+      return const SizedBox(height: 198);
+    }
+
     final isDark = _isDarkMode;
     final List<List<Color>> indicatorColors = [
       [const Color(0xFF2563EB), const Color(0xFF4338CA)],
