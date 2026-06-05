@@ -8,6 +8,7 @@ import '../auth/register_member_page.dart';
 import '../services/nepali_calendar_page.dart';
 import '../services/date_conversion_page.dart';
 import '../settings/about_us_page.dart';
+import '../settings/about_app_page.dart';
 import '../services/qr_generator_page.dart';
 import '../settings/member_details_page.dart';
 import '../settings/cooperative_details_page.dart';
@@ -141,6 +142,7 @@ class ProfileTab extends StatelessWidget {
         _profileActionOption(context, Icons.calendar_month_rounded, 'Nepali Calendar'.tr, 'View Bikram Sambat dates, Nepalese holidays and board runs'.tr, const NepaliCalendarPage()),
         _profileActionOption(context, Icons.swap_horizontal_circle_outlined, 'Date Utility'.tr, 'Convert between BS and AD, calculate date difference'.tr, const DateConversionPage()),
         _profileActionOption(context, Icons.info_outline_rounded, 'About Developer'.tr, 'Technical details, architecture and specs by Bright Software'.tr, const AboutUsPage()),
+        _profileActionOption(context, Icons.smartphone_rounded, 'About App'.tr, 'View app specs, version code and development history changelogs'.tr, const AboutAppPage()),
         const SizedBox(height: 32),
         ElevatedButton(
           onPressed: onLogout,
