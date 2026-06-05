@@ -34,6 +34,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   bool _cameraError = false;
   String _cameraErrorMessage = '';
   bool _isActive = false;
+  bool _isPermissionDialogShowing = false;
 
   bool get _isSupported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
@@ -85,6 +86,59 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
     await _startCameraController();
   }
 
+  void _showCameraPermissionDialog() {
+    if (_isPermissionDialogShowing) return;
+    _isPermissionDialogShowing = true;
+    final isDark = widget.isDarkMode;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Camera Permission Required'.tr,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          content: Text(
+            'Camera permission is required to scan QR codes. Please enable camera access in Settings to proceed.'.tr,
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel'.tr,
+                style: const TextStyle(color: Color(0xFF64748B)),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openAppSettings();
+              },
+              child: Text(
+                'Open Settings'.tr,
+                style: const TextStyle(
+                  color: Color(0xFF2563EB),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      _isPermissionDialogShowing = false;
+    });
+  }
+
   Future<void> _startCameraController() async {
     // Check camera permission first explicitly
     final status = await Permission.camera.request();
@@ -92,8 +146,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
       if (mounted) {
         setState(() {
           _cameraError = true;
-          _cameraErrorMessage = 'Camera permission is required to scan QR codes.';
+          _cameraErrorMessage = 'Camera permission is required to scan QR codes.'.tr;
         });
+        _showCameraPermissionDialog();
       }
       return;
     }
@@ -140,18 +195,22 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_isSupported) return;
-    if (!_isActive || _controller == null) return;
     
     if (state == AppLifecycleState.paused) {
-      try {
-        _controller?.stop();
-      } catch (_) {}
-    } else if (state == AppLifecycleState.resumed && _isScanning && !_hasResult) {
-      // Safely access the value property now that initialization is gated
-      if (_controller != null && !_controller!.value.isRunning) {
+      if (_controller != null) {
         try {
-          _controller?.start();
+          _controller?.stop();
         } catch (_) {}
+      }
+    } else if (state == AppLifecycleState.resumed && _isActive) {
+      if (_cameraError || _controller == null) {
+        _startCameraController();
+      } else if (_isScanning && !_hasResult) {
+        if (_controller != null && !_controller!.value.isRunning) {
+          try {
+            _controller?.start();
+          } catch (_) {}
+        }
       }
     }
   }
