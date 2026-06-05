@@ -238,6 +238,10 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       switch (label) {
         case 'Interest Rate':
           return Icons.percent_rounded;
+        case 'Loan Amount':
+          return Icons.monetization_on_rounded;
+        case 'Loan Balance':
+          return Icons.account_balance_rounded;
         case 'Accrued Interest':
         case 'Accrued Interest Due':
         case 'Due Interest':
@@ -373,6 +377,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     } else if (isLoan) {
       detailsList.addAll([
         {'label': 'Interest Rate'.tr, 'value': '${acc['interest_rate'] ?? '12.0'}% p.a.'},
+        {'label': 'Loan Amount'.tr, 'value': 'Rs. ${_formatAmount(acc['loan_amount'])}'},
+        {'label': 'Loan Balance'.tr, 'value': 'Rs. ${_formatAmount(acc['balance'])}'},
         {'label': 'Opened Date (BS)'.tr, 'value': acc['issued_date']?.toString() ?? '2080-11-10'},
         {'label': 'Maturity Date (BS)'.tr, 'value': acc['maturity_date']?.toString() ?? 'N/A'},
         {'label': 'Principal Matured'.tr, 'value': 'Rs. ${_formatAmount(acc['matured_principal'])}'},

@@ -313,6 +313,8 @@ class TranslationService {
 
     // Account detail field labels
     'Interest Rate': 'ब्याज दर',
+    'Loan Amount': 'ऋण रकम',
+    'Loan Balance': 'ऋण ब्यालेन्स',
     'Accrued Interest': 'संचित ब्याज',
     'Minimum Balance': 'न्यूनतम ब्यालेन्स',
     'Opened Date (BS)': 'खाता खोलिएको मिति (वि.सं.)',

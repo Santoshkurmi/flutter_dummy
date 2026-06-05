@@ -220,7 +220,11 @@ class CooperativeAccountCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isOverview ? 'TOTAL ACCOUNT BALANCE'.tr : 'AVAILABLE BALANCE'.tr,
+                          isOverview
+                              ? 'TOTAL ACCOUNT BALANCE'.tr
+                              : (accountType == 'loans'
+                                  ? 'LOAN BALANCE'.tr
+                                  : 'AVAILABLE BALANCE'.tr),
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
