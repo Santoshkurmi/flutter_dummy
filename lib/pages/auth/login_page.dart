@@ -14,9 +14,11 @@ import 'package:flutter/foundation.dart';
 import '../../services/location_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../services/slider_image_cache_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   final String mobileNumber;
+  static bool isAppStartup = true;
   const LoginPage({super.key, required this.mobileNumber});
 
   @override
@@ -485,6 +487,7 @@ class _LoginPageState extends State<LoginPage> {
         _canAuthenticate = true;
         _isFaceId = authStore.biometricType == 'face';
       });
+      _checkAndAutoAuthenticate();
       return;
     }
 
@@ -494,7 +497,7 @@ class _LoginPageState extends State<LoginPage> {
       if (_deviceHasBiometricHardware && isEnabled) {
         final availableBiometrics = await _auth.getAvailableBiometrics();
         final hasFace = availableBiometrics.contains(BiometricType.face);
-        final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+        final isIOS = Platform.isIOS;
         final type = (hasFace || isIOS) ? 'face' : 'fingerprint';
         
         await authStore.setBiometricType(type);
@@ -503,6 +506,7 @@ class _LoginPageState extends State<LoginPage> {
           _canAuthenticate = true;
           _isFaceId = (type == 'face');
         });
+        _checkAndAutoAuthenticate();
       } else {
         setState(() {
           _canAuthenticate = false;
@@ -513,6 +517,33 @@ class _LoginPageState extends State<LoginPage> {
         _canAuthenticate = false;
       });
     }
+  }
+
+  Future<void> _checkAndAutoAuthenticate() async {
+    if (!LoginPage.isAppStartup) return;
+    LoginPage.isAppStartup = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      
+      final bool lastSessionClean = prefs.getBool('appClosedCleanlyWithBiometric') ?? false;
+      int streak = prefs.getInt('successiveBiometricLogins') ?? 0;
+      
+      if (!lastSessionClean) {
+        streak = 0;
+        await prefs.setInt('successiveBiometricLogins', 0);
+      }
+      
+      await prefs.setBool('appClosedCleanlyWithBiometric', false);
+      
+      if (streak >= 2) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isLoading) {
+            _authenticateBiometrics();
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   Future<Map<String, String>> _getLocationAndFcmToken() async {
@@ -555,7 +586,7 @@ class _LoginPageState extends State<LoginPage> {
     };
   }
 
-  Future<void> _handleResponseRouting(int responseCode, String apiMessage, Map<String, dynamic> res) async {
+  Future<void> _handleResponseRouting(int responseCode, String apiMessage, Map<String, dynamic> res, {bool isBiometric = false}) async {
     final data = res['data'] is Map ? res['data'] as Map<String, dynamic> : res;
     final token = data['token'] ?? res['token'];
 
@@ -568,9 +599,21 @@ class _LoginPageState extends State<LoginPage> {
     switch (responseCode) {
       case 1: // RESP_SUCCESS
         if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          if (isBiometric) {
+            final currentStreak = prefs.getInt('successiveBiometricLogins') ?? 0;
+            await prefs.setInt('successiveBiometricLogins', currentStreak + 1);
+            await prefs.setBool('appClosedCleanlyWithBiometric', true);
+          } else {
+            await prefs.setInt('successiveBiometricLogins', 0);
+            await prefs.setBool('appClosedCleanlyWithBiometric', false);
+          }
+
           // Immediately hide keyboard
           FocusManager.instance.primaryFocus?.unfocus();
-          FocusScope.of(context).unfocus();
+          if (mounted) {
+            FocusScope.of(context).unfocus();
+          }
 
           // ── Biometric decision BEFORE setToken ─────────────────────────────
           // setToken() calls notifyListeners() which causes InitialRouter to
@@ -807,7 +850,7 @@ class _LoginPageState extends State<LoginPage> {
           : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (res['token'] != null ? 1 : 0);
       final apiMessage = res['message'] ?? '';
 
-      await _handleResponseRouting(responseCode, apiMessage, res);
+      await _handleResponseRouting(responseCode, apiMessage, res, isBiometric: true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);

@@ -4,7 +4,6 @@ import 'dart:io';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
 import '../../store/auth_store.dart';
-import '../dashboard/dashboard_page.dart';
 
 class BiometricSetupPage extends StatefulWidget {
   const BiometricSetupPage({super.key});
@@ -80,7 +79,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
           final localAuth = LocalAuthentication();
           final availableBiometrics = await localAuth.getAvailableBiometrics();
           final hasFace = availableBiometrics.contains(BiometricType.face);
-          final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+          final isIOS = Platform.isIOS;
           final type = (hasFace || isIOS) ? 'face' : 'fingerprint';
           await authStore.setBiometricType(type);
         } catch (_) {}
