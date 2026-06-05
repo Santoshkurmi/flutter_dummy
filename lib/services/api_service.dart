@@ -995,6 +995,10 @@ class ApiService {
       debugPrint('Failed to fetch cooperatives from network: $e');
     }
 
+    if (forceRefresh) {
+      throw Exception(networkError);
+    }
+
     final cachedFallback = await loadCooperativesFromFile();
     if (cachedFallback != null && cachedFallback.isNotEmpty) {
       return cachedFallback;

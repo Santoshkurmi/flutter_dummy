@@ -20,6 +20,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
   String? _errorMessage;
 
   bool get _isDarkMode => AuthStore().isDarkMode;
+  bool get _hasRealData => _cooperatives.any((coop) => coop['isDevMode'] != true);
 
   @override
   void initState() {
@@ -37,7 +38,9 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
   Future<void> _loadCooperatives({bool forceRefresh = false}) async {
     if (mounted) {
       setState(() {
-        _isLoading = true;
+        if (!_hasRealData && !forceRefresh) {
+          _isLoading = true;
+        }
         _errorMessage = null;
       });
     }
@@ -67,26 +70,39 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
       }
     } catch (e) {
       if (mounted) {
-        final List<Map<String, dynamic>> fallbackList = [];
-        if (dotenv.env['IS_DEBUG'] == 'yes') {
-          final currentUrl = AuthStore().customApiUrl ?? dotenv.env['API_URL'] ?? 'http://192.168.1.253:8000';
-          fallbackList.add({
-            'id': 99999,
-            'name': 'Development Mode',
-            'address': dotenv.env['API_URL'] ?? 'http://192.168.1.253:8000',
-            'url': currentUrl,
-            'api_url': currentUrl,
-            'gradient': 'bg-rose-600',
-            'logoUrl': '',
-            'isDevMode': true,
+        final errorText = e.toString().replaceAll('Exception: ', '').trim();
+        if (_hasRealData) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorText),
+              backgroundColor: Colors.red.shade800,
+            ),
+          );
+        } else {
+          final List<Map<String, dynamic>> fallbackList = [];
+          if (dotenv.env['IS_DEBUG'] == 'yes') {
+            final currentUrl = AuthStore().customApiUrl ?? dotenv.env['API_URL'] ?? 'http://192.168.1.253:8000';
+            fallbackList.add({
+              'id': 99999,
+              'name': 'Development Mode',
+              'address': dotenv.env['API_URL'] ?? 'http://192.168.1.253:8000',
+              'url': currentUrl,
+              'api_url': currentUrl,
+              'gradient': 'bg-rose-600',
+              'logoUrl': '',
+              'isDevMode': true,
+            });
+          }
+          setState(() {
+            _cooperatives = fallbackList;
+            _filteredCooperatives = fallbackList;
+            _isLoading = false;
+            _errorMessage = errorText;
           });
         }
-        setState(() {
-          _cooperatives = fallbackList;
-          _filteredCooperatives = fallbackList;
-          _isLoading = false;
-          _errorMessage = fallbackList.isEmpty ? e.toString().replaceFirst('Exception: ', '') : null;
-        });
       }
     }
   }
@@ -694,7 +710,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
                       ),
                     )
-                  : _errorMessage != null && _cooperatives.isEmpty
+                  : _errorMessage != null && !_hasRealData
                       ? RefreshIndicator(
                           color: const Color(0xFF2563EB),
                           onRefresh: () => _loadCooperatives(forceRefresh: true),
