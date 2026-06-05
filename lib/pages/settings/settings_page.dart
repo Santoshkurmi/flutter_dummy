@@ -3,7 +3,6 @@ import 'dart:io';
 import '../../store/auth_store.dart';
 import '../../store/notification_store.dart';
 import '../../services/translation_service.dart';
-import '../../services/api_service.dart';
 import 'biometric_setup_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -119,27 +118,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 24),
 
-            // Section 2.5: Cache Settings
-            _buildSectionHeader('DATA & CACHE'.tr, isDarkMode),
-            
-            // Enable Caching Switch
-            _buildToggleItem(
-              title: 'Enable Caching'.tr,
-              subtitle: 'Store responses locally to reduce data usage and load pages faster'.tr,
-              value: authStore.enableCaching,
-              onChanged: (val) async {
-                if (val) {
-                  await authStore.setEnableCaching(true);
-                  setState(() {});
-                } else {
-                  _showDisableCacheDialog(context, authStore, isDarkMode);
-                }
-              },
-              icon: Icons.cached_rounded,
-              isDarkMode: isDarkMode,
-            ),
-
-            const SizedBox(height: 24),
             // Section 4: Appearance
             _buildSectionHeader('APPEARANCE'.tr, isDarkMode),
             const SizedBox(height: 12),
@@ -492,130 +470,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showDisableCacheDialog(BuildContext context, AuthStore authStore, bool isDarkMode) {
-    final TextEditingController passwordController = TextEditingController();
-    String? errorMessage;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Disable Caching?'.tr,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Disabling cache is not recommended and should only be used for testing purposes.'.tr,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Enter Password / PIN:'.tr,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A)),
-                    decoration: InputDecoration(
-                      hintText: 'Enter 6-digit PIN'.tr,
-                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                      filled: true,
-                      fillColor: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      errorText: errorMessage,
-                    ),
-                  ),
-                ],
-              ),
-              actionsPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Cancel'.tr,
-                    style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (passwordController.text == '723426') {
-                      await authStore.setEnableCaching(false);
-                      await ApiService.clearCache();
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
-                      setState(() {});
-                    } else {
-                      setDialogState(() {
-                        errorMessage = 'Incorrect password'.tr;
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  child: Text(
-                    'Disable'.tr,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _confirmReset(BuildContext context, AuthStore authStore, bool isDarkMode) {
     showDialog(
       context: context,
@@ -635,7 +489,7 @@ class _SettingsPageState extends State<SettingsPage> {
             TextButton(
               onPressed: () async {
                 await authStore.clearAll();
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                 }
               },

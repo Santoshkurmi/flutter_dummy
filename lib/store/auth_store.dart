@@ -37,6 +37,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _enableCaching = true;
   bool _showDateNotification = false;
   String _notificationLanguage = 'ne';
+  bool _isDeveloperMode = false;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -84,6 +85,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get enableCaching => _enableCaching;
   bool get showDateNotification => _showDateNotification;
   String get notificationLanguage => _notificationLanguage;
+  bool get isDeveloperMode => _isDeveloperMode;
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
@@ -144,6 +146,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _enableCaching = prefs.getBool('enableCaching') ?? true;
     _showDateNotification = prefs.getBool('showDateNotification') ?? false;
     _notificationLanguage = prefs.getString('notificationLanguage') ?? 'ne';
+    _isDeveloperMode = prefs.getBool('isDeveloperMode') ?? false;
 
     notifyListeners();
   }
@@ -310,6 +313,22 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  Future<void> setDeveloperMode(bool value) async {
+    _isDeveloperMode = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDeveloperMode', value);
+    notifyListeners();
+  }
+
+  Future<void> disableDeveloperMode() async {
+    _isDeveloperMode = false;
+    _enableCaching = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isDeveloperMode');
+    await prefs.setBool('enableCaching', true);
+    notifyListeners();
+  }
+
   Future<void> clearAll() async {
     _token = null;
     _mobile = null;
@@ -327,6 +346,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _enableCaching = true;
     _showDateNotification = false;
     _notificationLanguage = 'ne';
+    _isDeveloperMode = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();
