@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:show_fps/show_fps.dart' hide AnimatedBuilder;
+// ignore: depend_on_referenced_packages
+import 'package:flutter_performance_monitor_plus/flutter_performance_monitor_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -177,7 +180,9 @@ class BrightBankApp extends StatelessWidget {
         final isDark = AuthStore().isDarkMode;
         return MaterialApp(
           navigatorKey: AuthStore.navigatorKey,
-          navigatorObservers: [routeObserver],
+          navigatorObservers: [
+            routeObserver,
+          ],
           title: AuthStore().isCustomApp
               ? (AuthStore().selectedCooperative?['name'] ?? 'Mbright')
               : 'Mbright',
@@ -216,7 +221,7 @@ class BrightBankApp extends StatelessWidget {
           home: const InitialRouter(),
           builder: (context, child) {
             final MediaQueryData data = MediaQuery.of(context);
-            return MediaQuery(
+            Widget mainChild = MediaQuery(
               data: data.copyWith(
                 textScaler: data.textScaler.clamp(
                   minScaleFactor: 0.85,
@@ -240,6 +245,37 @@ class BrightBankApp extends StatelessWidget {
                 ),
               ),
             );
+            if (AuthStore().showFps) {
+              mainChild = Stack(
+                children: [
+                  mainChild,
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 6,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      child: ShowFPS(
+                        visible: true,
+                        showAverage: true,
+                        showMinMax: false,
+                        showChart: false,
+                        child: const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+            if (!kReleaseMode && AuthStore().showPerformanceMonitor) {
+              mainChild = PerformanceMonitorPlus(
+                config: const PerformanceMonitorConfig(
+                  enableNetworkLogging: true,
+                ),
+                child: mainChild,
+              );
+            }
+            return mainChild;
           },
         );
       },
@@ -296,7 +332,7 @@ class _InitialRouterState extends State<InitialRouter> {
         if (notificationStore.launchedFromNotification) {
           notificationStore.clearLaunchedFromNotification();
           AuthStore.navigatorKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
+            MaterialPageRoute(settings: const RouteSettings(name: 'NepaliCalendarPage'), builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
             (route) => false,
           );
         }

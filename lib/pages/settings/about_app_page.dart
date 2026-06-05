@@ -370,6 +370,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
+                                    settings: const RouteSettings(name: 'ChangelogsPage'),
                                     builder: (context) => const ChangelogsPage(),
                                   ),
                                 );

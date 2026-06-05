@@ -248,6 +248,7 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.push(
       context,
       PageRouteBuilder(
+        settings: const RouteSettings(name: 'FullScreenImagePage'),
         opaque: false,
         barrierColor: Colors.black.withValues(alpha: 0.9),
         pageBuilder: (context, animation, secondaryAnimation) {
@@ -628,6 +629,7 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'ActivationPage'),
             builder: (_) => ActivationPage(mobileNumber: widget.mobileNumber),
           ),
           (route) => false,
@@ -660,6 +662,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'ActivationPage'),
               builder: (_) => ActivationPage(mobileNumber: widget.mobileNumber),
             ),
             (route) => false,
@@ -675,6 +678,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'DeviceLinkingPage'),
               builder: (_) => DeviceLinkingPage(
                 mobileNumber: widget.mobileNumber,
                 directPasswordSetup: !needsDeviceLink && needsPasswordSetup,

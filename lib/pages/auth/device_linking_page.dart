@@ -925,7 +925,7 @@ class _DeviceLinkingPageState extends State<DeviceLinkingPage> {
             // Navigate back to status check screen
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const StatusCheckPage()),
+              MaterialPageRoute(settings: const RouteSettings(name: 'StatusCheckPage'), builder: (_) => const StatusCheckPage()),
               (route) => false,
             );
           },

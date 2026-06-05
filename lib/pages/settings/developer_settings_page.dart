@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
@@ -97,6 +98,37 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
               icon: Icons.cached_rounded,
               isDarkMode: isDarkMode,
             ),
+
+
+
+            const SizedBox(height: 16),
+
+            _buildToggleItem(
+              title: 'Show FPS'.tr,
+              subtitle: 'Show real-time FPS counter overlay'.tr,
+              value: authStore.showFps,
+              onChanged: (val) async {
+                await authStore.setShowFps(val);
+                setState(() {});
+              },
+              icon: Icons.av_timer_rounded,
+              isDarkMode: isDarkMode,
+            ),
+
+            if (!kReleaseMode) ...[
+              const SizedBox(height: 16),
+              _buildToggleItem(
+                title: 'Performance Monitor'.tr,
+                subtitle: 'Show floating performance monitoring widget'.tr,
+                value: authStore.showPerformanceMonitor,
+                onChanged: (val) async {
+                  await authStore.setShowPerformanceMonitor(val);
+                  setState(() {});
+                },
+                icon: Icons.monitor_heart_rounded,
+                isDarkMode: isDarkMode,
+              ),
+            ],
           ],
         ),
       ),

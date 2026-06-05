@@ -83,6 +83,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'AppPreferencesSetupPage'),
         builder: (_) => const AppPreferencesSetupPage(),
       ),
     );

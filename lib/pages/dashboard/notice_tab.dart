@@ -379,6 +379,7 @@ class _NoticeTabState extends State<NoticeTab> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
+                  settings: const RouteSettings(name: 'NoticeDetailPage'),
                   builder: (context) => NoticeDetailPage(
                     notice: item,
                     isDarkMode: isDark,

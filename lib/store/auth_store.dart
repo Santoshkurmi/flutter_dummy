@@ -38,6 +38,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _showDateNotification = false;
   String _notificationLanguage = 'ne';
   bool _isDeveloperMode = false;
+  bool _showFps = false;
+  bool _showPerformanceMonitor = false;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -86,6 +88,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get showDateNotification => _showDateNotification;
   String get notificationLanguage => _notificationLanguage;
   bool get isDeveloperMode => _isDeveloperMode;
+  bool get showFps => _showFps;
+  bool get showPerformanceMonitor => _showPerformanceMonitor;
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
@@ -147,6 +151,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _showDateNotification = prefs.getBool('showDateNotification') ?? false;
     _notificationLanguage = prefs.getString('notificationLanguage') ?? 'ne';
     _isDeveloperMode = prefs.getBool('isDeveloperMode') ?? false;
+    _showFps = prefs.getBool('showFps') ?? false;
+    _showPerformanceMonitor = prefs.getBool('showPerformanceMonitor') ?? false;
 
     notifyListeners();
   }
@@ -320,12 +326,39 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+
+  Future<void> setShowFps(bool value) async {
+    _showFps = value;
+    final prefs = await SharedPreferences.getInstance();
+    if (value) {
+      await prefs.setBool('showFps', true);
+    } else {
+      await prefs.remove('showFps');
+    }
+    notifyListeners();
+  }
+
+  Future<void> setShowPerformanceMonitor(bool value) async {
+    _showPerformanceMonitor = value;
+    final prefs = await SharedPreferences.getInstance();
+    if (value) {
+      await prefs.setBool('showPerformanceMonitor', true);
+    } else {
+      await prefs.remove('showPerformanceMonitor');
+    }
+    notifyListeners();
+  }
+
   Future<void> disableDeveloperMode() async {
     _isDeveloperMode = false;
     _enableCaching = true;
+    _showFps = false;
+    _showPerformanceMonitor = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('isDeveloperMode');
     await prefs.setBool('enableCaching', true);
+    await prefs.remove('showFps');
+    await prefs.remove('showPerformanceMonitor');
     notifyListeners();
   }
 
@@ -347,6 +380,8 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _showDateNotification = false;
     _notificationLanguage = 'ne';
     _isDeveloperMode = false;
+    _showFps = false;
+    _showPerformanceMonitor = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();

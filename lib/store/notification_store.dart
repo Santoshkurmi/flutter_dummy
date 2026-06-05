@@ -49,7 +49,7 @@ class NotificationStore extends ChangeNotifier with WidgetsBindingObserver {
   void _handleCalendarPayload() {
     if (AuthStore.navigatorKey.currentState != null) {
       AuthStore.navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
+        MaterialPageRoute(settings: const RouteSettings(name: 'NepaliCalendarPage'), builder: (_) => const NepaliCalendarPage(isFromNotification: true)),
         (route) => false,
       );
     } else {

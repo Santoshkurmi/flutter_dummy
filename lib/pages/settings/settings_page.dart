@@ -105,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (val) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const BiometricSetupPage()),
+                    MaterialPageRoute(settings: const RouteSettings(name: 'BiometricSetupPage'), builder: (_) => const BiometricSetupPage()),
                   ).then((_) => setState(() {}));
                 } else {
                   await authStore.setBiometricEnabled(false);

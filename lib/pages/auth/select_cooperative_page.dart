@@ -432,6 +432,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                   Navigator.pop(context);
                                   navigator.push(
                                     MaterialPageRoute(
+                                      settings: const RouteSettings(name: 'StatusCheckPage'),
                                       builder: (_) => const StatusCheckPage(showBackButton: true),
                                     ),
                                   );
@@ -541,7 +542,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                   'logoUrl': '',
                 });
                 navigator.push(
-                  MaterialPageRoute(builder: (_) => const StatusCheckPage(showBackButton: true)),
+                  MaterialPageRoute(settings: const RouteSettings(name: 'StatusCheckPage'), builder: (_) => const StatusCheckPage(showBackButton: true)),
                 );
               },
               child: Text(
@@ -794,6 +795,7 @@ class _SelectCooperativePageState extends State<SelectCooperativePage> {
                                       await AuthStore().setSelectedCooperative(coop);
                                       navigator.push(
                                         MaterialPageRoute(
+                                          settings: const RouteSettings(name: 'StatusCheckPage'),
                                           builder: (_) => const StatusCheckPage(showBackButton: true),
                                         ),
                                       );

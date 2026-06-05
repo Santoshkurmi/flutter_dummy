@@ -197,7 +197,7 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => targetPage)),
+        onTap: () => Navigator.push(context, MaterialPageRoute(settings: RouteSettings(name: targetPage.runtimeType.toString()), builder: (_) => targetPage)),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),

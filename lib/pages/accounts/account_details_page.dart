@@ -379,6 +379,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
+                settings: const RouteSettings(name: 'AccountSingleDetailsPage'),
                 builder: (_) => AccountSingleDetailsPage(
                   account: Map<String, dynamic>.from(acc),
                   accountType: type,

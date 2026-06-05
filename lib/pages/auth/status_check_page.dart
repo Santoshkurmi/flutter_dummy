@@ -118,6 +118,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'ActivationPage'),
               builder: (_) => ActivationPage(mobileNumber: mobile),
             ),
           );
@@ -148,6 +149,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
+                settings: const RouteSettings(name: 'ActivationPage'),
                 builder: (_) => ActivationPage(mobileNumber: mobile),
               ),
             );
@@ -160,6 +162,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
+                settings: const RouteSettings(name: 'DeviceLinkingPage'),
                 builder: (_) => DeviceLinkingPage(
                   mobileNumber: mobile,
                   directPasswordSetup: !needsDeviceLink && needsPasswordSetup,
@@ -538,6 +541,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
+                                            settings: const RouteSettings(name: 'RegisterMemberPage'),
                                             builder: (_) => const RegisterMemberPage(),
                                           ),
                                         );

@@ -223,13 +223,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   void _handleActionTap(BuildContext context, String label) {
     if (label == 'Accounts') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'AccountDetailsPage'), builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
     } else if (label == 'Statement') {
       widget.onTabChange(1); // Switches to the Statement bottom tab
     } else if (label == 'Calendar') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'NepaliCalendarPage'), builder: (_) => const NepaliCalendarPage()));
     } else if (label == 'Member Register') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'RegisterMemberPage'), builder: (_) => const RegisterMemberPage()));
     }  else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -338,6 +338,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      settings: const RouteSettings(name: 'MemberDetailsPage'),
                       builder: (_) => const MemberDetailsPage(),
                     ),
                   );
@@ -450,6 +451,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
+                                settings: const RouteSettings(name: 'NotificationsTab'),
                                 builder: (_) => NotificationsTab(
                                   isDarkMode: widget.isDarkMode,
                                 ),
@@ -630,6 +632,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      settings: const RouteSettings(name: 'AllServicesPage'),
                       builder: (_) => AllServicesPage(
                         isDarkMode: widget.isDarkMode,
                         onTabChange: widget.onTabChange,
@@ -719,6 +722,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
+                                settings: const RouteSettings(name: 'TransactionReceiptPage'),
                                 builder: (_) => TransactionReceiptPage(
                                   transaction: Map<String, dynamic>.from(tx),
                                   accountType: accountType,
@@ -866,7 +870,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     void onTapArrow() {
       if (isOverview) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
+        Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'AccountDetailsPage'), builder: (_) => AccountDetailsPage(initialAccountsData: widget.accountsData)));
       } else {
         final List<Map<String, dynamic>> swipable = [];
         if (widget.accountsData != null) {
@@ -885,6 +889,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'AccountSingleDetailsPage'),
             builder: (_) => AccountSingleDetailsPage(
               account: Map<String, dynamic>.from(cardData['raw']),
               accountType: type,
@@ -998,6 +1003,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'NoticeDetailPage'),
         builder: (context) => NoticeDetailPage(
           notice: notice,
           isDarkMode: widget.isDarkMode,

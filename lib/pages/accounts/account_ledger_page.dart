@@ -1550,6 +1550,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      settings: const RouteSettings(name: 'TransactionReceiptPage'),
                       builder: (_) => TransactionReceiptPage(
                         transaction: Map<String, dynamic>.from(tx),
                         accountType: _activeType,

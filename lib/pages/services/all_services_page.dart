@@ -18,17 +18,17 @@ class AllServicesPage extends StatelessWidget {
 
   void _handleActionTap(BuildContext context, String label) {
     if (label == 'Accounts') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'AccountDetailsPage'), builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
     } else if (label == 'Statement') {
       onTabChange(1); // Switches to bottom Statement tab
     } else if (label == 'Savings' || label == 'Ledger') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'AccountDetailsPage'), builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
     } else if (label == 'Calendar') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const NepaliCalendarPage()));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'NepaliCalendarPage'), builder: (_) => const NepaliCalendarPage()));
     } else if (label == 'Member Register') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterMemberPage()));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'RegisterMemberPage'), builder: (_) => const RegisterMemberPage()));
     } else if (label == 'Utility' || label == 'Payment' || label == 'Send Money') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
+      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'AccountDetailsPage'), builder: (_) => AccountDetailsPage(initialAccountsData: accountsData)));
     } else if (label == 'Scan QR' || label == 'QR Scan') {
       onTabChange(2); // Scan QR Tab
     } else {

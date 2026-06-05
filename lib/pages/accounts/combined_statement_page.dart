@@ -1234,6 +1234,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      settings: const RouteSettings(name: 'TransactionReceiptPage'),
                       builder: (_) => TransactionReceiptPage(
                         transaction: Map<String, dynamic>.from(tx),
                         accountType: accountType,

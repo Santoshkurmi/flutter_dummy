@@ -195,6 +195,7 @@ class AppPreferencesSetupPage extends StatelessWidget {
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
+                              settings: const RouteSettings(name: 'StatusCheckPage'),
                               builder: (_) => const StatusCheckPage(),
                             ),
                             (route) => false,
@@ -204,6 +205,7 @@ class AppPreferencesSetupPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
+                            settings: const RouteSettings(name: 'SelectCooperativePage'),
                             builder: (_) => const SelectCooperativePage(),
                           ),
                         );

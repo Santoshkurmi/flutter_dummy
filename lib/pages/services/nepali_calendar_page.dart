@@ -770,6 +770,7 @@ class _NepaliCalendarPageState extends State<NepaliCalendarPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
+                        settings: const RouteSettings(name: 'DateConversionPage'),
                         builder: (_) => const DateConversionPage(),
                       ),
                     );

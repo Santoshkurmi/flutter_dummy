@@ -305,6 +305,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
         Navigator.push(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'AccountLedgerPage'),
             builder: (_) => AccountLedgerPage(
               account: acc,
               accountType: accountType,
@@ -330,6 +331,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           Navigator.push(
             context,
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'RateLogsPage'),
               builder: (_) => RateLogsPage(
                 account: acc,
                 accountType: accountType,
@@ -348,6 +350,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           Navigator.push(
             context,
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'LoanSchedulesPage'),
               builder: (_) => LoanSchedulesPage(
                 account: acc,
               ),
@@ -726,6 +729,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
         Navigator.push(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'AccountLedgerPage'),
             builder: (_) => AccountLedgerPage(
               account: acc,
               accountType: type,
