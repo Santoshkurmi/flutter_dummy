@@ -922,23 +922,11 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // If it is another biometric/network/server error, try mock fallback or show it
-      try {
-        final devId = await ApiService.getDeviceId();
-        final loginRes = await ApiService().login(widget.mobileNumber, '1234', devId);
-        
-        final responseCodeRaw = loginRes['response_code'];
-        final int responseCode = responseCodeRaw is int
-            ? responseCodeRaw
-            : int.tryParse(responseCodeRaw?.toString() ?? '') ?? (loginRes['token'] != null ? 1 : 0);
-        final apiMessage = loginRes['message'] ?? '';
-
-        await _handleResponseRouting(responseCode, apiMessage, loginRes);
-      } catch (err) {
-        if (!mounted) return;
+      // Display the actual biometric authentication/signing error directly to the user
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(err.toString().replaceAll('Exception:', '').trim()),
+            content: Text(errStr.replaceAll('Exception:', '').trim()),
             backgroundColor: Colors.red.shade800,
           ),
         );
