@@ -24,6 +24,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   bool _showBalance = false;
   bool _isLoadingSummary = true;
   bool _hasError = false;
+  String? _errorMessage;
   Map<String, dynamic>? _summaryData;
   Map<String, dynamic>? _accountsData;
   List<dynamic>? _cachedLedgerItems;
@@ -154,15 +155,17 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           }
           _isLoadingSummary = false;
           _hasError = false;
+          _errorMessage = null;
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _summaryData = null;
           _accountsData = null;
           _isLoadingSummary = false;
           _hasError = true;
+          _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
         });
       }
     }
@@ -461,6 +464,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                 isDarkMode: _isDarkMode,
                 isLoadingSummary: _isLoadingSummary,
                 hasError: _hasError,
+                errorMessage: _errorMessage,
                 onRefresh: () => _loadSummary(forceRefresh: true),
                 onThemeToggle: _cycleTheme,
                 onLogout: _logout,

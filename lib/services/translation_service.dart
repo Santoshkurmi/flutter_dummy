@@ -433,6 +433,13 @@ class TranslationService {
     'Connection Failed': 'जडान असफल',
     'We had trouble communicating with the cooperative servers. Please check your internet connection.': 'सहकारी सर्भरहरूसँग सञ्चार गर्न समस्या भयो। कृपया आफ्नो इन्टरनेट जडान जाँच गर्नुहोस्।',
     'Try Again': 'फेरि प्रयास गर्नुहोस्',
+    'Refreshing...': 'रिफ्रेस गर्दै...',
+    'No internet connection or server is unreachable.': 'कुनै इन्टरनेट जडान छैन वा सर्भर पहुँचयोग्य छैन।',
+    'Connection timed out. Please try again.': 'जडानको समय समाप्त भयो। कृपया पुन: प्रयास गर्नुहोस्।',
+    'Secure connection failed.': 'सुरक्षित जडान असफल भयो।',
+    'Connection failed. Please check your internet connection.': 'जडान असफल भयो। कृपया आफ्नो इन्टरनेट जडान जाँच गर्नुहोस्।',
+    'Server returned an invalid response. Please try again later.': 'सर्भरले अमान्य प्रतिक्रिया पठायो। कृपया पछि पुन: प्रयास गर्नुहोस्।',
+    'An unexpected network error occurred.': 'एक अप्रत्याशित नेटवर्क त्रुटि देखा पर्यो।',
 
     // Quick action labels (home tab)
     'Pay': 'भुक्तानी',

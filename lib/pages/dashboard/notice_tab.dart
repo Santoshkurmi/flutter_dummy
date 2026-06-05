@@ -4,6 +4,7 @@ import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
 import 'notice_detail_page.dart';
 import '../../store/notice_store.dart';
+import '../../widgets/error_state_view.dart';
 
 class NoticeTab extends StatefulWidget {
   final bool isDarkMode;
@@ -278,51 +279,10 @@ class _NoticeTabState extends State<NoticeTab> {
     }
 
     if (_errorMessage != null && _notices.isEmpty) {
-      return Center(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 40.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: Color(0xFFEF4444),
-                size: 64,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Something went wrong'.tr,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: titleColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: descColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text('Try Again'.tr),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => _fetchNotices(1),
-              ),
-            ],
-          ),
-        ),
+      return ErrorStateView(
+        errorMessage: _errorMessage,
+        onRetry: () => _fetchNotices(1),
+        isDarkMode: isDark,
       );
     }
 

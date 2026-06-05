@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../widgets/cached_image.dart';
 import '../settings/settings_page.dart';
 import '../settings/permissions_page.dart';
 import '../auth/register_member_page.dart';
@@ -40,6 +41,18 @@ class ProfileTab extends StatelessWidget {
     final profileImagePath = profile?['profile_image_path'];
     final bool hasValidImage = profileImagePath != null && profileImagePath.toString().isNotEmpty;
 
+    final Widget initialsPlaceholder = Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+      ),
+      child: Center(
+        child: Text(
+          name.isEmpty ? 'S' : name.substring(0, 1),
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
+    );
+
     final String memberDetailsLabel = 'Member Details'.tr;
     final String memberDetailsSubtitle = 'View personal specifications, address and nominee details'.tr;
 
@@ -75,34 +88,13 @@ class ProfileTab extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: hasValidImage
-                    ? Image.network(
-                        profileImagePath,
+                    ? CachedImage(
+                        imageUrl: profileImagePath,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
-                            ),
-                            child: Center(
-                              child: Text(
-                                name.isEmpty ? 'S' : name.substring(0, 1),
-                                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-                          );
-                        },
+                        errorBuilder: (context, error, stackTrace) => initialsPlaceholder,
+                        placeholder: initialsPlaceholder,
                       )
-                    : Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
-                        ),
-                        child: Center(
-                          child: Text(
-                            name.isEmpty ? 'S' : name.substring(0, 1),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ),
-                      ),
+                    : initialsPlaceholder,
               ),
               const SizedBox(height: 16),
               Text(

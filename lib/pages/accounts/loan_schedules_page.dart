@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
+import '../../widgets/error_state_view.dart';
 
 class LoanSchedulesPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -163,36 +164,10 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
   }
 
   Widget _buildErrorState(bool isDarkMode) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded, size: 56, color: isDarkMode ? const Color(0xFFEF4444) : const Color(0xFFDC2626)),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _fetchSchedules,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: Text('Retry'.tr),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return ErrorStateView(
+      errorMessage: _errorMessage,
+      onRetry: _fetchSchedules,
+      isDarkMode: isDarkMode,
     );
   }
 

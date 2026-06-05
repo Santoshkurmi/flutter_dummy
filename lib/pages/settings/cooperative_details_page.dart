@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../widgets/cached_image.dart';
+import '../../widgets/error_state_view.dart';
 
 class CooperativeDetailsPage extends StatefulWidget {
   const CooperativeDetailsPage({super.key});
@@ -73,33 +75,16 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
             : _errorMessage != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: primaryTextColor, fontSize: 14),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading = true;
-                                _errorMessage = null;
-                              });
-                              _fetchCooperativeDetails();
-                            },
-                            child: Text('Retry'.tr),
-                          ),
-                        ],
-                      ),
-                    ),
+                ? ErrorStateView(
+                    errorMessage: _errorMessage,
+                    isDarkMode: isDarkMode,
+                    onRetry: () async {
+                      setState(() {
+                        _isLoading = true;
+                        _errorMessage = null;
+                      });
+                      await _fetchCooperativeDetails();
+                    },
                   )
                 : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -115,8 +100,8 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
                               border: Border.all(color: borderColor),
                             ),
                             child: ClipOval(
-                              child: Image.network(
-                                _coopData!['logo_url'],
+                              child: CachedImage(
+                                imageUrl: _coopData!['logo_url'],
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
@@ -127,6 +112,11 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
                                     color: Color(0xFF2563EB),
                                   );
                                 },
+                                placeholder: const Icon(
+                                  Icons.account_balance_rounded,
+                                  size: 48,
+                                  color: Color(0xFF2563EB),
+                                ),
                               ),
                             ),
                           ),

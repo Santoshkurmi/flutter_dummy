@@ -420,6 +420,32 @@ class ApiService {
     return completer.future;
   }
 
+  Exception _simplifyNetworkError(dynamic e) {
+    if (e is SocketException) {
+      return Exception('No internet connection or server is unreachable.'.tr);
+    } else if (e is TimeoutException) {
+      return Exception('Connection timed out. Please try again.'.tr);
+    } else if (e is HandshakeException) {
+      return Exception('Secure connection failed.'.tr);
+    }
+    
+    final errStr = e.toString();
+    if (errStr.contains('SocketException') || errStr.contains('Failed host lookup') || errStr.contains('Network is unreachable')) {
+      return Exception('No internet connection or server is unreachable.'.tr);
+    } else if (errStr.contains('TimeoutException') || errStr.contains('timeout')) {
+      return Exception('Connection timed out. Please try again.'.tr);
+    } else if (errStr.contains('HandshakeException') || errStr.contains('CertificateException') || errStr.contains('cert')) {
+      return Exception('Secure connection failed.'.tr);
+    } else if (errStr.contains('ClientException') || errStr.contains('Connection failed')) {
+      return Exception('Connection failed. Please check your internet connection.'.tr);
+    } else if (errStr.contains('FormatException') || errStr.contains('Unexpected character')) {
+      return Exception('Server returned an invalid response. Please try again later.'.tr);
+    }
+    
+    final cleanMsg = errStr.replaceAll('Exception:', '').trim();
+    return Exception(cleanMsg.isNotEmpty ? cleanMsg : 'An unexpected network error occurred.'.tr);
+  }
+
   // Helper response handler with retry capability
   Future<dynamic> _handleResponse(http.Response response, Future<dynamic> Function() retryCallback) async {
     if (response.statusCode == 401) {
@@ -441,11 +467,17 @@ class ApiService {
       throw Exception('Unauthorized. Session expired.');
     }
     
-    final body = jsonDecode(response.body);
+    final dynamic body;
+    try {
+      body = jsonDecode(response.body);
+    } catch (_) {
+      throw Exception('Server returned an invalid response. Please try again later.'.tr);
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
     } else {
-      throw Exception(body['message'] ?? 'Network API Error: ${response.statusCode}');
+      throw Exception((body is Map ? body['message'] : null) ?? 'Network API Error: ${response.statusCode}');
     }
   }
 
@@ -628,7 +660,12 @@ class ApiService {
       }
     }
 
-    final response = await _client.get(Uri.parse(urlStr), headers: reqHeaders);
+    final http.Response response;
+    try {
+      response = await _client.get(Uri.parse(urlStr), headers: reqHeaders);
+    } catch (e) {
+      throw _simplifyNetworkError(e);
+    }
 
     if (isCacheEnabled && response.statusCode == 304) {
       _lastResponseTimeMs = DateTime.now().millisecondsSinceEpoch;
@@ -644,7 +681,13 @@ class ApiService {
       return await _handleResponse(response, () => get(endpoint, params: params, metadata: metadata));
     }
 
-    final body = jsonDecode(response.body);
+    final dynamic body;
+    try {
+      body = jsonDecode(response.body);
+    } catch (_) {
+      throw Exception('Server returned an invalid response. Please try again later.'.tr);
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       _lastResponseTimeMs = DateTime.now().millisecondsSinceEpoch;
       if (isCacheEnabled) {
@@ -654,7 +697,7 @@ class ApiService {
       }
       return body;
     } else {
-      throw Exception(body['message'] ?? 'Network API Error: ${response.statusCode}');
+      throw Exception((body is Map ? body['message'] : null) ?? 'Network API Error: ${response.statusCode}');
     }
   }
 
@@ -679,11 +722,16 @@ class ApiService {
     }
     reqHeaders['X-Device-Id'] = await getDeviceId();
     reqHeaders.addAll(meta);
-    final response = await _client.post(
-      Uri.parse('$_baseUrl$endpoint'),
-      headers: reqHeaders,
-      body: jsonEncode(payload),
-    );
+    final http.Response response;
+    try {
+      response = await _client.post(
+        Uri.parse('$_baseUrl$endpoint'),
+        headers: reqHeaders,
+        body: jsonEncode(payload),
+      );
+    } catch (e) {
+      throw _simplifyNetworkError(e);
+    }
     return await _handleResponse(response, () => post(endpoint, data));
   }
 
@@ -943,7 +991,7 @@ class ApiService {
         networkError = 'Server returned status code: ${response.statusCode}';
       }
     } catch (e) {
-      networkError = e.toString();
+      networkError = _simplifyNetworkError(e).toString().replaceAll('Exception: ', '');
       debugPrint('Failed to fetch cooperatives from network: $e');
     }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../widgets/cached_image.dart';
+import '../../widgets/error_state_view.dart';
 
 class MemberDetailsPage extends StatefulWidget {
   const MemberDetailsPage({super.key});
@@ -81,33 +83,16 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
             : _errorMessage != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: primaryTextColor, fontSize: 14),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading = true;
-                                _errorMessage = null;
-                              });
-                              _fetchMemberDetails();
-                            },
-                            child: Text('Retry'.tr),
-                          ),
-                        ],
-                      ),
-                    ),
+                ? ErrorStateView(
+                    errorMessage: _errorMessage,
+                    isDarkMode: isDarkMode,
+                    onRetry: () async {
+                      setState(() {
+                        _isLoading = true;
+                        _errorMessage = null;
+                      });
+                      await _fetchMemberDetails();
+                    },
                   )
                 : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -124,10 +109,11 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
                           clipBehavior: Clip.antiAlias,
                           child: hasProfileImg
                               ? ClipOval(
-                                  child: Image.network(
-                                    profileImg,
+                                  child: CachedImage(
+                                    imageUrl: profileImg,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => _buildInitialsPlaceholder(name),
+                                    placeholder: _buildInitialsPlaceholder(name),
                                   ),
                                 )
                               : _buildInitialsPlaceholder(name),

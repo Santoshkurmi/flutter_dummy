@@ -15,6 +15,7 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../services/nepali_calendar_service.dart';
 import 'transaction_receipt_page.dart';
+import '../../widgets/error_state_view.dart';
 
 
 class DateMaskTextInputFormatter extends TextInputFormatter {
@@ -1379,97 +1380,10 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildErrorView(bool isDarkMode) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.elasticOut,
-            builder: (context, val, child) {
-              return Transform.scale(
-                scale: val,
-                child: child,
-              );
-            },
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: isDarkMode 
-                      ? [const Color(0xFFEF4444).withValues(alpha: 0.2), const Color(0xFFF87171).withValues(alpha: 0.05)]
-                      : [const Color(0xFFFEE2E2), const Color(0xFFFEF2F2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Icon(
-                    Icons.wifi_off_rounded,
-                    size: 50,
-                    color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Connection Failed'.tr,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40.0),
-            child: Text(
-              _errorMessage ?? 'We had trouble communicating with the cooperative servers. Please check your internet connection.'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.5,
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: _loadLedger,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 4,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.refresh_rounded, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Try Again'.tr,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return ErrorStateView(
+      errorMessage: _errorMessage,
+      onRetry: _loadLedger,
+      isDarkMode: isDarkMode,
     );
   }
 

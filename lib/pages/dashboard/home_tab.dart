@@ -13,6 +13,7 @@ import '../accounts/transaction_receipt_page.dart';
 import '../../store/notice_store.dart';
 import 'notice_detail_page.dart';
 import '../settings/member_details_page.dart';
+import '../../widgets/error_state_view.dart';
 
 class HomeTab extends StatefulWidget {
   final GlobalKey<RefreshIndicatorState>? refreshIndicatorKey;
@@ -23,6 +24,7 @@ class HomeTab extends StatefulWidget {
   final bool isDarkMode;
   final bool isLoadingSummary;
   final bool hasError;
+  final String? errorMessage;
   final Future<void> Function() onRefresh;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
@@ -39,6 +41,7 @@ class HomeTab extends StatefulWidget {
     required this.isDarkMode,
     required this.isLoadingSummary,
     required this.hasError,
+    this.errorMessage,
     required this.onRefresh,
     required this.onThemeToggle,
     required this.onLogout,
@@ -1270,160 +1273,10 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildErrorView(BuildContext context, bool isDarkMode) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 70),
-          // Animated Cartoon-like Network Error illustration
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.elasticOut,
-            builder: (context, val, child) {
-              return Transform.scale(
-                scale: val,
-                child: child,
-              );
-            },
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: isDarkMode 
-                      ? [const Color(0xFFEF4444).withValues(alpha: 0.2), const Color(0xFFF87171).withValues(alpha: 0.05)]
-                      : [const Color(0xFFFEE2E2), const Color(0xFFFEF2F2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Animated glowing rings
-                  _ErrorPulseRing(delay: 0, isDarkMode: isDarkMode),
-                  _ErrorPulseRing(delay: 500, isDarkMode: isDarkMode),
-                  Icon(
-                    Icons.wifi_off_rounded,
-                    size: 60,
-                    color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'Connection Failed'.tr,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40.0),
-            child: Text(
-              'We had trouble communicating with the cooperative servers. Please check your internet connection.'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.5,
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
-            ),
-          ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: () {
-              widget.onRefresh();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 4,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.refresh_rounded, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Try Again'.tr,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 80),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorPulseRing extends StatefulWidget {
-  final int delay;
-  final bool isDarkMode;
-  const _ErrorPulseRing({required this.delay, required this.isDarkMode});
-
-  @override
-  State<_ErrorPulseRing> createState() => _ErrorPulseRingState();
-}
-
-class _ErrorPulseRingState extends State<_ErrorPulseRing> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) {
-        _controller.repeat();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Container(
-          width: 140 * _controller.value,
-          height: 140 * _controller.value,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: (widget.isDarkMode ? const Color(0xFFEF4444) : const Color(0xFFF87171))
-                  .withValues(alpha: (1.0 - _controller.value) * 0.3),
-              width: 1.5,
-            ),
-          ),
-        );
-      },
+    return ErrorStateView(
+      errorMessage: widget.errorMessage,
+      onRetry: widget.onRefresh,
+      isDarkMode: isDarkMode,
     );
   }
 }
