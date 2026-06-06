@@ -59,7 +59,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
     _lastAppNameTapTime = now;
     _appNameTapCount++;
 
-    if (_appNameTapCount >= 10) {
+    if (_appNameTapCount >= 7) {
       _appNameTapCount = 0;
       Navigator.push(
         context,
