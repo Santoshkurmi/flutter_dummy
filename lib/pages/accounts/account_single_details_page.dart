@@ -5,6 +5,7 @@ import '../../store/auth_store.dart';
 import 'account_ledger_page.dart';
 import 'rate_logs_page.dart';
 import 'loan_schedules_page.dart';
+import '../../services/theme_color_service.dart';
 
 class AccountSingleDetailsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -164,34 +165,12 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     return _currentIndex - progress;
   }
 
-  void _handleQuickAction(String title) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('The $title features are running in simulation modes for this demonstration account.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-            )
-          ],
-        );
-      },
-    );
-  }
-
   void _showNotImplementedSnackBar(String feature) {
+    final colors = context.colors;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature feature is not implemented yet.'),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1E293B) 
-            : const Color(0xFF0F172A),
+        content: Text('$feature feature is not implemented yet.'.tr),
+        backgroundColor: colors.snackBarBackground,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -215,7 +194,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     
     // Resolve active account details based on current index
     final activeItem = _accountsList[_currentIndex];
@@ -227,51 +207,33 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final isLoan = accountType == 'loans';
     final isShare = accountType == 'shares';
 
-    Color accentColor = const Color(0xFF2563EB); // savings blue
+    Color accentColor = colors.accent; // savings blue
     if (accountType == 'loans') {
-      accentColor = const Color(0xFFEF4444);
+      accentColor = colors.error;
     } else if (accountType == 'shares') {
-      accentColor = const Color(0xFF10B981);
+      accentColor = colors.success;
     }
 
     IconData getIconForLabel(String label) {
-      switch (label) {
-        case 'Interest Rate':
-          return Icons.percent_rounded;
-        case 'Loan Amount':
-          return Icons.monetization_on_rounded;
-        case 'Loan Balance':
-          return Icons.account_balance_rounded;
-        case 'Accrued Interest':
-        case 'Accrued Interest Due':
-        case 'Due Interest':
-        case 'Total Matured to Pay':
-          return Icons.payments_rounded;
-        case 'Minimum Balance':
-          return Icons.wallet_rounded;
-        case 'Opened Date (BS)':
-          return Icons.calendar_today_rounded;
-        case 'Maturity Date':
-        case 'Maturity Date (BS)':
-          return Icons.event_busy_rounded;
-        case 'Interest Posting Date':
-          return Icons.event_repeat_rounded;
-        case 'Principal Fine':
-        case 'Interest Fine':
-        case 'Fine Amount':
-          return Icons.gavel_rounded;
-        case 'Matured Principal':
-        case 'Principal Matured':
-          return Icons.account_balance_rounded;
-        case 'Share Capital Value':
-          return Icons.monetization_on_rounded;
-        case 'Total Share Units':
-          return Icons.grid_view_rounded;
-        case 'Member Status':
-          return Icons.verified_user_rounded;
-        default:
-          return Icons.info_outline_rounded;
+      if (label == 'Interest Rate'.tr) return Icons.percent_rounded;
+      if (label == 'Loan Amount'.tr) return Icons.monetization_on_rounded;
+      if (label == 'Loan Balance'.tr) return Icons.account_balance_rounded;
+      if (label == 'Accrued Interest'.tr ||
+          label == 'Accrued Interest Due'.tr ||
+          label == 'Due Interest'.tr ||
+          label == 'Total Matured to Pay'.tr) {
+        return Icons.payments_rounded;
       }
+      if (label == 'Minimum Balance'.tr) return Icons.wallet_rounded;
+      if (label == 'Opened Date (BS)'.tr) return Icons.calendar_today_rounded;
+      if (label == 'Maturity Date'.tr || label == 'Maturity Date (BS)'.tr) return Icons.event_busy_rounded;
+      if (label == 'Interest Posting Date'.tr) return Icons.event_repeat_rounded;
+      if (label == 'Principal Fine'.tr || label == 'Interest Fine'.tr || label == 'Fine Amount'.tr) return Icons.gavel_rounded;
+      if (label == 'Matured Principal'.tr || label == 'Principal Matured'.tr) return Icons.account_balance_rounded;
+      if (label == 'Share Capital Value'.tr) return Icons.monetization_on_rounded;
+      if (label == 'Total Share Units'.tr) return Icons.grid_view_rounded;
+      if (label == 'Member Status'.tr) return Icons.verified_user_rounded;
+      return Icons.info_outline_rounded;
     }
 
     // Build actions list dynamically based on account type
@@ -366,8 +328,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
       final String maturityDate = acc['maturity_date']?.toString() ?? 'N/A';
       final String rawPosting = acc['interest_credit_period']?.toString() ?? 'Quarterly';
       final String interestPosting = rawPosting.isNotEmpty
-          ? '${rawPosting[0].toUpperCase()}${rawPosting.substring(1)} Capitalization'
-          : 'Quarterly Capitalization';
+          ? '${rawPosting[0].toUpperCase()}${rawPosting.substring(1)} Capitalization'.tr
+          : 'Quarterly Capitalization'.tr;
 
       detailsList.addAll([
         {'label': 'Interest Rate'.tr, 'value': '${acc['interest_rate'] ?? '8.5'}% p.a.'},
@@ -400,14 +362,14 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -415,7 +377,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           name,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 16,
           ),
         ),
@@ -535,13 +497,13 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                   final type = card['type'] as String?;
                   Color cardAccentColor;
                   if (type == 'savings') {
-                    cardAccentColor = const Color(0xFF6366F1);
+                    cardAccentColor = colors.accent;
                   } else if (type == 'shares') {
-                    cardAccentColor = const Color(0xFF10B981);
+                    cardAccentColor = colors.success;
                   } else if (type == 'loans') {
-                    cardAccentColor = const Color(0xFFF43F5E);
+                    cardAccentColor = colors.error;
                   } else {
-                    cardAccentColor = const Color(0xFF2563EB);
+                    cardAccentColor = colors.accent;
                   }
 
                   final inactiveColor = isDarkMode
@@ -578,7 +540,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
-                      color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -593,7 +555,6 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                       return _buildActionGridButton(
                         act['label'] as String,
                         act['icon'] as IconData,
-                        isDarkMode,
                         onTap: act['onTap'] as VoidCallback,
                       );
                     }).toList(),
@@ -608,16 +569,16 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
-                      color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      color: colors.cardBackground,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                        color: colors.border,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -657,7 +618,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                                       detail['label']!,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        color: colors.secondaryText,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -670,7 +631,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
-                                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                        color: colors.primaryText,
                                       ),
                                     ),
                                   ),
@@ -681,7 +642,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
                               Divider(
                                 height: 1,
                                 thickness: 1,
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFEFF6FF),
+                                color: colors.border,
                               ),
                           ],
                         );
@@ -706,7 +667,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final title = acc['name'] ?? 'Account';
 
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = context.isDarkMode;
 
     final String? effectiveTag = isTopCard ? (widget.heroTag ?? 'ledger_$accountNo') : null;
 
@@ -748,7 +709,8 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     );
   }
 
-  Widget _buildActionGridButton(String label, IconData icon, bool isDarkMode, {VoidCallback? onTap}) {
+  Widget _buildActionGridButton(String label, IconData icon, {VoidCallback? onTap}) {
+    final colors = context.colors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -758,15 +720,15 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+              color: colors.quickActionBackground,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFDBEAFE),
+                color: colors.quickActionBorder,
               ),
             ),
             child: Icon(
               icon,
-              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.quickActionIcon,
               size: 24,
             ),
           ),
@@ -777,7 +739,7 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+              color: colors.primaryText,
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
             ),

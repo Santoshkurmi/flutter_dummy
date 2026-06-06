@@ -3,6 +3,7 @@ import 'dart:io';
 import '../../store/auth_store.dart';
 import '../../store/notification_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import 'biometric_setup_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -32,18 +33,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isDarkMode = AuthStore().isDarkMode;
     final authStore = AuthStore();
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -51,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
           'Settings'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 20,
           ),
         ),
@@ -156,6 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeSelector(bool isDarkMode, AuthStore authStore) {
+    final colors = context.colors;
     final currentMode = authStore.themeMode;
     final modes = [
       {'key': 'system', 'label': 'System'.tr, 'icon': Icons.brightness_auto_rounded},
@@ -166,10 +169,10 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.chipBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: Row(
@@ -183,7 +186,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      ? (isDarkMode ? colors.inputFill : colors.containerBackground)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isSelected && !isDarkMode
@@ -195,8 +198,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icon(
                       mode['icon'] as IconData,
                       color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : const Color(0xFF64748B),
+                          ? colors.accent
+                          : colors.secondaryText,
                       size: 18,
                     ),
                     const SizedBox(height: 4),
@@ -206,8 +209,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected
-                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
-                            : const Color(0xFF64748B),
+                            ? colors.primaryText
+                            : colors.secondaryText,
                       ),
                     ),
                   ],
@@ -221,6 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildLanguageSelector(bool isDarkMode, AuthStore authStore) {
+    final colors = context.colors;
     final currentLang = authStore.language;
     final langs = [
       {'key': 'en', 'label': 'English', 'icon': Icons.language_rounded},
@@ -230,10 +234,10 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.chipBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: Row(
@@ -247,7 +251,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      ? (isDarkMode ? colors.inputFill : colors.containerBackground)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isSelected && !isDarkMode
@@ -259,8 +263,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icon(
                       lang['icon'] as IconData,
                       color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : const Color(0xFF64748B),
+                          ? colors.accent
+                          : colors.secondaryText,
                       size: 18,
                     ),
                     const SizedBox(height: 4),
@@ -270,8 +274,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected
-                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
-                            : const Color(0xFF64748B),
+                            ? colors.primaryText
+                            : colors.secondaryText,
                       ),
                     ),
                   ],
@@ -285,13 +289,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSectionHeader(String title, bool isDarkMode) {
+    final colors = context.colors;
     return Text(
       title.toUpperCase(),
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w900,
         letterSpacing: 1.5,
-        color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+        color: colors.secondaryText,
       ),
     );
   }
@@ -304,14 +309,15 @@ class _SettingsPageState extends State<SettingsPage> {
     required IconData icon,
     required bool isDarkMode,
   }) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: Row(
@@ -319,10 +325,10 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+              color: colors.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF2563EB), size: 20),
+            child: Icon(icon, color: colors.accent, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -334,7 +340,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    color: colors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -342,7 +348,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                    color: colors.secondaryText,
                     height: 1.3,
                   ),
                 ),
@@ -353,7 +359,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: const Color(0xFF2563EB),
+            activeTrackColor: colors.accent,
             thumbColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.selected)) return Colors.white;
               return null;
@@ -365,6 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildLimitPill(String value, String label, AuthStore authStore, bool isDarkMode) {
+    final colors = context.colors;
     final isSelected = authStore.dailyLimit == value;
     return Expanded(
       child: InkWell(
@@ -377,13 +384,13 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected 
-                ? const Color(0xFF2563EB) 
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white),
+                ? colors.accent 
+                : colors.chipBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected 
-                  ? const Color(0xFF2563EB) 
-                  : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFCBD5E1)),
+                  ? colors.accent 
+                  : colors.chipBorder,
             ),
           ),
           child: Text(
@@ -394,7 +401,7 @@ class _SettingsPageState extends State<SettingsPage> {
               fontWeight: FontWeight.bold,
               color: isSelected 
                   ? Colors.white 
-                  : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                  : colors.primaryText,
             ),
           ),
         ),
@@ -403,6 +410,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildNotificationLanguageSelector(bool isDarkMode, AuthStore authStore) {
+    final colors = context.colors;
     final currentLang = authStore.notificationLanguage;
     final langs = [
       {'key': 'en', 'label': 'English'.tr, 'icon': Icons.language_rounded},
@@ -412,10 +420,10 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.chipBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: Row(
@@ -433,7 +441,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDarkMode ? const Color(0xFF1E293B) : Colors.white)
+                      ? (isDarkMode ? colors.inputFill : colors.containerBackground)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isSelected && !isDarkMode
@@ -445,8 +453,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icon(
                       lang['icon'] as IconData,
                       color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : const Color(0xFF64748B),
+                          ? colors.accent
+                          : colors.secondaryText,
                       size: 18,
                     ),
                     const SizedBox(height: 4),
@@ -456,8 +464,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected
-                            ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
-                            : const Color(0xFF64748B),
+                            ? colors.primaryText
+                            : colors.secondaryText,
                       ),
                     ),
                   ],
@@ -471,11 +479,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _confirmReset(BuildContext context, AuthStore authStore, bool isDarkMode) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text('Reset Settings?'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
           content: Text(
@@ -484,7 +493,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'.tr, style: const TextStyle(color: Color(0xFF64748B))),
+              child: Text('Cancel'.tr, style: TextStyle(color: colors.secondaryText)),
             ),
             TextButton(
               onPressed: () async {

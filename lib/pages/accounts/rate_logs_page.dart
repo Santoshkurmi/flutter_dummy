@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import '../../widgets/error_state_view.dart';
+import '../../services/theme_color_service.dart';
 
 class RateLogsPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -123,20 +124,21 @@ class _RateLogsPageState extends State<RateLogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = AuthStore().isDarkMode;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     final schemeName = AuthStore().language == 'ne'
         ? (widget.account['scheme_name_nepali'] ?? widget.account['scheme_name'] ?? '')
         : (widget.account['scheme_name'] ?? '');
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -144,17 +146,17 @@ class _RateLogsPageState extends State<RateLogsPage> {
           (widget.accountType == 'savings' ? 'Interest Rate Logs' : 'Loan Interest Log').tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 18,
           ),
         ),
       ),
       body: RefreshIndicator(
         onRefresh: () => _fetchRateLogs(forceRefresh: true),
-        color: const Color(0xFF2563EB),
-        backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        color: colors.accent,
+        backgroundColor: colors.cardBackground,
         child: _isLoading && _errorMessage == null
-            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
+            ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(colors.accent)))
             : _errorMessage != null && _rateLogs.isEmpty
                 ? _buildErrorState(isDarkMode)
                 : _buildBody(isDarkMode, schemeName),
@@ -171,6 +173,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
   }
 
   Widget _buildBody(bool isDarkMode, String schemeName) {
+    final colors = context.colors;
     return ListView(
       padding: const EdgeInsets.only(bottom: 16),
       children: [
@@ -181,10 +184,10 @@ class _RateLogsPageState extends State<RateLogsPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: colors.border,
             ),
           ),
           child: Row(
@@ -193,10 +196,10 @@ class _RateLogsPageState extends State<RateLogsPage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                  color: colors.accent.withValues(alpha: isDarkMode ? 0.15 : 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.trending_up_rounded, color: Color(0xFF2563EB), size: 22),
+                child: Icon(Icons.trending_up_rounded, color: colors.accent, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -208,7 +211,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        color: colors.primaryText,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -216,7 +219,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                       '${widget.account['accNo'] ?? ''} • ${'${_rateLogs.length} entries'.tr}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: colors.secondaryText,
                       ),
                     ),
                   ],
@@ -244,6 +247,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
 
   Widget _buildLogRow(Map<String, dynamic> log, bool isFirst, bool isDarkMode) {
     final isSavings = widget.accountType == 'savings';
+    final colors = context.colors;
 
     if (isSavings) {
       final from = log['from']?.toString() ?? '';
@@ -262,13 +266,11 @@ class _RateLogsPageState extends State<RateLogsPage> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isFirst
-              ? (isDarkMode ? const Color(0xFF2563EB).withValues(alpha: 0.1) : const Color(0xFF2563EB).withValues(alpha: 0.05))
-              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+              ? colors.accent.withValues(alpha: isDarkMode ? 0.15 : 0.05)
+              : colors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isFirst
-                ? const Color(0xFF2563EB)
-                : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            color: isFirst ? colors.accent : colors.border,
             width: isFirst ? 1.5 : 1,
           ),
           boxShadow: [
@@ -290,7 +292,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                       Icon(
                         Icons.date_range_rounded,
                         size: 14,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: colors.secondaryText,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -298,7 +300,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          color: colors.secondaryText,
                         ),
                       ),
                     ],
@@ -312,7 +314,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            color: colors.primaryText,
                           ),
                         ),
                       ),
@@ -321,7 +323,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.15 : 0.1),
+                            color: colors.success.withValues(alpha: isDarkMode ? 0.15 : 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -329,7 +331,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                              color: colors.success,
                             ),
                           ),
                         ),
@@ -342,9 +344,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isFirst
-                    ? const Color(0xFF2563EB)
-                    : (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                color: isFirst ? colors.accent : colors.inputFill,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -352,7 +352,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: isFirst ? Colors.white : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                  color: isFirst ? Colors.white : colors.primaryText,
                 ),
               ),
             ),
@@ -368,10 +368,10 @@ class _RateLogsPageState extends State<RateLogsPage> {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            color: colors.border,
           ),
           boxShadow: [
             BoxShadow(
@@ -392,7 +392,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                       Icon(
                         Icons.date_range_rounded,
                         size: 14,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: colors.secondaryText,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -400,7 +400,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          color: colors.secondaryText,
                         ),
                       ),
                     ],
@@ -411,7 +411,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      color: colors.primaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -420,7 +420,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: colors.secondaryText,
                     ),
                   ),
                 ],
@@ -429,7 +429,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                color: colors.inputFill,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -437,7 +437,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                  color: colors.primaryText,
                 ),
               ),
             ),
@@ -448,6 +448,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
   }
 
   Widget _buildEmptyState(bool isDarkMode) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -457,13 +458,13 @@ class _RateLogsPageState extends State<RateLogsPage> {
             Icon(
               Icons.history_toggle_off_rounded,
               size: 48,
-              color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+              color: colors.secondaryText,
             ),
             const SizedBox(height: 12),
             Text(
               'No rate change history found.'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: colors.secondaryText,
                 fontSize: 14,
               ),
             ),
@@ -472,7 +473,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
               'The current rate has been applied since the beginning.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                color: colors.secondaryText,
                 fontSize: 12,
               ),
             ),
@@ -483,22 +484,23 @@ class _RateLogsPageState extends State<RateLogsPage> {
   }
 
   Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        color: colors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          color: colors.error.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFEF4444),
+            color: colors.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -506,7 +508,7 @@ class _RateLogsPageState extends State<RateLogsPage> {
             child: Text(
               error,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                color: colors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),

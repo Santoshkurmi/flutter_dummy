@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:disk_space_plus/disk_space_plus.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../../store/auth_store.dart';
 import 'changelogs_page.dart';
 import 'easter_app_page.dart';
@@ -192,18 +193,19 @@ class _AboutAppPageState extends State<AboutAppPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
 
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
-    final accentColor = const Color(0xFF2563EB); // Indigo/Blue accent
+    final primaryTextColor = colors.primaryText;
+    final secondaryTextColor = colors.secondaryText;
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
+    final accentColor = colors.accent;
 
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+          backgroundColor: colors.scaffoldBackground,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -236,9 +238,9 @@ class _AboutAppPageState extends State<AboutAppPage> {
               future: _diagnosticsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                     ),
                   );
                 }
@@ -302,7 +304,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                                 if (AuthStore().isDeveloperMode) return;
                                 _tapCount++;
                                 if (_tapCount >= 7) {
-                                  _showEnableDeveloperModeDialog(context, isDarkMode);
+                                  _showEnableDeveloperModeDialog(context);
                                   _tapCount = 0; // Reset tap count after dialog triggers
                                 }
                               },
@@ -415,9 +417,9 @@ class _AboutAppPageState extends State<AboutAppPage> {
           Positioned.fill(
             child: Container(
               color: Colors.black.withValues(alpha: 0.4),
-              child: const Center(
+              child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                 ),
               ),
             ),
@@ -533,14 +535,16 @@ class _AboutAppPageState extends State<AboutAppPage> {
   }
 
   Widget _buildDivider(bool isDarkMode) {
+    final colors = context.colors;
     return Divider(
       height: 1,
       thickness: 1,
-      color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFEFF6FF),
+      color: colors.border,
     );
   }
 
-  void _showEnableDeveloperModeDialog(BuildContext context, bool isDarkMode) {
+  void _showEnableDeveloperModeDialog(BuildContext context) {
+    final colors = context.colors;
     final TextEditingController passwordController = TextEditingController();
     String? errorMessage;
 
@@ -551,17 +555,17 @@ class _AboutAppPageState extends State<AboutAppPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              backgroundColor: colors.cardBackground,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                      color: colors.accent.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.security_rounded, color: Color(0xFF2563EB), size: 24),
+                    child: Icon(Icons.security_rounded, color: colors.accent, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -569,7 +573,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                       'Enable Developer Mode?'.tr,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        color: colors.primaryText,
                         fontSize: 18,
                       ),
                     ),
@@ -584,7 +588,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                     'Enabling developer mode allows modifying system configurations and diagnostics.'.tr,
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -593,7 +597,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -601,12 +605,12 @@ class _AboutAppPageState extends State<AboutAppPage> {
                     controller: passwordController,
                     obscureText: true,
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(color: colors.primaryText),
                     decoration: InputDecoration(
                       hintText: 'Enter 6-digit PIN'.tr,
-                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                      hintStyle: TextStyle(color: colors.secondaryText, fontSize: 14),
                       filled: true,
-                      fillColor: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      fillColor: colors.inputFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -624,7 +628,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                   },
                   child: Text(
                     'Cancel'.tr,
-                    style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    style: TextStyle(color: colors.secondaryText, fontWeight: FontWeight.w600),
                   ),
                 ),
                 ElevatedButton(
@@ -648,7 +652,7 @@ class _AboutAppPageState extends State<AboutAppPage> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
+                    backgroundColor: colors.accent,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(

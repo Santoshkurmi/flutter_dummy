@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../../widgets/cached_image.dart';
 import '../settings/settings_page.dart';
 import '../settings/permissions_page.dart';
@@ -26,6 +27,9 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
+
     return AnimatedBuilder(
       animation: AuthStore(),
       builder: (context, _) {
@@ -48,8 +52,8 @@ class ProfileTab extends StatelessWidget {
         final bool hasValidImage = profileImagePath != null && profileImagePath.toString().isNotEmpty;
 
         final Widget initialsPlaceholder = Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [colors.accent.withValues(alpha: 0.8), colors.accent]),
           ),
           child: Center(
             child: Text(
@@ -69,10 +73,10 @@ class ProfileTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                color: colors.cardBackground,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                  color: colors.border,
                 ),
                 boxShadow: isDarkMode
                     ? []
@@ -108,11 +112,11 @@ class ProfileTab extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                      color: colors.primaryText,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(mobile, style: const TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                  Text(mobile, style: TextStyle(color: colors.secondaryText, fontSize: 14)),
                 ],
               ),
             ),
@@ -120,7 +124,7 @@ class ProfileTab extends StatelessWidget {
             Text(
               'MEMBER & COOPERATIVE IDENTITY'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                color: colors.secondaryText,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -133,7 +137,7 @@ class ProfileTab extends StatelessWidget {
             Text(
               'UTILITY SERVICES & PREFERENCES'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                color: colors.secondaryText,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -187,13 +191,14 @@ class ProfileTab extends StatelessWidget {
   }
 
   Widget _profileActionOption(BuildContext context, IconData icon, String title, String subtitle, Widget targetPage) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+          color: colors.border,
         ),
       ),
       child: InkWell(
@@ -203,7 +208,7 @@ class ProfileTab extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(icon, color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
+              Icon(icon, color: colors.accent),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -212,7 +217,7 @@ class ProfileTab extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                        color: colors.primaryText,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -220,12 +225,12 @@ class ProfileTab extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                      style: TextStyle(color: colors.secondaryText, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF64748B), size: 14),
+              Icon(Icons.arrow_forward_ios_rounded, color: colors.secondaryText, size: 14),
             ],
           ),
         ),

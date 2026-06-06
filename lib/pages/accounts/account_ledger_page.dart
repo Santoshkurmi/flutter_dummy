@@ -17,6 +17,7 @@ import '../../services/nepali_calendar_service.dart';
 import '../../widgets/cooperative_account_card.dart';
 import 'transaction_receipt_page.dart';
 import '../../widgets/error_state_view.dart';
+import '../../services/theme_color_service.dart';
 
 
 class DateMaskTextInputFormatter extends TextInputFormatter {
@@ -351,14 +352,15 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
   }
 
   Color _getAccentColor() {
+    final colors = context.colors;
     switch (_activeType) {
       case 'loans':
-        return const Color(0xFFEF4444);
+        return colors.error;
       case 'shares':
-        return const Color(0xFF10B981);
+        return colors.success;
       case 'savings':
       default:
-        return const Color(0xFF2563EB);
+        return colors.accent;
     }
   }
 
@@ -372,6 +374,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final colors = context.colors;
         return StatefulBuilder(
           builder: (context, setBottomSheetState) {
             String? fromError;
@@ -413,7 +416,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                  color: colors.cardBackground,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
@@ -433,12 +436,12 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            color: colors.primaryText,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                          color: colors.secondaryText,
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -455,7 +458,6 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                             controller: fromController,
                             label: 'From Date'.tr,
                             errorText: fromError,
-                            isDarkMode: isDarkMode,
                             accentColor: accentColor,
                           ),
                         ),
@@ -465,7 +467,6 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                             controller: toController,
                             label: 'To Date'.tr,
                             errorText: toError,
-                            isDarkMode: isDarkMode,
                             accentColor: accentColor,
                           ),
                         ),
@@ -480,9 +481,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                              foregroundColor: colors.primaryText,
                               side: BorderSide(
-                                color: isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1),
+                                color: colors.border,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -525,9 +526,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     required TextEditingController controller,
     required String label,
     required String? errorText,
-    required bool isDarkMode,
     required Color accentColor,
   }) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -536,7 +537,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            color: colors.secondaryText,
           ),
         ),
         const SizedBox(height: 6),
@@ -547,14 +548,14 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             DateMaskTextInputFormatter(), // safely handles masking & digit stripping inside
           ],
           style: TextStyle(
-            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
           decoration: InputDecoration(
             hintText: 'YYYY-MM-DD',
-            hintStyle: const TextStyle(
-              color: Color(0xFF64748B),
+            hintStyle: TextStyle(
+              color: colors.secondaryText,
               fontSize: 13,
               fontWeight: FontWeight.normal,
             ),
@@ -562,17 +563,17 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             errorStyle: const TextStyle(fontSize: 10, height: 0.8),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             filled: true,
-            fillColor: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
+            fillColor: colors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFCBD5E1),
+                color: colors.border,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFCBD5E1),
+                color: colors.border,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -585,8 +586,9 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     );
   }
 
-  Widget _buildPresetChip(String preset, String label, Color accentColor, bool isDarkMode) {
+   Widget _buildPresetChip(String preset, String label, Color accentColor, bool isDarkMode) {
     final bool isSelected = _selectedPreset == preset;
+    final colors = context.colors;
     return InkWell(
       onTap: () => _selectPreset(preset),
       borderRadius: BorderRadius.circular(20),
@@ -595,12 +597,12 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
         decoration: BoxDecoration(
           color: isSelected 
               ? accentColor 
-              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+              : colors.chipBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
                 ? accentColor 
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
+                : colors.chipBorder,
           ),
         ),
         child: Text(
@@ -610,7 +612,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             fontWeight: FontWeight.bold,
             color: isSelected 
                 ? Colors.white 
-                : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                : colors.chipText,
           ),
         ),
       ),
@@ -620,6 +622,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
   Widget _buildFilterChip(Color accentColor, bool isDarkMode) {
     final bool isCustomActive = _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
     final String label = isCustomActive ? 'Filter Active'.tr : 'Filter'.tr;
+    final colors = context.colors;
     return InkWell(
       onTap: () => _openFilterBottomSheet(context, accentColor, isDarkMode),
       borderRadius: BorderRadius.circular(20),
@@ -628,12 +631,12 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
         decoration: BoxDecoration(
           color: isCustomActive 
               ? accentColor 
-              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+              : colors.chipBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isCustomActive 
                 ? accentColor 
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
+                : colors.chipBorder,
           ),
         ),
         child: Row(
@@ -643,7 +646,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
               size: 14,
               color: isCustomActive 
                   ? Colors.white 
-                  : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                  : colors.chipText,
             ),
             const SizedBox(width: 6),
             Text(
@@ -653,7 +656,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                 fontWeight: FontWeight.bold,
                 color: isCustomActive 
                     ? Colors.white 
-                    : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                    : colors.chipText,
               ),
             ),
           ],
@@ -669,26 +672,26 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     if (currentYear < startYear) currentYear = startYear;
     if (currentYear > todayBsYear) currentYear = todayBsYear;
 
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final colors = context.colors;
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: currentYear,
           icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
-          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          iconEnabledColor: colors.secondaryText,
+          dropdownColor: colors.cardBackground,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: primaryTextColor,
+            color: colors.primaryText,
             fontSize: 12,
           ),
           items: () {
@@ -718,26 +721,26 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
 
   Widget _buildMonthDropdown(bool isDarkMode) {
     final int currentMonth = _selectedNepaliMonth ?? 1;
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final colors = context.colors;
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: currentMonth,
           icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
-          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          iconEnabledColor: colors.secondaryText,
+          dropdownColor: colors.cardBackground,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: primaryTextColor,
+            color: colors.primaryText,
             fontSize: 12,
           ),
           items: List.generate(12, (index) => index + 1).map((mIdx) {
@@ -992,10 +995,11 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
           final status = await Permission.storage.request();
           if (!status.isGranted) {
             if (!mounted) return;
+            final colors = context.colors;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Storage permission is required to save PDF.'),
-                backgroundColor: Colors.redAccent,
+              SnackBar(
+                content: Text('Storage permission is required to save PDF.'.tr),
+                backgroundColor: colors.error,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -1021,13 +1025,14 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
 
       if (success == true) {
         if (!mounted) return;
+        final colors = context.colors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Saved to Downloads: $fileName'),
-            backgroundColor: const Color(0xFF10B981),
+            content: Text('Saved to Downloads: $fileName'.tr),
+            backgroundColor: colors.success,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
-              label: 'VIEW',
+              label: 'VIEW'.tr,
               textColor: Colors.white,
               onPressed: () async {
                 try {
@@ -1036,8 +1041,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Could not open PDF: ${openResult.message}'),
-                        backgroundColor: Colors.redAccent,
+                        content: Text('Could not open PDF: ${openResult.message}'.tr),
+                        backgroundColor: colors.error,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -1046,8 +1051,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error opening PDF: $e'),
-                      backgroundColor: Colors.redAccent,
+                      content: Text('Error opening PDF: $e'.tr),
+                      backgroundColor: colors.error,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -1061,10 +1066,11 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       }
     } catch (e) {
       if (!mounted) return;
+      final colors = context.colors;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save PDF: $e'),
-          backgroundColor: Colors.redAccent,
+          content: Text('Failed to save PDF: $e'.tr),
+          backgroundColor: colors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1088,19 +1094,20 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     final accentColor = _getAccentColor();
     final bool isFilteredAtAll = _selectedPreset != null || _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -1108,7 +1115,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
           'Account Statement'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 16,
           ),
         ),
@@ -1116,7 +1123,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
           IconButton(
             icon: Icon(
               Icons.picture_as_pdf_rounded,
-              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.accent,
             ),
             tooltip: 'Download PDF',
             onPressed: () => _downloadPdf(isDarkMode),
@@ -1124,7 +1131,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
           IconButton(
             icon: Icon(
               Icons.print_rounded,
-              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.accent,
             ),
             tooltip: 'Print',
             onPressed: () => _printPdf(isDarkMode),
@@ -1134,8 +1141,8 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _loadLedger(forceRefresh: true),
-          color: const Color(0xFF2563EB),
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          color: colors.accent,
+          backgroundColor: colors.cardBackground,
           child: ListView(
             padding: const EdgeInsets.only(bottom: 24),
             physics: _isDraggingCard ? const NeverScrollableScrollPhysics() : null,
@@ -1253,13 +1260,13 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                     final type = card['type'] as String?;
                     Color cardAccentColor;
                     if (type == 'savings') {
-                      cardAccentColor = const Color(0xFF6366F1);
+                      cardAccentColor = colors.accent;
                     } else if (type == 'shares') {
-                      cardAccentColor = const Color(0xFF10B981);
+                      cardAccentColor = colors.success;
                     } else if (type == 'loans') {
-                      cardAccentColor = const Color(0xFFF43F5E);
+                      cardAccentColor = colors.error;
                     } else {
-                      cardAccentColor = const Color(0xFF2563EB);
+                      cardAccentColor = colors.accent;
                     }
 
                     final inactiveColor = isDarkMode
@@ -1312,12 +1319,12 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                            color: colors.error.withValues(alpha: 0.1),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.refresh_rounded,
                             size: 16,
-                            color: Color(0xFFEF4444),
+                            color: colors.error,
                           ),
                         ),
                       ),
@@ -1331,7 +1338,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
               // Results Container
               Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A).withValues(alpha: 0.3) : Colors.white,
+                  color: Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
@@ -1354,7 +1361,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
     final accountNo = acc['accNo'] ?? acc['account_no'] ?? 'N/A';
     final title = acc['name'] ?? 'Account';
 
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = context.isDarkMode;
 
     return CooperativeAccountCard(
       isOverview: false,
@@ -1373,12 +1380,13 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
   }
 
   Widget _buildMainContent(bool isDarkMode, Color accentColor) {
+    final colors = context.colors;
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 60.0),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60.0),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+            valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
           ),
         ),
       );
@@ -1400,13 +1408,13 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             Icon(
               Icons.assignment_late_outlined,
               size: 60,
-              color: isDarkMode ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+              color: colors.secondaryText,
             ),
             const SizedBox(height: 16),
             Text(
               'No transactions found.'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: colors.secondaryText,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -1416,7 +1424,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
               _getEmptyStateDescription(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
+                color: colors.secondaryText,
                 fontSize: 13,
               ),
             ),
@@ -1500,7 +1508,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                        color: colors.secondaryText,
                       ),
                     ),
                     if (rangeText.isNotEmpty)
@@ -1509,7 +1517,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                          color: colors.primaryText,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1520,7 +1528,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                 listTitle,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
+                  color: colors.secondaryText,
                 ),
               ),
             ],
@@ -1563,12 +1571,10 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                    color: colors.cardBackground,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.black.withValues(alpha: 0.04),
+                      color: colors.border,
                     ),
                     boxShadow: isDarkMode
                         ? []
@@ -1588,12 +1594,12 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isCredit
-                              ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                              : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                              ? colors.success.withValues(alpha: 0.1)
+                              : colors.error.withValues(alpha: 0.1),
                         ),
                         child: Icon(
                           isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                          color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          color: isCredit ? colors.success : colors.error,
                           size: 16,
                         ),
                       ),
@@ -1608,7 +1614,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                color: colors.primaryText,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -1617,9 +1623,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                               style: TextStyle(
                                 fontSize: 12.0,
                                 fontWeight: FontWeight.bold,
-                                color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : const Color(0xFF1E293B),
+                                color: colors.primaryText,
                               ),
                             ),
                             if (refNo.isNotEmpty) ...[
@@ -1628,7 +1632,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                                 'Ref: $refNo',
                                 style: TextStyle(
                                   fontSize: 9.5,
-                                  color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                  color: colors.secondaryText,
                                   fontFamily: 'monospace',
                                 ),
                               ),
@@ -1645,7 +1649,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                             amountStr,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                              color: isCredit ? colors.success : colors.error,
                               fontSize: 14.5,
                             ),
                           ),
@@ -1653,16 +1657,14 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.03)
-                                  : const Color(0xFFF1F5F9),
+                              color: colors.inputFill,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               balanceStr,
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                  color: colors.secondaryText,
                                   fontSize: 10,
                                 ),
                             ),
@@ -1689,22 +1691,23 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
   }
 
   Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        color: colors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          color: colors.error.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFEF4444),
+            color: colors.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -1712,7 +1715,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
             child: Text(
               error,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                color: colors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),

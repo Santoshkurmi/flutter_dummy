@@ -737,7 +737,7 @@ class ApiService {
 
   // API Call Implementations
   Future<Map<String, dynamic>> checkStatus(String mobile, String deviceId) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     return await post('/check-status', {'mobile': mobile, 'device_id': devId});
@@ -774,7 +774,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> sendDeviceLinkOtp(String mobile, String deviceId) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     return await post('/device-link/send-otp', {'mobile': mobile, 'device_id': devId});
@@ -798,7 +798,7 @@ class ApiService {
     String? latitude,
     String? longitude,
   }) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     final payload = {
@@ -858,21 +858,21 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> registerMember(Map<String, dynamic> formData, String deviceId) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     return await post('/register-member', {'data': formData, 'device_id': devId});
   }
 
   Future<Map<String, dynamic>> checkRegistrationsStatus(List<String> phoneNumbers, String deviceId) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     return await post('/check-registrations-status', {'phone_numbers': phoneNumbers, 'device_id': devId});
   }
 
   Future<Map<String, dynamic>> deleteRegistrationApp(String phoneNumber, String deviceId) async {
-    final devId = (deviceId == null || deviceId.isEmpty)
+    final devId = deviceId.isEmpty
         ? await getDeviceId()
         : deviceId;
     return await post('/delete-registration', {'phone_number': phoneNumber, 'device_id': devId});

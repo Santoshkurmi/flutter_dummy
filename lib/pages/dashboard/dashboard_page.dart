@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../../store/auth_store.dart';
 import 'home_tab.dart';
 import '../accounts/combined_statement_page.dart';
@@ -176,17 +177,17 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        final isDark = AuthStore().isDarkMode;
+        final colors = context.colors;
         return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           content: Padding(
             padding: const EdgeInsets.symmetric(vertical: 20.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -194,7 +195,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: colors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -203,7 +204,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: colors.secondaryText,
                   ),
                 ),
               ],
@@ -261,25 +262,25 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   }
 
   Future<bool?> _showLogoutConfirmation() async {
-    final isDark = AuthStore().isDarkMode;
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
+        final colors = context.colors;
         return AlertDialog(
           title: Text(
             'Confirm Logout',
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              color: colors.primaryText,
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Are you sure you want to log out?',
             style: TextStyle(
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              color: colors.secondaryText,
             ),
           ),
-          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           actions: <Widget>[
             TextButton(
@@ -287,7 +288,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: colors.secondaryText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -314,25 +315,25 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   }
 
   Future<bool?> _showExitLogoutConfirmation() async {
-    final isDark = AuthStore().isDarkMode;
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
+        final colors = context.colors;
         return AlertDialog(
           title: Text(
             'Logout & Exit',
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              color: colors.primaryText,
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Are you sure you want to log out of your session and exit the app?',
             style: TextStyle(
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              color: colors.secondaryText,
             ),
           ),
-          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           actions: <Widget>[
             TextButton(
@@ -340,7 +341,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: colors.secondaryText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -432,7 +433,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         }
       },
       child: Scaffold(
-        backgroundColor: _isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+        backgroundColor: context.colors.scaffoldBackground,
         body: PageView(
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(),
@@ -505,12 +506,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           ],
         ),
         bottomNavigationBar: Material(
-          color: _isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          color: context.colors.containerBackground,
           child: Container(
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: _isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+                  color: context.colors.border,
                   width: 1,
                 ),
               ),

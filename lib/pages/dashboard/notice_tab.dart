@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import 'notice_detail_page.dart';
 import '../../store/notice_store.dart';
 import '../../widgets/error_state_view.dart';
+import '../../services/theme_color_service.dart';
 
 class NoticeTab extends StatefulWidget {
   final bool isDarkMode;
@@ -199,21 +200,20 @@ class _NoticeTabState extends State<NoticeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDarkMode;
-    final cardBgColor = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final borderColor = isDark 
-        ? Colors.white.withValues(alpha: 0.04) 
-        : Colors.black.withValues(alpha: 0.04);
-    final titleColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final descColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final colors = context.colors;
+    final isDark = context.isDarkMode;
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
+    final titleColor = colors.primaryText;
+    final descColor = colors.secondaryText;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         title: Text(
           'Notice'.tr,
           style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -224,7 +224,7 @@ class _NoticeTabState extends State<NoticeTab> {
             ? IconButton(
                 icon: Icon(
                   Icons.arrow_back_rounded,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: colors.primaryText,
                 ),
                 onPressed: () => Navigator.pop(context),
               )
@@ -245,7 +245,7 @@ class _NoticeTabState extends State<NoticeTab> {
                   icon: const Icon(Icons.mark_email_read_rounded, size: 16),
                   label: Text('Read All'.tr, style: const TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                    foregroundColor: colors.accent,
                   ),
                   onPressed: () => store.markAllAsRead(),
                 ),
@@ -256,24 +256,26 @@ class _NoticeTabState extends State<NoticeTab> {
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: const Color(0xFF2563EB),
-        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-        child: _buildBody(isDark, cardBgColor, borderColor, titleColor, descColor),
+        color: colors.accent,
+        backgroundColor: colors.cardBackground,
+        child: _buildBody(context, isDark, cardBgColor, borderColor, titleColor, descColor),
       ),
     );
   }
 
   Widget _buildBody(
+    BuildContext context,
     bool isDark,
     Color cardBgColor,
     Color borderColor,
     Color titleColor,
     Color descColor,
   ) {
+    final colors = context.colors;
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF2563EB),
+          color: colors.accent,
         ),
       );
     }
@@ -310,7 +312,7 @@ class _NoticeTabState extends State<NoticeTab> {
                   child: Icon(
                     Icons.campaign_rounded,
                     size: 64,
-                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                    color: colors.accent,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -346,15 +348,15 @@ class _NoticeTabState extends State<NoticeTab> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         if (index == _notices.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Center(
               child: SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: Color(0xFF2563EB),
+                  color: colors.accent,
                 ),
               ),
             ),
@@ -391,14 +393,10 @@ class _NoticeTabState extends State<NoticeTab> {
             child: Ink(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark
-                    ? (isRead ? cardBgColor : const Color(0xFF1E293B).withValues(alpha: 0.5))
-                    : (isRead ? cardBgColor : const Color(0xFFEFF6FF)),
+                color: isRead ? cardBgColor : colors.inputFill,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? (isRead ? borderColor : const Color(0xFF3B82F6).withValues(alpha: 0.2))
-                      : (isRead ? borderColor : const Color(0xFF3B82F6).withValues(alpha: 0.15)),
+                  color: colors.border,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -467,8 +465,8 @@ class _NoticeTabState extends State<NoticeTab> {
                                     Container(
                                       width: 7,
                                       height: 7,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF3B82F6),
+                                      decoration: BoxDecoration(
+                                        color: colors.accent,
                                         shape: BoxShape.circle,
                                       ),
                                     ),
@@ -482,7 +480,7 @@ class _NoticeTabState extends State<NoticeTab> {
                                 dateBs.trd,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                  color: colors.secondaryText,
                                 ),
                               ),
                             ],
@@ -508,7 +506,7 @@ class _NoticeTabState extends State<NoticeTab> {
                     IconButton(
                       icon: Icon(
                         Icons.check_circle_outline_rounded,
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        color: colors.accent,
                         size: 22,
                       ),
                       onPressed: () {
@@ -531,7 +529,7 @@ class _NoticeTabState extends State<NoticeTab> {
     if (_errorMessage != null && _notices.isNotEmpty) {
       return Column(
         children: [
-          _buildInlineErrorBanner(_errorMessage!, isDark),
+          _buildInlineErrorBanner(_errorMessage!, context),
           Expanded(child: mainList),
         ],
       );
@@ -540,7 +538,8 @@ class _NoticeTabState extends State<NoticeTab> {
     return mainList;
   }
 
-  Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+  Widget _buildInlineErrorBanner(String error, BuildContext context) {
+    final isDarkMode = context.isDarkMode;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

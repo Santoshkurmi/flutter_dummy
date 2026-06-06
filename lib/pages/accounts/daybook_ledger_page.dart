@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/theme_color_service.dart';
 
 class DaybookLedgerPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -67,28 +68,28 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
   }
 
   void _shareStatement() {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
         return AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Export Statement', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: const Text('Do you want to download or share the transaction statement as a secure PDF?'),
+          title: Text('Export Statement', style: TextStyle(fontWeight: FontWeight.bold, color: colors.primaryText)),
+          content: Text('Do you want to download or share the transaction statement as a secure PDF?', style: TextStyle(color: colors.primaryText)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+              child: Text('Cancel', style: TextStyle(color: colors.secondaryText)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Statement PDF exported successfully!'), backgroundColor: Color(0xFF10B981)),
+                  SnackBar(content: const Text('Statement PDF exported successfully!'), backgroundColor: colors.success),
                 );
               },
-              child: const Text('Download PDF', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+              child: Text('Download PDF', style: TextStyle(color: colors.accent, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -98,21 +99,21 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
 
     final totalCredit = _calculateTotal('credit');
     final totalDebit = _calculateTotal('debit');
     final netChange = totalCredit - totalDebit;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -120,14 +121,14 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
           'Daybook Statement',
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 18,
           ),
         ),
         actions: [
           IconButton(
             onPressed: _shareStatement,
-            icon: Icon(Icons.share_rounded, color: isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+            icon: Icon(Icons.share_rounded, color: colors.primaryText),
           ),
         ],
       ),
@@ -141,10 +142,10 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  color: colors.inputFill,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                    color: colors.border,
                   ),
                 ),
                 child: Column(
@@ -177,23 +178,23 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                    color: colors.border,
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildSummaryCol('Total Credits', 'Rs. ${totalCredit.toStringAsFixed(2)}', const Color(0xFF10B981)),
-                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
-                    _buildSummaryCol('Total Debits', 'Rs. ${totalDebit.toStringAsFixed(2)}', const Color(0xFFEF4444)),
-                    Container(width: 1, height: 35, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
+                    _buildSummaryCol('Total Credits', 'Rs. ${totalCredit.toStringAsFixed(2)}', colors.success),
+                    Container(width: 1, height: 35, color: colors.border),
+                    _buildSummaryCol('Total Debits', 'Rs. ${totalDebit.toStringAsFixed(2)}', colors.error),
+                    Container(width: 1, height: 35, color: colors.border),
                     _buildSummaryCol(
                       'Net Change',
                       '${netChange >= 0 ? "+" : "-"}Rs. ${netChange.abs().toStringAsFixed(2)}',
-                      netChange >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      netChange >= 0 ? colors.success : colors.error,
                     ),
                   ],
                 ),
@@ -211,7 +212,7 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
-                  color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                  color: colors.secondaryText,
                 ),
               ),
             ),
@@ -221,9 +222,9 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
             // Ledgers List
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                        valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                       ),
                     )
                   : _ledgerItems.isEmpty
@@ -231,7 +232,7 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                           child: Text(
                             'No transactions match this BS date range.',
                             style: TextStyle(
-                              color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                              color: colors.secondaryText,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -253,10 +254,10 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                color: colors.cardBackground,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                                  color: colors.border,
                                 ),
                               ),
                               child: Row(
@@ -268,13 +269,13 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
                                           color: isCredit
-                                              ? const Color(0xFF10B981).withValues(alpha: 0.08)
-                                              : const Color(0xFFEF4444).withValues(alpha: 0.08),
+                                              ? colors.success.withValues(alpha: 0.08)
+                                              : colors.error.withValues(alpha: 0.08),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(
                                           isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                                          color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                          color: isCredit ? colors.success : colors.error,
                                           size: 16,
                                         ),
                                       ),
@@ -287,15 +288,15 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                                             style: TextStyle(
                                               fontWeight: FontWeight.w900,
                                               fontSize: 13,
-                                              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                              color: colors.primaryText,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             dateStr,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
-                                              color: Color(0xFF64748B),
+                                              color: colors.secondaryText,
                                             ),
                                           ),
                                         ],
@@ -309,16 +310,16 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
                                         amountStr,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w900,
-                                          color: isCredit ? const Color(0xFF10B981) : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                                          color: isCredit ? colors.success : colors.primaryText,
                                           fontSize: 14,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Bal: Rs. $balance',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 10,
-                                          color: Color(0xFF64748B),
+                                          color: colors.secondaryText,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -337,7 +338,7 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
   }
 
   Widget _buildBsDateSelector(String label, String currentVal, ValueChanged<String> onChanged) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
     final options = [
       '2083-01-01',
       '2083-01-15',
@@ -356,10 +357,10 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF64748B),
+            color: colors.secondaryText,
             letterSpacing: 0.5,
           ),
         ),
@@ -367,18 +368,18 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white,
+            color: colors.inputFill,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+              color: colors.border,
             ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: options.contains(currentVal) ? currentVal : options.first,
-              dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              dropdownColor: colors.cardBackground,
               style: TextStyle(
-                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                color: colors.primaryText,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -400,11 +401,12 @@ class _DaybookLedgerPageState extends State<DaybookLedgerPage> {
   }
 
   Widget _buildSummaryCol(String label, String value, Color valueColor) {
+    final colors = context.colors;
     return Column(
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+          style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: colors.secondaryText, letterSpacing: 0.5),
         ),
         const SizedBox(height: 4),
         Text(

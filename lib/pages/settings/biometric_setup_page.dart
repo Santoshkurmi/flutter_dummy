@@ -4,6 +4,7 @@ import 'dart:io';
 import '../../services/api_service.dart';
 import '../../services/biometric_signature_service.dart';
 import '../../store/auth_store.dart';
+import '../../services/theme_color_service.dart';
 
 class BiometricSetupPage extends StatefulWidget {
   const BiometricSetupPage({super.key});
@@ -116,10 +117,11 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -129,7 +131,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
             child: Text(
               'Skip',
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                color: colors.secondaryText,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -150,9 +152,9 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                   height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.08 : 0.04),
+                    color: colors.accent.withValues(alpha: isDarkMode ? 0.08 : 0.04),
                     border: Border.all(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                      color: colors.accent.withValues(alpha: 0.1),
                       width: 2,
                     ),
                   ),
@@ -162,12 +164,12 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                       height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF2563EB).withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                        color: colors.accent.withValues(alpha: isDarkMode ? 0.15 : 0.08),
                       ),
                       child: Icon(
                         _isFaceId ? Icons.face_unlock_rounded : Icons.fingerprint_rounded,
                         size: 56,
-                        color: const Color(0xFF2563EB),
+                        color: colors.accent,
                       ),
                     ),
                   ),
@@ -176,13 +178,14 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
               const SizedBox(height: 40),
 
               // Title & Description
-              const Text(
+              Text(
                 'Biometric Log In',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.5,
+                  color: colors.primaryText,
                 ),
               ),
               const SizedBox(height: 12),
@@ -191,7 +194,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                  color: colors.secondaryText,
                   height: 1.5,
                 ),
               ),
@@ -202,15 +205,15 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                    color: colors.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
+                    border: Border.all(color: colors.error.withValues(alpha: 0.2)),
                   ),
                   child: Text(
                     _errorMessage!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFFEF4444),
+                    style: TextStyle(
+                      color: colors.error,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
@@ -225,7 +228,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _enableBiometrics,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
+                    backgroundColor: colors.accent,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -255,7 +258,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 TextButton(
                   onPressed: _neverAskSetup,
                   style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                    foregroundColor: colors.secondaryText,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -278,7 +281,7 @@ class _BiometricSetupPageState extends State<BiometricSetupPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                  color: colors.secondaryText,
                   height: 1.4,
                 ),
               ),

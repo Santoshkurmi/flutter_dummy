@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../accounts/account_details_page.dart';
 import '../accounts/account_single_details_page.dart';
 import '../services/nepali_calendar_page.dart';
@@ -242,6 +243,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
 
     final profile = AuthStore().profile;
     final firstName = profile?['member_first_name'] ?? (profile?['member_name']?.toString().split(' ').first) ?? 'User';
@@ -321,8 +324,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     return RefreshIndicator(
       key: widget.refreshIndicatorKey,
       onRefresh: widget.onRefresh,
-      color: const Color(0xFF2563EB),
-      backgroundColor: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+      color: colors.accent,
+      backgroundColor: colors.cardBackground,
       child: ListView(
         controller: _scrollController,
         physics: _isDraggingCard ? const NeverScrollableScrollPhysics() : null,
@@ -351,7 +354,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       'Namaste, 🙏'.tr,
                       style: TextStyle(
                         fontSize: 12,
-                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+                        color: colors.secondaryText,
                       ),
                     ),
                     Text(
@@ -359,7 +362,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                        color: colors.primaryText,
                       ),
                     ),
                   ],
@@ -367,15 +370,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               ),
               Row(
                 children: [
-
+  
                   Container(
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                      color: colors.quickActionBackground,
                       border: Border.all(
-                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                        color: colors.quickActionBorder,
                       ),
                     ),
                     child: IconButton(
@@ -383,7 +386,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       constraints: const BoxConstraints(),
                       icon: Icon(
                         widget.showBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                        color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        color: colors.quickActionIcon,
                         size: 16,
                       ),
                       onPressed: widget.onToggleBalanceVisibility,
@@ -395,17 +398,17 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                      color: colors.quickActionBackground,
                       border: Border.all(
-                        color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                        color: colors.quickActionBorder,
                       ),
                     ),
                     child: IconButton(
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       icon: Icon(
-                        widget.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                        color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: colors.quickActionIcon,
                         size: 16,
                       ),
                       onPressed: widget.onThemeToggle,
@@ -421,9 +424,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEFF6FF),
+                          color: colors.quickActionBackground,
                           border: Border.all(
-                            color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFDBEAFE),
+                            color: colors.quickActionBorder,
                           ),
                         ),
                         child: IconButton(
@@ -438,13 +441,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                   backgroundColor: const Color(0xFFEF4444),
                                   child: Icon(
                                     Icons.notifications_rounded,
-                                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                    color: colors.quickActionIcon,
                                     size: 18,
                                   ),
                                 )
                               : Icon(
                                   Icons.notifications_rounded,
-                                  color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                                  color: colors.quickActionIcon,
                                   size: 18,
                                 ),
                           onPressed: () {
@@ -453,7 +456,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                               MaterialPageRoute(
                                 settings: const RouteSettings(name: 'NotificationsTab'),
                                 builder: (_) => NotificationsTab(
-                                  isDarkMode: widget.isDarkMode,
+                                  isDarkMode: isDarkMode,
                                 ),
                               ),
                             );
@@ -595,9 +598,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     }
                   }
 
-                  final inactiveColor = widget.isDarkMode
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.black.withValues(alpha: 0.15);
+                  final inactiveColor = colors.border;
                   final dotColor = Color.lerp(inactiveColor, cardAccentColor, activeRatio) ?? cardAccentColor;
 
                   return Container(
@@ -623,7 +624,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                  color: colors.secondaryText,
                   letterSpacing: 1.5,
                 ),
               ),
@@ -634,7 +635,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     MaterialPageRoute(
                       settings: const RouteSettings(name: 'AllServicesPage'),
                       builder: (_) => AllServicesPage(
-                        isDarkMode: widget.isDarkMode,
+                        isDarkMode: isDarkMode,
                         onTabChange: widget.onTabChange,
                         accountsData: widget.accountsData,
                       ),
@@ -646,7 +647,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                    color: colors.accent,
                   ),
                 ),
               ),
@@ -662,7 +663,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                  color: colors.secondaryText,
                   letterSpacing: 1.5,
                 ),
               ),
@@ -673,7 +674,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                    color: colors.accent,
                   ),
                 ),
               ),
@@ -681,9 +682,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
           const SizedBox(height: 8),
           widget.isLoadingSummary
-              ? const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)))))
+              ? Center(child: Padding(padding: const EdgeInsets.all(24.0), child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(colors.accent))))
               : recentTransactions == null || recentTransactions.isEmpty
-                  ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.'.tr, style: TextStyle(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4), fontSize: 13))))
+                  ? Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text('No recent transactions found.'.tr, style: TextStyle(color: colors.secondaryText, fontSize: 13))))
                   : Column(
                       children: recentTransactions.map((tx) {
                         final typeStr = (tx['type'] ?? '').toString().toUpperCase();
@@ -701,20 +702,20 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         String typeLabel;
                         if (accountType == 'savings') {
                           typeLabel = 'Savings'.tr;
-                          badgeBg = widget.isDarkMode ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF);
-                          badgeText = widget.isDarkMode ? const Color(0xFF818CF8) : const Color(0xFF4F46E5);
+                          badgeBg = colors.infoBadgeBg;
+                          badgeText = colors.infoBadgeText;
                         } else if (accountType == 'loans') {
                           typeLabel = 'Loan'.tr;
-                          badgeBg = widget.isDarkMode ? const Color(0xFF451A03) : const Color(0xFFFEF2F2);
-                          badgeText = widget.isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+                          badgeBg = colors.errorBadgeBg;
+                          badgeText = colors.errorBadgeText;
                         } else if (accountType == 'shares') {
                           typeLabel = 'Shares'.tr;
-                          badgeBg = widget.isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
-                          badgeText = widget.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+                          badgeBg = colors.successBadgeBg;
+                          badgeText = colors.successBadgeText;
                         } else {
                           typeLabel = 'Account'.tr;
-                          badgeBg = widget.isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
-                          badgeText = widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+                          badgeBg = colors.cardBackground;
+                          badgeText = colors.secondaryText;
                         }
 
                         return GestureDetector(
@@ -735,14 +736,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                              color: colors.cardBackground,
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: widget.isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.04)
-                                    : Colors.black.withValues(alpha: 0.04),
+                                color: colors.border,
                               ),
-                              boxShadow: widget.isDarkMode
+                              boxShadow: isDarkMode
                                   ? []
                                   : [
                                       BoxShadow(
@@ -779,7 +778,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
-                                          color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                          color: colors.primaryText,
                                         ),
                                       ),
                                       const SizedBox(height: 6),
@@ -808,7 +807,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                              color: colors.secondaryText,
                                             ),
                                           ),
                                         ],
@@ -819,9 +818,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                         style: TextStyle(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.bold,
-                                          color: widget.isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.6)
-                                              : const Color(0xFF475569),
+                                          color: colors.secondaryText,
                                         ),
                                       ),
                                       if (refNo.isNotEmpty) ...[
@@ -830,7 +827,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                           'Ref: $refNo',
                                           style: TextStyle(
                                             fontSize: 9.5,
-                                            color: widget.isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                            color: colors.secondaryText,
                                             fontFamily: 'monospace',
                                           ),
                                         ),
@@ -938,15 +935,10 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     ];
 
-    final Color containerColor = widget.isDarkMode 
-        ? Colors.white.withValues(alpha: 0.05) 
-        : const Color(0xFFEFF6FF);
-    final Color borderColor = widget.isDarkMode 
-        ? Colors.white.withValues(alpha: 0.08) 
-        : const Color(0xFFDBEAFE);
-    final Color iconColor = widget.isDarkMode 
-        ? const Color(0xFF60A5FA) 
-        : const Color(0xFF2563EB);
+    final colors = context.colors;
+    final Color containerColor = colors.quickActionBackground;
+    final Color borderColor = colors.quickActionBorder;
+    final Color iconColor = colors.quickActionIcon;
 
     return GridView.count(
       crossAxisCount: 4,
@@ -979,7 +971,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  color: colors.primaryText,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1013,6 +1005,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildNoticeSlider(BuildContext context) {
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
+
     // Helper to determine if notice should show in the slider
     bool shouldShowNotice(Map n) {
       final id = n['id'] as int? ?? 0;
@@ -1066,7 +1061,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+            color: colors.secondaryText,
             letterSpacing: 1.5,
           ),
         ),
@@ -1120,14 +1115,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(20),
                     child: Ink(
                       decoration: BoxDecoration(
-                        color: widget.isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                        color: colors.cardBackground,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: widget.isDarkMode
-                              ? Colors.white.withValues(alpha: 0.04)
-                              : Colors.black.withValues(alpha: 0.04),
+                          color: colors.border,
                         ),
-                        boxShadow: widget.isDarkMode
+                        boxShadow: isDarkMode
                             ? []
                             : [
                                 BoxShadow(
@@ -1181,7 +1174,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                         style: TextStyle(
                                           fontSize: 14.5,
                                           fontWeight: FontWeight.bold,
-                                          color: widget.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                          color: colors.primaryText,
                                         ),
                                       ),
                                     ),
@@ -1189,7 +1182,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                     // Right chevron icon
                                     Icon(
                                       Icons.chevron_right_rounded,
-                                      color: widget.isDarkMode ? const Color(0xFF475569) : Colors.grey.shade400,
+                                      color: colors.secondaryText,
                                       size: 20,
                                     ),
                                   ],
@@ -1203,7 +1196,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      color: colors.secondaryText,
                                       height: 1.4,
                                     ),
                                   ),
@@ -1213,9 +1206,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: widget.isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.05)
-                                        : Colors.black.withValues(alpha: 0.035),
+                                    color: colors.border,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
@@ -1224,7 +1215,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                       Icon(
                                         Icons.calendar_today_rounded,
                                         size: 10,
-                                        color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        color: colors.secondaryText,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -1232,7 +1223,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w500,
-                                          color: widget.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                          color: colors.secondaryText,
                                         ),
                                       ),
                                     ],
@@ -1264,10 +1255,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isActive
-                      ? (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B))
-                      : (widget.isDarkMode
-                          ? Colors.white.withValues(alpha: 0.2)
-                          : Colors.black.withValues(alpha: 0.15)),
+                      ? colors.primaryText
+                      : colors.border,
                 ),
               );
             }),

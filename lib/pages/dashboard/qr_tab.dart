@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../../widgets/cooperative_qr_card.dart';
 
 class QRTab extends StatefulWidget {
@@ -466,8 +467,9 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   }
 
   Widget _buildPlaceholder(bool isDark) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -475,7 +477,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
             Icon(
               Icons.qr_code_scanner_rounded,
               size: 64,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              color: colors.secondaryText,
             ),
             const SizedBox(height: 16),
             Text(
@@ -483,7 +485,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                color: colors.primaryText,
               ),
             ),
             const SizedBox(height: 8),
@@ -491,7 +493,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
               'Tap to activate camera',
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: colors.secondaryText,
               ),
             ),
           ],
@@ -501,6 +503,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   }
 
   Widget _buildScannerView(bool isDark) {
+    final colors = context.colors;
     return Scaffold(
       backgroundColor: Colors.black,
       body: LayoutBuilder(
@@ -538,14 +541,14 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: colors.primaryText,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _cameraErrorMessage,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                        style: TextStyle(color: colors.secondaryText, fontSize: 13),
                       ),
                     ],
                   ),
@@ -760,20 +763,21 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   }
 
   Widget _buildResultView(bool isDark) {
+    final colors = context.colors;
     final type = _scannedType ?? 'Text';
     final value = _scannedValue ?? '';
     final typeIcon = _getTypeIcon(type);
     final typeColor = _getTypeColor(type);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
           ),
           onPressed: _resetScanner,
         ) : null,
@@ -782,7 +786,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
           ),
         ),
         centerTitle: true,
@@ -790,7 +794,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
           IconButton(
             icon: Icon(
               Icons.qr_code_scanner_rounded,
-              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.accent,
             ),
             onPressed: _resetScanner,
           ),
@@ -838,10 +842,10 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                color: colors.cardBackground,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                  color: colors.border,
                 ),
                 boxShadow: isDark
                     ? []
@@ -858,14 +862,14 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.data_object_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), size: 16),
+                      Icon(Icons.data_object_rounded, color: colors.secondaryText, size: 16),
                       const SizedBox(width: 8),
                       Text(
                         'SCANNED DATA',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          color: colors.secondaryText,
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -876,7 +880,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                     value,
                     style: TextStyle(
                       fontSize: 15,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      color: colors.primaryText,
                       height: 1.6,
                     ),
                   ),
@@ -895,7 +899,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                   child: _buildResultAction(
                     icon: Icons.copy_rounded,
                     label: 'Copy'.tr,
-                    color: const Color(0xFF2563EB),
+                    color: colors.accent,
                     isDark: isDark,
                     onTap: _copyToClipboard,
                   ),
@@ -930,13 +934,13 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
-                  foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                  backgroundColor: colors.inputFill,
+                  foregroundColor: colors.primaryText,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06),
+                      color: colors.border,
                     ),
                   ),
                 ),
@@ -949,18 +953,19 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
   }
 
   Widget _buildCustomQrResultView(bool isDark) {
+    final colors = context.colors;
     final value = _scannedValue ?? '';
     final themeColor = const Color(0xFF10B981);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
           ),
           onPressed: _resetScanner,
         ) : null,
@@ -969,7 +974,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
           ),
         ),
         centerTitle: true,
@@ -994,7 +999,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
             Text(
               'QR DETAILS'.tr,
               style: TextStyle(
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                color: colors.secondaryText,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -1006,10 +1011,10 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                color: colors.cardBackground,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                  color: colors.border,
                 ),
               ),
               child: TextField(
@@ -1021,11 +1026,11 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                     _customQrLabel = val;
                   });
                 },
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
+                style: TextStyle(color: colors.primaryText, fontSize: 14),
                 decoration: InputDecoration(
                   labelText: 'Text Below QR Code'.tr,
-                  labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                  prefixIcon: const Icon(Icons.label_outline_rounded, color: Color(0xFF64748B)),
+                  labelStyle: TextStyle(color: colors.secondaryText, fontSize: 13),
+                  prefixIcon: Icon(Icons.label_outline_rounded, color: colors.secondaryText),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -1037,10 +1042,10 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                color: colors.cardBackground,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                  color: colors.border,
                 ),
               ),
               child: Column(
@@ -1048,14 +1053,14 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.link_rounded, color: Color(0xFF64748B), size: 16),
+                      Icon(Icons.link_rounded, color: colors.secondaryText, size: 16),
                       const SizedBox(width: 8),
                       Text(
                         'SCANNED PAYLOAD'.tr,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF64748B),
+                          color: colors.secondaryText,
                           letterSpacing: 1.0,
                         ),
                       ),
@@ -1066,7 +1071,7 @@ class QRTabState extends State<QRTab> with WidgetsBindingObserver, SingleTickerP
                     value,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF334155),
+                      color: colors.primaryText,
                     ),
                   ),
                 ],

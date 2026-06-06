@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
+import '../../services/theme_color_service.dart';
 
 class DeveloperSettingsPage extends StatefulWidget {
   const DeveloperSettingsPage({super.key});
@@ -30,18 +31,19 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     final authStore = AuthStore();
-    final isDarkMode = authStore.isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -49,7 +51,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
           'Developer Settings'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 20,
           ),
         ),
@@ -136,13 +138,14 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
   }
 
   Widget _buildSectionHeader(String title, bool isDarkMode) {
+    final colors = context.colors;
     return Text(
       title.toUpperCase(),
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w900,
         letterSpacing: 1.5,
-        color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+        color: colors.secondaryText,
       ),
     );
   }
@@ -155,14 +158,15 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
     required IconData icon,
     required bool isDarkMode,
   }) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: Row(
@@ -170,10 +174,10 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+              color: colors.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF2563EB), size: 20),
+            child: Icon(icon, color: colors.accent, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -185,7 +189,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    color: colors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -193,7 +197,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: const Color(0xFF64748B),
+                    color: colors.secondaryText,
                     height: 1.3,
                   ),
                 ),
@@ -204,7 +208,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: const Color(0xFF2563EB),
+            activeTrackColor: colors.accent,
             thumbColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.selected)) return Colors.white;
               return null;
@@ -216,6 +220,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
   }
 
   void _showDisableCacheDialog(BuildContext context, AuthStore authStore, bool isDarkMode) {
+    final colors = context.colors;
     final TextEditingController passwordController = TextEditingController();
     String? errorMessage;
 
@@ -226,7 +231,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+              backgroundColor: colors.cardBackground,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Row(
                 children: [
@@ -244,7 +249,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                       'Disable Caching?'.tr,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        color: colors.primaryText,
                         fontSize: 18,
                       ),
                     ),
@@ -259,7 +264,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                     'Disabling cache is not recommended and should only be used for testing purposes.'.tr,
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -268,7 +273,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -276,12 +281,12 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                     controller: passwordController,
                     obscureText: true,
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(color: colors.primaryText),
                     decoration: InputDecoration(
                       hintText: 'Enter 6-digit PIN'.tr,
-                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                      hintStyle: TextStyle(color: colors.secondaryText, fontSize: 14),
                       filled: true,
-                      fillColor: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      fillColor: colors.inputFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -299,7 +304,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                   },
                   child: Text(
                     'Cancel'.tr,
-                    style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    style: TextStyle(color: colors.secondaryText, fontWeight: FontWeight.w600),
                   ),
                 ),
                 ElevatedButton(

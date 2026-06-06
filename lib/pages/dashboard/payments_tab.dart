@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/theme_color_service.dart';
 
 class PaymentsTab extends StatelessWidget {
   final bool isDarkMode;
@@ -10,13 +11,14 @@ class PaymentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.payment_rounded, size: 64, color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)),
+          Icon(Icons.payment_rounded, size: 64, color: colors.accent),
           const SizedBox(height: 16),
           Text(
             'Cooperative Bank Payments',
@@ -24,7 +26,7 @@ class PaymentsTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+              color: colors.primaryText,
             ),
           ),
           const SizedBox(height: 8),
@@ -32,7 +34,7 @@ class PaymentsTab extends StatelessWidget {
             'Transfer funds, pay utility bills, and pay loans instantly.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+              color: colors.secondaryText,
             ),
           ),
         ],

@@ -623,7 +623,7 @@ class _StatusCheckPageState extends State<StatusCheckPage> {
                                             await ApiService.clearCache();
                                             await SliderImageCacheService.clearAllCache();
                                             await AuthStore().clearAll();
-                                            if (!mounted) return;
+                                            if (!context.mounted) return;
                                             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                                           }
                                         },

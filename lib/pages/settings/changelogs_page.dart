@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/changelog_data.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
+import '../../services/theme_color_service.dart';
 
 class ChangelogsPage extends StatelessWidget {
   const ChangelogsPage({super.key});
@@ -14,18 +15,19 @@ class ChangelogsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
-    final accentColor = const Color(0xFF2563EB); // Vibrant Indigo/Blue
+    final primaryTextColor = colors.primaryText;
+    final secondaryTextColor = colors.secondaryText;
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
+    final accentColor = colors.accent;
 
     final versionsList = ChangelogData.versions;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -77,7 +79,7 @@ class ChangelogsPage extends StatelessWidget {
                                 color: accentColor,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: isDarkMode ? const Color(0xFF020617) : Colors.white,
+                                  color: colors.scaffoldBackground,
                                   width: 2.5,
                                 ),
                                 boxShadow: [
@@ -94,9 +96,7 @@ class ChangelogsPage extends StatelessWidget {
                               Expanded(
                                 child: Container(
                                   width: 2,
-                                  color: isDarkMode 
-                                      ? Colors.white.withValues(alpha: 0.08) 
-                                      : const Color(0xFFE2E8F0),
+                                  color: colors.border,
                                 ),
                               ),
                           ],
@@ -160,9 +160,7 @@ class ChangelogsPage extends StatelessWidget {
                                   // Divider
                                   Container(
                                     height: 1,
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.03)
-                                        : const Color(0xFFEFF6FF),
+                                    color: colors.border,
                                   ),
                                   const SizedBox(height: 12),
                                   
@@ -177,8 +175,8 @@ class ChangelogsPage extends StatelessWidget {
                                               child: Container(
                                                 width: 5,
                                                 height: 5,
-                                                decoration: const BoxDecoration(
-                                                  color: Color(0xFF64748B),
+                                                decoration: BoxDecoration(
+                                                  color: colors.secondaryText,
                                                   shape: BoxShape.circle,
                                                 ),
                                               ),

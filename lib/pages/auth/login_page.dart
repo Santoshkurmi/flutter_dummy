@@ -1387,7 +1387,7 @@ class _LoginPageState extends State<LoginPage> {
                                         await ApiService.clearCache();
                                         await store.clearAuth();
                                         
-                                        if (!mounted) return;
+                                        if (!context.mounted) return;
                                         setState(() {
                                           _isHeroEnabled = false;
                                         });
@@ -1462,7 +1462,7 @@ class _LoginPageState extends State<LoginPage> {
                                           await ApiService.clearCache();
                                           await SliderImageCacheService.clearAllCache();
                                           await AuthStore().clearAll();
-                                          if (!mounted) return;
+                                          if (!context.mounted) return;
                                           setState(() {
                                             _isHeroEnabled = false;
                                           });

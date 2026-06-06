@@ -16,7 +16,7 @@ import '../../services/translation_service.dart';
 import '../../services/nepali_calendar_service.dart';
 import 'transaction_receipt_page.dart';
 import '../../widgets/error_state_view.dart';
-
+import '../../services/theme_color_service.dart';
 
 class DateMaskTextInputFormatter extends TextInputFormatter {
   @override
@@ -219,6 +219,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   void _openFilterBottomSheet(BuildContext context, Color accentColor, bool isDarkMode) {
     final TextEditingController fromController = TextEditingController(text: _fromDateVal);
     final TextEditingController toController = TextEditingController(text: _toDateVal);
+    final colors = context.colors;
     
     showModalBottomSheet(
       context: context,
@@ -265,7 +266,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                  color: colors.cardBackground,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
@@ -284,17 +285,17 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            color: colors.primaryText,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                          color: colors.secondaryText,
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1, color: colors.border),
                     const SizedBox(height: 20),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +305,6 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                             controller: fromController,
                             label: 'From Date',
                             errorText: fromError,
-                            isDarkMode: isDarkMode,
                             accentColor: accentColor,
                           ),
                         ),
@@ -314,7 +314,6 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                             controller: toController,
                             label: 'To Date',
                             errorText: toError,
-                            isDarkMode: isDarkMode,
                             accentColor: accentColor,
                           ),
                         ),
@@ -327,9 +326,9 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                              foregroundColor: colors.secondaryText,
                               side: BorderSide(
-                                color: isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1),
+                                color: colors.border,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -372,9 +371,9 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
     required TextEditingController controller,
     required String label,
     required String? errorText,
-    required bool isDarkMode,
     required Color accentColor,
   }) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -383,7 +382,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            color: colors.secondaryText,
           ),
         ),
         const SizedBox(height: 6),
@@ -394,14 +393,14 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             DateMaskTextInputFormatter(),
           ],
           style: TextStyle(
-            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
           decoration: InputDecoration(
             hintText: 'YYYY-MM-DD',
-            hintStyle: const TextStyle(
-              color: Color(0xFF64748B),
+            hintStyle: TextStyle(
+              color: colors.secondaryText,
               fontSize: 13,
               fontWeight: FontWeight.normal,
             ),
@@ -409,17 +408,17 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             errorStyle: const TextStyle(fontSize: 10, height: 0.8),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             filled: true,
-            fillColor: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
+            fillColor: colors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFCBD5E1),
+                color: colors.border,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFCBD5E1),
+                color: colors.border,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -433,6 +432,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildPresetChip(String preset, String label, Color accentColor, bool isDarkMode) {
+    final colors = context.colors;
     final bool isSelected = _selectedPreset == preset;
     return InkWell(
       onTap: () => _selectPreset(preset),
@@ -442,12 +442,12 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
         decoration: BoxDecoration(
           color: isSelected 
               ? accentColor 
-              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+              : colors.chipBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
                 ? accentColor 
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
+                : colors.chipBorder,
           ),
         ),
         child: Text(
@@ -457,7 +457,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             fontWeight: FontWeight.bold,
             color: isSelected 
                 ? Colors.white 
-                : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                : colors.chipText,
           ),
         ),
       ),
@@ -465,6 +465,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildFilterChip(Color accentColor, bool isDarkMode) {
+    final colors = context.colors;
     final bool isCustomActive = _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
     final String label = isCustomActive ? 'Filter Active' : 'Filter';
     return InkWell(
@@ -475,12 +476,12 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
         decoration: BoxDecoration(
           color: isCustomActive 
               ? accentColor 
-              : (isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+              : colors.chipBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isCustomActive 
                 ? accentColor 
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
+                : colors.chipBorder,
           ),
         ),
         child: Row(
@@ -490,7 +491,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               size: 14,
               color: isCustomActive 
                   ? Colors.white 
-                  : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                  : colors.chipText,
             ),
             const SizedBox(width: 6),
             Text(
@@ -500,7 +501,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                 fontWeight: FontWeight.bold,
                 color: isCustomActive 
                     ? Colors.white 
-                    : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                    : colors.chipText,
               ),
             ),
           ],
@@ -510,32 +511,32 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildYearDropdown(bool isDarkMode) {
+    final colors = context.colors;
     final int todayBsYear = NepaliCalendarService.adToBs(DateTime.now())[0];
     final int startYear = 2078;
     int currentYear = _selectedNepaliYear ?? todayBsYear;
     if (currentYear < startYear) currentYear = startYear;
     if (currentYear > todayBsYear) currentYear = todayBsYear;
 
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: currentYear,
           icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
-          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          iconEnabledColor: colors.secondaryText,
+          dropdownColor: colors.cardBackground,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: primaryTextColor,
+            color: colors.primaryText,
             fontSize: 12,
           ),
           items: () {
@@ -564,27 +565,27 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildMonthDropdown(bool isDarkMode) {
+    final colors = context.colors;
     final int currentMonth = _selectedNepaliMonth ?? 1;
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+          color: colors.border,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: currentMonth,
           icon: const Icon(Icons.arrow_drop_down_rounded, size: 18),
-          iconEnabledColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-          dropdownColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          iconEnabledColor: colors.secondaryText,
+          dropdownColor: colors.cardBackground,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: primaryTextColor,
+            color: colors.primaryText,
             fontSize: 12,
           ),
           items: List.generate(12, (index) => index + 1).map((mIdx) {
@@ -822,6 +823,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Future<void> _downloadPdf(bool isDarkMode) async {
+    final colors = context.colors;
     try {
       if (Platform.isAndroid) {
         final deviceInfo = DeviceInfoPlugin();
@@ -831,9 +833,9 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           if (!status.isGranted) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Storage permission is required to save PDF.'),
-                backgroundColor: Colors.redAccent,
+              SnackBar(
+                content: const Text('Storage permission is required to save PDF.'),
+                backgroundColor: colors.error,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -861,7 +863,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Saved to Downloads: $fileName'),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: colors.success,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
               label: 'VIEW',
@@ -874,7 +876,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Could not open PDF: ${openResult.message}'),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: colors.error,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -884,7 +886,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error opening PDF: $e'),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: colors.error,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -901,7 +903,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to save PDF: $e'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: colors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -925,12 +927,13 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    const accentColor = Color(0xFF2563EB); // Royal Blue as standard for combined statement
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
+    final accentColor = colors.accent;
     final bool isFilteredAtAll = _selectedPreset != null || _fromDateVal.isNotEmpty || _toDateVal.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -938,7 +941,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           'Statement History',
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 16,
           ),
         ),
@@ -946,7 +949,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           IconButton(
             icon: Icon(
               Icons.picture_as_pdf_rounded,
-              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.accent,
             ),
             tooltip: 'Download PDF',
             onPressed: () => _downloadPdf(isDarkMode),
@@ -954,7 +957,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           IconButton(
             icon: Icon(
               Icons.print_rounded,
-              color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              color: colors.accent,
             ),
             tooltip: 'Print',
             onPressed: () => _printPdf(isDarkMode),
@@ -966,8 +969,8 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
           onRefresh: () async {
             await _loadLedger(forceRefetch: true);
           },
-          color: const Color(0xFF2563EB),
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          color: colors.accent,
+          backgroundColor: colors.cardBackground,
           child: ListView(
             padding: const EdgeInsets.only(bottom: 24, top: 10),
             children: [
@@ -1001,12 +1004,12 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                            color: colors.error.withValues(alpha: 0.1),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.refresh_rounded,
                             size: 16,
-                            color: Color(0xFFEF4444),
+                            color: colors.error,
                           ),
                         ),
                       ),
@@ -1020,7 +1023,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               // Results Container
               Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A).withValues(alpha: 0.3) : Colors.white,
+                  color: Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
@@ -1036,12 +1039,13 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildMainContent(bool isDarkMode, Color accentColor) {
+    final colors = context.colors;
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 80.0),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 80.0),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+            valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
           ),
         ),
       );
@@ -1063,13 +1067,13 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             Icon(
               Icons.assignment_late_outlined,
               size: 60,
-              color: isDarkMode ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+              color: colors.secondaryText,
             ),
             const SizedBox(height: 16),
             Text(
               'No transactions found.'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: colors.secondaryText,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -1079,7 +1083,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               _getEmptyStateDescription(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
+                color: colors.secondaryText,
                 fontSize: 13,
               ),
             ),
@@ -1163,7 +1167,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+                        color: colors.secondaryText,
                       ),
                     ),
                     if (rangeText.isNotEmpty)
@@ -1172,7 +1176,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                          color: colors.primaryText,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1183,7 +1187,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                 listTitle,
                 style: TextStyle(
                   fontSize: 10.5,
-                  color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF64748B),
+                  color: colors.secondaryText,
                 ),
               ),
             ],
@@ -1213,20 +1217,20 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
               String typeLabel;
               if (accountType == 'savings') {
                 typeLabel = 'Savings';
-                badgeBg = isDarkMode ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF);
-                badgeText = isDarkMode ? const Color(0xFF818CF8) : const Color(0xFF4F46E5);
+                badgeBg = colors.accent.withValues(alpha: 0.1);
+                badgeText = colors.accent;
               } else if (accountType == 'loans') {
                 typeLabel = 'Loan';
-                badgeBg = isDarkMode ? const Color(0xFF451A03) : const Color(0xFFFEF2F2);
-                badgeText = isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+                badgeBg = colors.error.withValues(alpha: 0.1);
+                badgeText = colors.error;
               } else if (accountType == 'shares') {
                 typeLabel = 'Shares';
-                badgeBg = isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
-                badgeText = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+                badgeBg = colors.success.withValues(alpha: 0.1);
+                badgeText = colors.success;
               } else {
                 typeLabel = 'Account';
-                badgeBg = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
-                badgeText = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+                badgeBg = colors.secondaryText.withValues(alpha: 0.1);
+                badgeText = colors.secondaryText;
               }
 
               return GestureDetector(
@@ -1247,22 +1251,18 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                    color: colors.cardBackground,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.black.withValues(alpha: 0.04),
+                      color: colors.border,
                     ),
-                    boxShadow: isDarkMode
-                        ? []
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.015),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.015),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1272,12 +1272,12 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isCredit
-                              ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                              : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                              ? colors.success.withValues(alpha: 0.1)
+                              : colors.error.withValues(alpha: 0.1),
                         ),
                         child: Icon(
                           isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                          color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          color: isCredit ? colors.success : colors.error,
                           size: 16,
                         ),
                       ),
@@ -1292,7 +1292,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                color: colors.primaryText,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -1323,7 +1323,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    color: colors.secondaryText,
                                   ),
                                 ),
                               ],
@@ -1335,9 +1335,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
-                                color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.6)
-                                    : const Color(0xFF475569),
+                                color: colors.primaryText,
                               ),
                             ),
                             if (refNo.isNotEmpty) ...[
@@ -1346,10 +1344,10 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                                 'Ref: $refNo',
                                 style: TextStyle(
                                     fontSize: 9.5,
-                                    color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                    color: colors.secondaryText,
                                     fontFamily: 'monospace',
                                   ),
-                              ),
+                                ),
                             ],
                           ],
                         ),
@@ -1363,7 +1361,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                             amountStr,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                              color: isCredit ? colors.success : colors.error,
                               fontSize: 14.5,
                             ),
                           ),
@@ -1389,22 +1387,23 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
   }
 
   Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        color: colors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          color: colors.error.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFEF4444),
+            color: colors.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -1412,7 +1411,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
             child: Text(
               error,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                color: colors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),

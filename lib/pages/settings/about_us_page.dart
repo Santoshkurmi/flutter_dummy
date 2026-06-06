@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 
 class AboutUsPage extends StatelessWidget {
   const AboutUsPage({super.key});
@@ -68,17 +69,16 @@ class AboutUsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
 
-    // Harmonious colors based on mode
-    final cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final hintTextColor = isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8);
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
+    final primaryTextColor = colors.primaryText;
+    final secondaryTextColor = colors.secondaryText;
+    final hintTextColor = colors.secondaryText;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -110,14 +110,14 @@ class AboutUsPage extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+                  color: colors.containerBackground,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: borderColor,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                      color: colors.accent.withValues(alpha: 0.08),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     )
@@ -130,10 +130,10 @@ class AboutUsPage extends StatelessWidget {
                     height: 72,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
+                      return Icon(
                         Icons.business_rounded,
                         size: 48,
-                        color: Color(0xFF2563EB),
+                        color: colors.accent,
                       );
                     },
                   ),
@@ -157,7 +157,7 @@ class AboutUsPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                color: colors.accent,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -189,31 +189,22 @@ class AboutUsPage extends StatelessWidget {
             const SizedBox(height: 12),
 
             _buildProductTile(
+              context: context,
               title: 'Cooperative Banking System (CBS)'.tr,
               desc: 'High-security cloud core banking platform featuring real-time multi-branch ledger sync, share/savings/loan management, and COPOMIS reporting.'.tr,
               icon: Icons.account_balance_rounded,
-              isDarkMode: isDarkMode,
-              cardBgColor: cardBgColor,
-              borderColor: borderColor,
-              primaryTextColor: primaryTextColor,
             ),
             _buildProductTile(
+              context: context,
               title: 'Educational ERP Systems'.tr,
               desc: 'Comprehensive management software for schools and colleges, integrating academic plans, fee billing, payroll, inventory, and online exam modules.'.tr,
               icon: Icons.school_rounded,
-              isDarkMode: isDarkMode,
-              cardBgColor: cardBgColor,
-              borderColor: borderColor,
-              primaryTextColor: primaryTextColor,
             ),
             _buildProductTile(
+              context: context,
               title: 'Smart Payments & Utilities'.tr,
               desc: 'Secure digital banking utilities for real-time mobile top-ups, electricity, water, internet payments, remittance, and cooperative QR systems.'.tr,
               icon: Icons.qr_code_scanner_rounded,
-              isDarkMode: isDarkMode,
-              cardBgColor: cardBgColor,
-              borderColor: borderColor,
-              primaryTextColor: primaryTextColor,
             ),
             const SizedBox(height: 28),
 
@@ -290,21 +281,19 @@ class AboutUsPage extends StatelessWidget {
   }
 
   Widget _buildProductTile({
+    required BuildContext context,
     required String title,
     required String desc,
     required IconData icon,
-    required bool isDarkMode,
-    required Color cardBgColor,
-    required Color borderColor,
-    required Color primaryTextColor,
   }) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardBgColor,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,10 +301,10 @@ class AboutUsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+              color: colors.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF2563EB), size: 20),
+            child: Icon(icon, color: colors.accent, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -327,15 +316,15 @@ class AboutUsPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
+                    color: colors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   desc,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
-                    color: Color(0xFF64748B),
+                    color: colors.secondaryText,
                     height: 1.45,
                   ),
                 ),

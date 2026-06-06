@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'widgets/flying_hero_interactor.dart';
 import 'store/auth_store.dart';
+import 'services/theme_color_service.dart';
 import 'pages/auth/onboarding_page.dart';
 import 'pages/auth/status_check_page.dart';
 import 'pages/auth/login_page.dart';
@@ -194,7 +195,7 @@ class BrightBankApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             brightness: isDark ? Brightness.dark : Brightness.light,
-            scaffoldBackgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+            scaffoldBackgroundColor: ThemeColorService.colors.scaffoldBackground,
             appBarTheme: AppBarTheme(
               systemOverlayStyle: SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
@@ -203,21 +204,21 @@ class BrightBankApp extends StatelessWidget {
               ),
             ),
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF2563EB),
+              seedColor: ThemeColorService.colors.accent,
               brightness: isDark ? Brightness.dark : Brightness.light,
-              surface: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+              surface: ThemeColorService.colors.surface,
             ),
             snackBarTheme: SnackBarThemeData(
               behavior: SnackBarBehavior.floating,
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+              backgroundColor: ThemeColorService.colors.snackBarBackground,
               dismissDirection: DismissDirection.up,
-              contentTextStyle: const TextStyle(
-                color: Colors.white,
+              contentTextStyle: TextStyle(
+                color: ThemeColorService.colors.snackBarText,
                 fontSize: 14,
                 fontFamily: 'Roboto',
                 fontWeight: FontWeight.w500,
               ),
-              actionTextColor: const Color(0xFF60A5FA),
+              actionTextColor: ThemeColorService.colors.snackBarActionText,
             ),
             fontFamily: 'Roboto',
           ),

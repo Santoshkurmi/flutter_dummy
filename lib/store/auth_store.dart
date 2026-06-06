@@ -32,6 +32,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _smsAlertsEnabled = true;
   String _dailyLimit = '50000';
   String _themeMode = 'system'; // 'system', 'dark', 'light'
+  String _colorTheme = 'default'; // 'default', 'forest', 'ocean'
   // In-memory only — true between login-success and biometric setup completion
   bool _pendingBiometricSetup = false;
   bool _enableCaching = true;
@@ -83,6 +84,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get smsAlertsEnabled => _smsAlertsEnabled;
   String get dailyLimit => _dailyLimit;
   String get themeMode => _themeMode;
+  String get colorTheme => _colorTheme;
   bool get pendingBiometricSetup => _pendingBiometricSetup;
   bool get enableCaching => _enableCaching;
   bool get showDateNotification => _showDateNotification;
@@ -145,6 +147,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _smsAlertsEnabled = prefs.getBool('smsAlertsEnabled') ?? true;
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
     _themeMode = prefs.getString('themeMode') ?? 'system';
+    _colorTheme = prefs.getString('colorTheme') ?? 'default';
     _language = prefs.getString('language') ?? 'en';
     _preferencesSetupCompleted = prefs.getBool('preferences_setup_completed') ?? false;
     _enableCaching = prefs.getBool('enableCaching') ?? true;
@@ -175,6 +178,13 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _themeMode = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('themeMode', value);
+    notifyListeners();
+  }
+
+  Future<void> setColorTheme(String value) async {
+    _colorTheme = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('colorTheme', value);
     notifyListeners();
   }
 
@@ -375,6 +385,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _smsAlertsEnabled = true;
     _dailyLimit = '50000';
     _themeMode = 'system';
+    _colorTheme = 'default';
     _preferencesSetupCompleted = false;
     _enableCaching = true;
     _showDateNotification = false;

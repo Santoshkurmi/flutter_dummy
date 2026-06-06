@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../store/notification_store.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 
 class NotificationsTab extends StatefulWidget {
   final bool isDarkMode;
@@ -107,7 +108,9 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
     return const Color(0xFF3B82F6); // Default Blue
   }
 
-  Widget _buildPermissionAlertBanner(bool isDark) {
+  Widget _buildPermissionAlertBanner(BuildContext context) {
+    final colors = context.colors;
+    final isDark = context.isDarkMode;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -146,7 +149,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14.5,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: colors.primaryText,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -154,7 +157,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                       'Notification permission is disabled or denied. You will not receive transaction alerts, statement updates, or security announcements.'.tr,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: colors.secondaryText,
                         height: 1.4,
                       ),
                     ),
@@ -199,7 +202,9 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
     );
   }
 
-  Widget _buildEmptyStateContent(bool isDark) {
+  Widget _buildEmptyStateContent(BuildContext context) {
+    final colors = context.colors;
+    final isDark = context.isDarkMode;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -227,15 +232,15 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'When you receive transactional alerts or cooperative news, they will appear here.'.tr,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFF64748B),
+          style: TextStyle(
+            color: colors.secondaryText,
             height: 1.4,
           ),
         ),
@@ -245,15 +250,16 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDarkMode;
+    final colors = context.colors;
+    final isDark = context.isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC),
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         title: Text(
           'Notifications',
           style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            color: colors.primaryText,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -263,7 +269,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
             ? IconButton(
                 icon: Icon(
                   Icons.arrow_back_rounded,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: colors.primaryText,
                 ),
                 onPressed: () => Navigator.pop(context),
               )
@@ -284,7 +290,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                       icon: const Icon(Icons.mark_email_read_rounded, size: 16),
                       label: const Text('Read All', style: TextStyle(fontSize: 12)),
                       style: TextButton.styleFrom(
-                        foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        foregroundColor: colors.accent,
                       ),
                       onPressed: () => store.markAllAsRead(),
                     ),
@@ -298,13 +304,13 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-                          title: Text('Clear Notifications', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B))),
-                          content: Text('Are you sure you want to delete all notifications?', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569))),
+                          backgroundColor: colors.cardBackground,
+                          title: Text('Clear Notifications', style: TextStyle(color: colors.primaryText)),
+                          content: Text('Are you sure you want to delete all notifications?', style: TextStyle(color: colors.secondaryText)),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: Text('Cancel', style: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
+                              child: Text('Cancel', style: TextStyle(color: colors.secondaryText)),
                             ),
                             TextButton(
                               onPressed: () {
@@ -339,16 +345,16 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildPermissionAlertBanner(isDark),
+                  _buildPermissionAlertBanner(context),
                   const SizedBox(height: 40),
-                  _buildEmptyStateContent(isDark),
+                  _buildEmptyStateContent(context),
                 ],
               );
             }
             return Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                child: _buildEmptyStateContent(isDark),
+                child: _buildEmptyStateContent(context),
               ),
             );
           }
@@ -364,7 +370,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
             },
             itemBuilder: (context, index) {
               if (hasBanner && index == 0) {
-                return _buildPermissionAlertBanner(isDark);
+                return _buildPermissionAlertBanner(context);
               }
               final itemIndex = hasBanner ? index - 1 : index;
               final item = list[itemIndex];
@@ -415,20 +421,16 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? (isRead ? const Color(0xFF0F172A) : const Color(0xFF1E293B).withValues(alpha: 0.5))
-                          : (isRead ? Colors.white : const Color(0xFFEFF6FF)),
+                      color: isRead ? colors.cardBackground : colors.inputFill,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark
-                            ? (isRead ? Colors.white.withValues(alpha: 0.04) : const Color(0xFF3B82F6).withValues(alpha: 0.2))
-                            : (isRead ? Colors.black.withValues(alpha: 0.04) : const Color(0xFF3B82F6).withValues(alpha: 0.15)),
+                        color: colors.border,
                       ),
                       boxShadow: isRead
                           ? []
                           : [
                               BoxShadow(
-                                color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.05 : 0.03),
+                                color: colors.accent.withValues(alpha: isDark ? 0.05 : 0.03),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -465,7 +467,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                                             style: TextStyle(
                                               fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
                                               fontSize: 14,
-                                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                              color: colors.primaryText,
                                             ),
                                           ),
                                         ),
@@ -474,8 +476,8 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                                           Container(
                                             width: 7,
                                             height: 7,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF3B82F6),
+                                            decoration: BoxDecoration(
+                                              color: colors.accent,
                                               shape: BoxShape.circle,
                                             ),
                                           ),
@@ -488,7 +490,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                                     _formatTime(item['timestamp'] ?? ''),
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                      color: colors.secondaryText,
                                     ),
                                   ),
                                 ],
@@ -498,9 +500,7 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                                 item['body'] ?? '',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark
-                                      ? (isRead ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1))
-                                      : (isRead ? const Color(0xFF475569) : const Color(0xFF1E293B)),
+                                  color: isRead ? colors.secondaryText : colors.primaryText,
                                   height: 1.4,
                                 ),
                               ),

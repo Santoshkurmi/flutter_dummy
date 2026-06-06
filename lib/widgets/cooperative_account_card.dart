@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
+import '../services/theme_color_service.dart';
 import 'flying_hero_interactor.dart';
 
 class CooperativeAccountCard extends StatelessWidget {
@@ -40,33 +41,24 @@ class CooperativeAccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     // Gradients
     LinearGradient gradient;
     if (isOverview) {
-      gradient = isDarkMode
-          ? const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF4C1D95)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-          : const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+      gradient = colors.overviewGradient;
     } else {
       switch (accountType) {
         case 'savings':
-          gradient = isDarkMode
-              ? const LinearGradient(colors: [Color(0xFF312E81), Color(0xFF701A75)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFFD946EF)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          gradient = colors.savingsGradient;
           break;
         case 'shares':
-          gradient = isDarkMode
-              ? const LinearGradient(colors: [Color(0xFF115E59), Color(0xFF065F46)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF10B981)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          gradient = colors.sharesGradient;
           break;
         case 'loans':
-          gradient = isDarkMode
-              ? const LinearGradient(colors: [Color(0xFF9F1239), Color(0xFF7C2D12)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : const LinearGradient(colors: [Color(0xFFF43F5E), Color(0xFFFB923C)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          gradient = colors.loansGradient;
           break;
         default:
-          gradient = isDarkMode
-              ? const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF4C1D95)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+          gradient = colors.overviewGradient;
       }
     }
 

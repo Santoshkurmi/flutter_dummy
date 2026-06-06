@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 
 class NoticeDetailPage extends StatelessWidget {
   final Map<String, dynamic> notice;
@@ -52,11 +53,12 @@ class NoticeDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = isDarkMode;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final cardBgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
+    final colors = context.colors;
+    final isDark = context.isDarkMode;
+    final primaryTextColor = colors.primaryText;
+    final secondaryTextColor = colors.secondaryText;
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
 
     final String title = notice['title'] ?? '';
     final String description = notice['description'] ?? '';
@@ -68,7 +70,7 @@ class NoticeDetailPage extends StatelessWidget {
     final hasImage = imagePath != null && imagePath.toString().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -169,7 +171,7 @@ class NoticeDetailPage extends StatelessWidget {
                     _buildBadge(
                       'Published: ${dateBs.trd}'.tr,
                       isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
-                      isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                      colors.accent,
                     ),
 
                   // End Date Badge
@@ -223,40 +225,40 @@ class NoticeDetailPage extends StatelessWidget {
                     p: TextStyle(
                       fontSize: 14.5,
                       height: 1.6,
-                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                      color: colors.primaryText,
                     ),
                     h1: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                      color: colors.accent,
                       height: 1.5,
                     ),
                     h2: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                      color: colors.accent,
                       height: 1.5,
                     ),
                     h3: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                      color: colors.accent,
                       height: 1.5,
                     ),
                     listBullet: TextStyle(
                       fontSize: 14.5,
-                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                      color: colors.primaryText,
                     ),
                     blockquote: TextStyle(
                       fontSize: 14.5,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                      color: colors.secondaryText,
                     ),
                     blockquoteDecoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      color: colors.inputFill,
                       border: Border(
                         left: BorderSide(
-                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                          color: colors.accent,
                           width: 4,
                         ),
                       ),

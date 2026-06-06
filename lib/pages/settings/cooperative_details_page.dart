@@ -4,6 +4,7 @@ import '../../store/auth_store.dart';
 import '../../services/translation_service.dart';
 import '../../widgets/cached_image.dart';
 import '../../widgets/error_state_view.dart';
+import '../../services/theme_color_service.dart';
 
 class CooperativeDetailsPage extends StatefulWidget {
   const CooperativeDetailsPage({super.key});
@@ -44,15 +45,16 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = AuthStore().isDarkMode;
-    final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
+    final primaryTextColor = colors.primaryText;
+    final secondaryTextColor = colors.secondaryText;
+    final cardBgColor = colors.cardBackground;
+    final borderColor = colors.border;
     final String currentLang = AuthStore().language;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -73,7 +75,7 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
+            ? Center(child: CircularProgressIndicator(color: colors.accent))
             : _errorMessage != null
                 ? ErrorStateView(
                     errorMessage: _errorMessage,
@@ -106,16 +108,16 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
                                 height: 80,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
+                                  return Icon(
                                     Icons.account_balance_rounded,
                                     size: 48,
-                                    color: Color(0xFF2563EB),
+                                    color: colors.accent,
                                   );
                                 },
-                                placeholder: const Icon(
+                                placeholder: Icon(
                                   Icons.account_balance_rounded,
                                   size: 48,
-                                  color: Color(0xFF2563EB),
+                                  color: colors.accent,
                                 ),
                               ),
                             ),
@@ -176,6 +178,7 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
     required Color secondaryTextColor,
     required List<Widget> items,
   }) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -187,7 +190,7 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
               fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.5,
-              color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+              color: colors.secondaryText,
             ),
           ),
         ),
@@ -214,6 +217,7 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
     Color secondaryTextColor, {
     bool isNumeric = false,
   }) {
+    final colors = context.colors;
     final String currentLang = AuthStore().language;
     String displayValue = '-';
     
@@ -236,7 +240,7 @@ class _CooperativeDetailsPageState extends State<CooperativeDetailsPage> {
           Icon(
             icon,
             size: 20,
-            color: AuthStore().isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+            color: colors.accent,
           ),
           const SizedBox(width: 14),
           Expanded(

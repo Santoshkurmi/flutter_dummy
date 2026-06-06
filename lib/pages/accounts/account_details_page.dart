@@ -4,6 +4,7 @@ import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import 'account_single_details_page.dart';
 import '../../widgets/cooperative_account_card.dart';
+import '../../services/theme_color_service.dart';
 
 class AccountDetailsPage extends StatefulWidget {
   final Map<String, dynamic>? initialAccountsData;
@@ -119,7 +120,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
 
     // Filter Logic
     List<dynamic> displayAccounts = [];
@@ -136,14 +137,14 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     final totalCount = _savingsAccounts.length + _loanAccounts.length + _shareAccounts.length;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: (!widget.isTab && Navigator.canPop(context)) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -151,20 +152,20 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
           'My Accounts'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 20,
           ),
         ),
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                 ),
               )
             : _hasError
-                ? _buildErrorView(context, isDarkMode)
+                ? _buildErrorView(context)
                 : ListView(
                     padding: const EdgeInsets.only(top: 0, bottom: 24),
                     children: [
@@ -178,13 +179,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 20.0),
                             child: Row(
                               children: [
-                                _buildFilterPill('all', 'All'.tr, totalCount, isDarkMode),
+                                _buildFilterPill('all', 'All'.tr, totalCount),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('savings', 'Savings'.tr, _savingsAccounts.length, isDarkMode),
+                                _buildFilterPill('savings', 'Savings'.tr, _savingsAccounts.length),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('loans', 'Loans'.tr, _loanAccounts.length, isDarkMode),
+                                _buildFilterPill('loans', 'Loans'.tr, _loanAccounts.length),
                                 const SizedBox(width: 10),
-                                _buildFilterPill('shares', 'Share Capital'.tr, _shareAccounts.length, isDarkMode),
+                                _buildFilterPill('shares', 'Share Capital'.tr, _shareAccounts.length),
                               ],
                             ),
                           ),
@@ -199,8 +200,8 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      isDarkMode ? const Color(0xFF020617).withValues(alpha: 0.0) : Colors.white.withValues(alpha: 0.0),
-                                      isDarkMode ? const Color(0xFF020617) : Colors.white,
+                                      colors.scaffoldBackground.withValues(alpha: 0.0),
+                                      colors.scaffoldBackground,
                                     ],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
@@ -219,7 +220,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                           width: 48,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            color: colors.inputFill,
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: Stack(
@@ -231,7 +232,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                                 width: 16,
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2563EB),
+                                    color: colors.accent,
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
@@ -242,14 +243,16 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                       ),
 
                       // Grouped Account Lists by Section
-                      ..._buildAccountsList(isDarkMode),
+                      ..._buildAccountsList(),
                     ],
                   ),
       ),
     );
   }
 
-  List<Widget> _buildAccountsList(bool isDarkMode) {
+  List<Widget> _buildAccountsList() {
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     final List<Widget> list = [];
     bool hasAnyAccount = false;
 
@@ -257,7 +260,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'savings') {
       if (_savingsAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Savings Accounts'.tr, const Color(0xFF2563EB), isDarkMode));
+        list.add(_buildSectionHeader('Savings Accounts'.tr, colors.accent));
         for (var acc in _savingsAccounts) {
           list.add(_buildAccountCardWidget(acc, 'savings', isDarkMode));
         }
@@ -268,7 +271,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'loans') {
       if (_loanAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Loan Accounts'.tr, const Color(0xFFEF4444), isDarkMode));
+        list.add(_buildSectionHeader('Loan Accounts'.tr, colors.error));
         for (var acc in _loanAccounts) {
           list.add(_buildAccountCardWidget(acc, 'loans', isDarkMode));
         }
@@ -279,7 +282,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     if (_activeFilter == 'all' || _activeFilter == 'shares') {
       if (_shareAccounts.isNotEmpty) {
         hasAnyAccount = true;
-        list.add(_buildSectionHeader('Share Capital Accounts'.tr, const Color(0xFF10B981), isDarkMode));
+        list.add(_buildSectionHeader('Share Capital Accounts'.tr, colors.success));
         for (var acc in _shareAccounts) {
           list.add(_buildAccountCardWidget(acc, 'shares', isDarkMode));
         }
@@ -294,7 +297,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             child: Text(
               'No accounts found in this category.'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                color: colors.secondaryText,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -307,7 +310,8 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     return list;
   }
 
-  Widget _buildSectionHeader(String title, Color color, bool isDarkMode) {
+  Widget _buildSectionHeader(String title, Color color) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
       child: Row(
@@ -327,7 +331,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.5,
-              color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569),
+              color: colors.secondaryText,
             ),
           ),
         ],
@@ -394,7 +398,8 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     );
   }
 
-  Widget _buildFilterPill(String id, String label, int count, bool isDarkMode) {
+  Widget _buildFilterPill(String id, String label, int count) {
+    final colors = context.colors;
     final isActive = _activeFilter == id;
     return InkWell(
       onTap: () {
@@ -407,13 +412,13 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFF2563EB)
-              : (isDarkMode ? const Color(0xFF0F172A).withValues(alpha: 0.4) : const Color(0xFFF1F5F9)),
+              ? colors.accent
+              : colors.inputFill,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
-                ? const Color(0xFF2563EB)
-                : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0)),
+                ? colors.accent
+                : colors.border,
           ),
         ),
         child: Row(
@@ -423,7 +428,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
-                color: isActive ? Colors.white : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                color: isActive ? Colors.white : colors.secondaryText,
               ),
             ),
             const SizedBox(width: 6),
@@ -432,7 +437,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               decoration: BoxDecoration(
                 color: isActive
                     ? Colors.white.withValues(alpha: 0.2)
-                    : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFCBD5E1)),
+                    : colors.border,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -440,7 +445,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
-                  color: isActive ? Colors.white : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                  color: isActive ? Colors.white : colors.secondaryText,
                 ),
               ),
             ),
@@ -450,7 +455,8 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
     );
   }
 
-  Widget _buildErrorView(BuildContext context, bool isDarkMode) {
+  Widget _buildErrorView(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -474,9 +480,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: isDarkMode 
-                      ? [const Color(0xFFEF4444).withValues(alpha: 0.2), const Color(0xFFF87171).withValues(alpha: 0.05)]
-                      : [const Color(0xFFFEE2E2), const Color(0xFFFEF2F2)],
+                  colors: [colors.error.withValues(alpha: 0.2), colors.error.withValues(alpha: 0.05)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -487,7 +491,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
                   Icon(
                     Icons.cloud_off_rounded,
                     size: 60,
-                    color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+                    color: colors.error,
                   ),
                 ],
               ),
@@ -499,7 +503,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
-              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+              color: colors.primaryText,
             ),
           ),
           const SizedBox(height: 12),
@@ -511,7 +515,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color: colors.secondaryText,
               ),
             ),
           ),
@@ -525,7 +529,7 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
               _loadAccounts();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: colors.error,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(

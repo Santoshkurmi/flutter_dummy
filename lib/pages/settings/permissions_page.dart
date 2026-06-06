@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../../services/translation_service.dart';
-import '../../store/auth_store.dart';
+import '../../services/theme_color_service.dart';
 
 class PermissionsPage extends StatefulWidget {
   const PermissionsPage({super.key});
@@ -146,26 +146,26 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
   }
 
   void _showSettingsDialog(String title, String message) {
-    final isDarkMode = AuthStore().isDarkMode;
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(title.tr, style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : const Color(0xFF0F172A))),
-          content: Text(message.tr, style: TextStyle(color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569))),
+          title: Text(title.tr, style: TextStyle(fontWeight: FontWeight.bold, color: colors.primaryText)),
+          content: Text(message.tr, style: TextStyle(color: colors.secondaryText)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'.tr, style: const TextStyle(color: Color(0xFF64748B))),
+              child: Text('Cancel'.tr, style: TextStyle(color: colors.secondaryText)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
                 openAppSettings();
               },
-              child: Text('Open Settings'.tr, style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+              child: Text('Open Settings'.tr, style: TextStyle(color: colors.accent, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -233,17 +233,17 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = AuthStore().isDarkMode;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context) ? IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ) : null,
@@ -251,14 +251,14 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
           'App Permissions'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 20,
           ),
         ),
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Color(0xFF2563EB))))
+            ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(colors.accent)))
             : ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                 children: [
@@ -268,7 +268,7 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
-                      color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -276,7 +276,7 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
                     'Manage device permissions for location, camera, storage, and notifications.'.tr,
                     style: TextStyle(
                       fontSize: 11.5,
-                      color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                      color: colors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -293,10 +293,10 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        color: colors.cardBackground,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0),
+                          color: colors.border,
                         ),
                       ),
                       child: Column(
@@ -323,7 +323,7 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
-                                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                        color: colors.primaryText,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -373,14 +373,14 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
                           Divider(
                             height: 1,
                             thickness: 1,
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFEFF6FF),
+                            color: colors.border,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             description.tr,
                             style: TextStyle(
                               fontSize: 11.5,
-                              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              color: colors.secondaryText,
                               height: 1.4,
                             ),
                           ),
@@ -394,3 +394,4 @@ class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingOb
     );
   }
 }
+

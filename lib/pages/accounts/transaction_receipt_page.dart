@@ -15,6 +15,7 @@ import 'package:downloadsfolder/downloadsfolder.dart' hide context, Context;
 import 'package:open_filex/open_filex.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
+import '../../services/theme_color_service.dart';
 
 class TransactionReceiptPage extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -54,6 +55,8 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
     setState(() {
       _isSavingPng = true;
     });
+
+    final colors = context.colors;
 
     try {
       final RenderRepaintBoundary boundary = _receiptBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -97,7 +100,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: colors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -107,8 +110,8 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save receipt: ${e.toString()}'),
-            backgroundColor: Colors.red.shade800,
+            content: Text('Failed to save receipt: ${e.toString()}'.tr),
+            backgroundColor: colors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -167,7 +170,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
               ),
               
               pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(vertical: 16),
+                padding: pw.EdgeInsets.symmetric(vertical: 16),
                 child: pw.Divider(thickness: 0.5, color: PdfColors.grey400),
               ),
 
@@ -214,8 +217,6 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                     _pdfRow('Ending Balance', 'Rs. ${_formatAmount(balance)}'),
                 ],
               ),
-
-
             ],
           );
         },
@@ -246,6 +247,8 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
       _isSavingPdf = true;
     });
 
+    final colors = context.colors;
+
     try {
       if (Platform.isAndroid) {
         final deviceInfo = DeviceInfoPlugin();
@@ -257,7 +260,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Storage permission is required to save PDF.'.tr),
-                backgroundColor: Colors.redAccent,
+                backgroundColor: colors.error,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
@@ -298,7 +301,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: colors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             action: SnackBarAction(
@@ -312,7 +315,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Could not open PDF: ${openResult.message}'.tr),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: colors.error,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
@@ -323,7 +326,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error opening PDF: $e'.tr),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: colors.error,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
@@ -341,7 +344,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save PDF: ${e.toString()}'.tr),
-            backgroundColor: Colors.red.shade800,
+            backgroundColor: colors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -362,6 +365,8 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
       _isPrinting = true;
     });
 
+    final colors = context.colors;
+
     try {
       final bytes = await _generateReceiptPdf();
       final tx = widget.transaction;
@@ -375,8 +380,8 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to print receipt: ${e.toString()}'),
-            backgroundColor: Colors.red.shade800,
+            content: Text('Failed to print receipt: ${e.toString()}'.tr),
+            backgroundColor: colors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -393,7 +398,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.colors;
     
     final tx = widget.transaction;
     final String typeStr = (tx['type'] ?? '').toString().toUpperCase();
@@ -404,13 +409,14 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
     final String refNo = tx['refNo'] ?? tx['reference_number'] ?? 'N/A';
     final double? balance = tx['balance'] != null ? (tx['balance'] as num).toDouble() : null;
 
-    final accentColor = isCredit ? const Color(0xFF10B981) : const Color(0xFF2563EB);
+    final accentColor = isCredit ? colors.success : colors.accent;
+    final amountColor = isCredit ? colors.success : colors.error;
     final profile = AuthStore().profile;
     final coop = AuthStore().selectedCooperative;
     final coopName = coop?['name'] ?? 'Bright Saving & Credit Co-operative';
     final memberName = profile?['member_name'] ?? 'Sahakari User';
 
-    final receiptBgColor = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
+    final receiptBgColor = colors.cardBackground;
 
     return Scaffold(
       backgroundColor: receiptBgColor,
@@ -420,7 +426,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
         leading: IconButton(
           icon: Icon(
             Icons.close_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -429,7 +435,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
           style: TextStyle(
             fontWeight: FontWeight.w900,
             fontSize: 16,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
         ),
         centerTitle: true,
@@ -467,22 +473,22 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 1.0,
-                                    color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                                    color: colors.accent,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   coop?['address'] ?? 'Kathmandu, Nepal',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Color(0xFF64748B),
+                                    color: colors.secondaryText,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 24.0),
-                                  child: Divider(height: 1, thickness: 1, color: Color(0x1F64748B)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                  child: Divider(height: 1, thickness: 1, color: colors.border),
                                 ),
 
                                 // Success checkmark badge
@@ -516,20 +522,20 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.w900,
-                                    color: isCredit ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                    color: amountColor,
                                   ),
                                 ),
                                 const SizedBox(height: 32),
 
                                 // Details rows
-                                _buildDetailRow('Member Name'.tr, memberName, isDarkMode),
-                                _buildDetailRow('Account Number'.tr, widget.accountNo, isDarkMode),
-                                _buildDetailRow('Account Type'.tr, widget.accountType.toUpperCase(), isDarkMode),
-                                _buildDetailRow('Description'.tr, desc, isDarkMode),
-                                _buildDetailRow('Date (BS)'.tr, nepaliDate, isDarkMode),
-                                _buildDetailRow('Transaction ID'.tr, refNo, isDarkMode),
+                                _buildDetailRow('Member Name'.tr, memberName),
+                                _buildDetailRow('Account Number'.tr, widget.accountNo),
+                                _buildDetailRow('Account Type'.tr, widget.accountType.toUpperCase()),
+                                _buildDetailRow('Description'.tr, desc),
+                                _buildDetailRow('Date (BS)'.tr, nepaliDate),
+                                _buildDetailRow('Transaction ID'.tr, refNo),
                                 if (balance != null)
-                                  _buildDetailRow('Ending Balance'.tr, 'Rs. ${_formatAmount(balance)}', isDarkMode),
+                                  _buildDetailRow('Ending Balance'.tr, 'Rs. ${_formatAmount(balance)}'),
                               ],
                             ),
                           ),
@@ -545,21 +551,18 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
                                 label: 'Save Gallery'.tr,
                                 onPressed: _isSavingPng ? null : _saveAsPng,
                                 isLoading: _isSavingPng,
-                                isDarkMode: isDarkMode,
                               ),
                               _buildActionButton(
                                 icon: Icons.picture_as_pdf_rounded,
                                 label: 'Download PDF'.tr,
                                 onPressed: _isSavingPdf ? null : _downloadAsPdf,
                                 isLoading: _isSavingPdf,
-                                isDarkMode: isDarkMode,
                               ),
                               _buildActionButton(
                                 icon: Icons.print_rounded,
                                 label: 'Print'.tr,
                                 onPressed: _isPrinting ? null : _printReceipt,
                                 isLoading: _isPrinting,
-                                isDarkMode: isDarkMode,
                               ),
                             ],
                           ),
@@ -581,10 +584,11 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
     required String label,
     required VoidCallback? onPressed,
     required bool isLoading,
-    required bool isDarkMode,
   }) {
-    final buttonBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
-    final buttonIconColor = isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
+    final buttonBgColor = colors.inputFill;
+    final buttonIconColor = colors.accent;
     final shadowColor = isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15);
 
     return Column(
@@ -635,14 +639,15 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            color: colors.secondaryText,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value, bool isDarkMode) {
+  Widget _buildDetailRow(String label, String value) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 9.0),
       child: Row(
@@ -650,10 +655,10 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
+              color: colors.secondaryText,
             ),
           ),
           const SizedBox(width: 16),
@@ -664,7 +669,7 @@ class _TransactionReceiptPageState extends State<TransactionReceiptPage> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                color: colors.primaryText,
               ),
             ),
           ),

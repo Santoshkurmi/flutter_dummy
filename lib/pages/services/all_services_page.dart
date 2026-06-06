@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/translation_service.dart';
+import '../../services/theme_color_service.dart';
 import '../accounts/account_details_page.dart';
 import 'nepali_calendar_page.dart';
 import '../auth/register_member_page.dart';
@@ -58,15 +59,10 @@ class AllServicesPage extends StatelessWidget {
       {'icon': Icons.public_rounded, 'label': 'Remittance'},
     ];
 
-    final Color containerColor = isDarkMode 
-        ? Colors.white.withValues(alpha: 0.05) 
-        : const Color(0xFFEFF6FF);
-    final Color borderColor = isDarkMode 
-        ? Colors.white.withValues(alpha: 0.08) 
-        : const Color(0xFFDBEAFE);
-    final Color iconColor = isDarkMode 
-        ? const Color(0xFF60A5FA) 
-        : const Color(0xFF2563EB);
+    final colors = context.colors;
+    final Color containerColor = colors.quickActionBackground;
+    final Color borderColor = colors.quickActionBorder;
+    final Color iconColor = colors.quickActionIcon;
 
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF020617) : const Color(0xFFF8FAFC),

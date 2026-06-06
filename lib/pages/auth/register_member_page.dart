@@ -239,11 +239,13 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('submitted_memberships', jsonEncode(_submittedApplications));
         
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Application cancelled and deleted successfully.')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('Exception:', ''))),
       );
@@ -361,6 +363,7 @@ class _RegisterMemberPageState extends State<RegisterMemberPage> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('Exception:', '')),

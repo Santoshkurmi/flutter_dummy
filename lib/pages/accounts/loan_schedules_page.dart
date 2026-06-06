@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../store/auth_store.dart';
 import '../../widgets/error_state_view.dart';
+import '../../services/theme_color_service.dart';
 
 class LoanSchedulesPage extends StatefulWidget {
   final Map<String, dynamic> account;
@@ -124,20 +125,21 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = AuthStore().isDarkMode;
+    final colors = context.colors;
+    final isDarkMode = context.isDarkMode;
     final schemeName = AuthStore().language == 'ne'
         ? (widget.account['scheme_name_nepali'] ?? widget.account['scheme_name'] ?? '')
         : (widget.account['scheme_name'] ?? '');
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF020617) : Colors.white,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -145,17 +147,17 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
           'Loan Payment Schedules'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+            color: colors.primaryText,
             fontSize: 18,
           ),
         ),
       ),
       body: RefreshIndicator(
         onRefresh: () => _fetchSchedules(forceRefresh: true),
-        color: const Color(0xFF2563EB),
-        backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        color: colors.accent,
+        backgroundColor: colors.cardBackground,
         child: _isLoading && _errorMessage == null
-            ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))))
+            ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(colors.accent)))
             : _errorMessage != null && _schedules.isEmpty
                 ? _buildErrorState(isDarkMode)
                 : _buildBody(isDarkMode, schemeName),
@@ -172,6 +174,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
   }
 
   Widget _buildBody(bool isDarkMode, String schemeName) {
+    final colors = context.colors;
     final filteredSchedules = _showInterest
         ? _schedules
         : _schedules.where((s) => (s['installment_amount'] ?? 0) > 0).toList();
@@ -186,10 +189,10 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: colors.border,
             ),
           ),
           child: Row(
@@ -198,10 +201,10 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                  color: colors.error.withValues(alpha: isDarkMode ? 0.15 : 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.calendar_month_rounded, color: Color(0xFFEF4444), size: 22),
+                child: Icon(Icons.calendar_month_rounded, color: colors.error, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -213,7 +216,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        color: colors.primaryText,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -221,7 +224,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                       '${widget.account['accNo'] ?? ''} • ${'${filteredSchedules.length} installments'.tr}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: colors.secondaryText,
                       ),
                     ),
                   ],
@@ -236,10 +239,10 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: colors.border,
             ),
           ),
           child: Row(
@@ -250,7 +253,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                  color: colors.primaryText,
                 ),
               ),
               Switch(
@@ -260,7 +263,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                     _showInterest = val;
                   });
                 },
-                activeColor: const Color(0xFFEF4444),
+                activeThumbColor: colors.accent,
               ),
             ],
           ),
@@ -282,6 +285,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
   }
 
   Widget _buildCard(Map<String, dynamic> schedule, int sn, bool showInterest, bool isDarkMode) {
+    final colors = context.colors;
     final date = schedule['payment_date_bs']?.toString() ?? '';
     final daysPassed = schedule['days_passed'] ?? 0;
     final instAmt = schedule['installment_amount'];
@@ -297,27 +301,27 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
 
     if (!showInterest) {
       if (status == 'paid') {
-        cardBgColor = isDarkMode ? const Color(0xFF064E3B).withValues(alpha: 0.15) : const Color(0xFFD1FAE5).withValues(alpha: 0.5);
-        borderCol = isDarkMode ? const Color(0xFF065F46) : const Color(0xFFA7F3D0);
-        statusColor = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+        cardBgColor = colors.success.withValues(alpha: 0.1);
+        borderCol = colors.success.withValues(alpha: 0.2);
+        statusColor = colors.success;
         statusText = 'Paid'.tr;
       } else if (status == 'not_paid') {
-        cardBgColor = isDarkMode ? const Color(0xFF7F1D1D).withValues(alpha: 0.15) : const Color(0xFFFEE2E2).withValues(alpha: 0.5);
-        borderCol = isDarkMode ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5);
-        statusColor = isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626);
+        cardBgColor = colors.error.withValues(alpha: 0.1);
+        borderCol = colors.error.withValues(alpha: 0.2);
+        statusColor = colors.error;
         statusText = 'Overdue'.tr;
       } else {
         // pending
-        cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-        borderCol = isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-        statusColor = isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569);
+        cardBgColor = colors.cardBackground;
+        borderCol = colors.border;
+        statusColor = colors.secondaryText;
         statusText = 'Upcoming'.tr;
       }
     } else {
       // Interest mode: no status colors, all are normal
-      cardBgColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-      borderCol = isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-      statusColor = isDarkMode ? const Color(0xFF64748B) : const Color(0xFF475569);
+      cardBgColor = colors.cardBackground;
+      borderCol = colors.border;
+      statusColor = colors.secondaryText;
       statusText = '';
     }
 
@@ -348,7 +352,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  color: colors.inputFill,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -356,7 +360,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    color: colors.primaryText,
                   ),
                 ),
               ),
@@ -382,7 +386,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
           const SizedBox(height: 12),
           Divider(
             height: 1,
-            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            color: colors.border,
           ),
           const SizedBox(height: 12),
           Row(
@@ -409,7 +413,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                         : '$displayDays ${'Days'.tr}', 
                       isDarkMode,
                       color: daysPassed > 0 && !showInterest
-                        ? (isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626))
+                        ? colors.error
                         : null
                     ),
                   ],
@@ -441,7 +445,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
                       isDarkMode, 
                       fontWeight: FontWeight.w700,
                       color: (paidAmt != null && double.tryParse(paidAmt.toString()) != 0.0)
-                        ? const Color(0xFF10B981)
+                        ? colors.success
                         : null
                     ),
                   ],
@@ -473,28 +477,31 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
   }
 
   Widget _buildInfoLabel(String label, bool isDarkMode) {
+    final colors = context.colors;
     return Text(
       label,
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+        color: colors.secondaryText,
       ),
     );
   }
 
   Widget _buildInfoValue(String val, bool isDarkMode, {FontWeight? fontWeight, Color? color}) {
+    final colors = context.colors;
     return Text(
       val,
       style: TextStyle(
         fontSize: 13,
         fontWeight: fontWeight ?? FontWeight.w600,
-        color: color ?? (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+        color: color ?? colors.primaryText,
       ),
     );
   }
 
   Widget _buildEmptyState(bool isDarkMode) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -504,13 +511,13 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
             Icon(
               Icons.calendar_today_rounded,
               size: 48,
-              color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+              color: colors.secondaryText,
             ),
             const SizedBox(height: 12),
             Text(
               'No schedules found.'.tr,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: colors.secondaryText,
                 fontSize: 14,
               ),
             ),
@@ -521,22 +528,23 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
   }
 
   Widget _buildInlineErrorBanner(String error, bool isDarkMode) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+        color: colors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          color: colors.error.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFEF4444),
+            color: colors.error,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -544,7 +552,7 @@ class _LoanSchedulesPageState extends State<LoanSchedulesPage> {
             child: Text(
               error,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                color: colors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
