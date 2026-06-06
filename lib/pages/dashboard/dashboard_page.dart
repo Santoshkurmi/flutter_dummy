@@ -506,7 +506,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           ],
         ),
         bottomNavigationBar: Material(
-          color: context.colors.containerBackground,
+          color: context.colors.scaffoldBackground,
           child: Container(
             decoration: BoxDecoration(
               border: Border(

@@ -598,7 +598,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     }
                   }
 
-                  final inactiveColor = colors.border;
+                  final inactiveColor = colors.sliderIndicatorInactive;
                   final dotColor = Color.lerp(inactiveColor, cardAccentColor, activeRatio) ?? cardAccentColor;
 
                   return Container(
@@ -1255,8 +1255,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isActive
-                      ? colors.primaryText
-                      : colors.border,
+                      ? colors.sliderIndicatorActive
+                      : colors.sliderIndicatorInactive,
                 ),
               );
             }),

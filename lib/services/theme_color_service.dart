@@ -51,6 +51,10 @@ abstract class ThemeColorSchema {
   Color get chipBackground;
   Color get chipBorder;
   Color get chipText;
+
+  // Slider / Dot Indicators
+  Color get sliderIndicatorActive;
+  Color get sliderIndicatorInactive;
 }
 
 class LightThemeColors implements ThemeColorSchema {
@@ -152,6 +156,11 @@ class LightThemeColors implements ThemeColorSchema {
   Color get chipBorder => const Color(0xFFE2E8F0);
   @override
   Color get chipText => const Color(0xFF475569);
+
+  @override
+  Color get sliderIndicatorActive => const Color(0xFF1E293B);
+  @override
+  Color get sliderIndicatorInactive => const Color(0x26000000); // Colors.black.withOpacity(0.15)
 }
 
 class DarkThemeColors implements ThemeColorSchema {
@@ -253,6 +262,11 @@ class DarkThemeColors implements ThemeColorSchema {
   Color get chipBorder => const Color(0x0AFFFFFF);
   @override
   Color get chipText => const Color(0xFF94A3B8);
+
+  @override
+  Color get sliderIndicatorActive => Colors.white;
+  @override
+  Color get sliderIndicatorInactive => const Color(0x33FFFFFF); // Colors.white.withOpacity(0.2)
 }
 
 
