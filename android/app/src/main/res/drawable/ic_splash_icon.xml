@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash screen icon — more inset than launcher icon to avoid looking too large on splash -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher"
+    android:insetTop="30%"
+    android:insetBottom="30%"
+    android:insetLeft="30%"
+    android:insetRight="30%" />
