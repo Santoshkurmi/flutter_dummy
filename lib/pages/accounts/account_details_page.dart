@@ -98,6 +98,14 @@ class _AccountDetailsPageState extends State<AccountDetailsPage> {
       final res = await ApiService().getAccounts();
       final data = res['data'] ?? {};
       
+      final allowedIdsRaw = data['allowed_saving_scheme_ids'];
+      if (allowedIdsRaw is List) {
+        final List<int> allowedIds = allowedIdsRaw.map((e) => (e as num).toInt()).toList();
+        AuthStore().setAllowedSavingSchemeIds(allowedIds);
+      } else {
+        AuthStore().setAllowedSavingSchemeIds([]);
+      }
+      
       if (!mounted) return;
       setState(() {
         _savingsAccounts = data['savings'] ?? [];

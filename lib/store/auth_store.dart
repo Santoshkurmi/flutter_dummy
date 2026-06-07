@@ -22,6 +22,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   Map<String, dynamic>? _profile;
   String? _customApiUrl;
   bool _preferencesSetupCompleted = false;
+  List<int> _allowedSavingSchemeIds = [];
 
   // App settings & preferences
   String _language = 'en';
@@ -46,6 +47,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String? get token => _token;
   String? get mobile => _mobile;
   String? get registeredMobile => _registeredMobile;
+  List<int> get allowedSavingSchemeIds => _allowedSavingSchemeIds;
   
   bool get isCustomApp => !kIsWeb && Platform.isAndroid && dotenv.env['IS_CUSTOM_APP'] == 'true';
   bool get preferencesSetupCompleted => _preferencesSetupCompleted;
@@ -97,6 +99,11 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
+    notifyListeners();
+  }
+
+  void setAllowedSavingSchemeIds(List<int> ids) {
+    _allowedSavingSchemeIds = ids;
     notifyListeners();
   }
 
@@ -333,6 +340,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> clearAuth() async {
     _token = null;
     _profile = null;
+    _allowedSavingSchemeIds = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('user_profile');
@@ -388,6 +396,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _registeredMobile = null;
     _selectedCooperative = null;
     _profile = null;
+    _allowedSavingSchemeIds = [];
     _isBiometricEnabled = false;
     _neverAskBiometric = false;
     _biometricType = null;

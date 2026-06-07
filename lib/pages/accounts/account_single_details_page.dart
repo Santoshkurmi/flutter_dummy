@@ -248,11 +248,22 @@ class _AccountSingleDetailsPageState extends State<AccountSingleDetailsPage> wit
     }
 
     if (!isShare) {
-      actions.add({
-        'label': 'Payment'.tr,
-        'icon': Icons.send_rounded,
-        'onTap': () => _showNotImplementedSnackBar('Payment'),
-      });
+      bool showPayment = true;
+      if (isSavings) {
+        final int? schemeId = (acc['scheme_id'] as num?)?.toInt();
+        if (schemeId != null) {
+          showPayment = AuthStore().allowedSavingSchemeIds.contains(schemeId);
+        } else {
+          showPayment = false;
+        }
+      }
+      if (showPayment) {
+        actions.add({
+          'label': 'Payment'.tr,
+          'icon': Icons.send_rounded,
+          'onTap': () => _showNotImplementedSnackBar('Payment'),
+        });
+      }
     }
 
     final accountNoForStatement = acc['accNo'] ?? acc['account_no'] ?? 'N/A';

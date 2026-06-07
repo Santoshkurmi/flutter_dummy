@@ -219,6 +219,8 @@ class TranslationService {
     'Version Code': 'संस्करण कोड',
     'Changelogs': 'परिवर्तन विवरणहरू',
     'View Changelogs': 'परिवर्तन इतिहास हेर्नुहोस्',
+    'What\'s New!': 'नयाँ के छ!',
+    'Ok!': 'उत्कृष्ट!',
     'Cooperative Mobile Banking': 'सहकारी मोबाइल बैंकिङ्ग',
     'View app specs, version code and development history changelogs': 'एप विनिर्देशहरू, संस्करण कोड र विकास इतिहासको परिवर्तन विवरणहरू हेर्नुहोस्',
     'Device Brand': 'उपकरण ब्रान्ड',

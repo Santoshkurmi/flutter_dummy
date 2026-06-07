@@ -11,6 +11,8 @@ import 'notice_tab.dart';
 import 'profile_tab.dart';
 import '../../main.dart';
 import '../../store/notice_store.dart';
+import '../../data/changelog_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class DashboardPage extends StatefulWidget {
@@ -42,6 +44,9 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     _loadSummary(forceRefresh: false);
     AuthStore().addListener(_onStateChange);
     NoticeStore().addListener(_onStateChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowChangelog();
+    });
   }
 
   @override
@@ -117,6 +122,13 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           _accountsData = (accountsRes != null && accountsRes.isNotEmpty) ? accountsRes['data'] : null;
           
           if (_accountsData != null) {
+            final allowedIdsRaw = _accountsData!['allowed_saving_scheme_ids'];
+            if (allowedIdsRaw is List) {
+              final List<int> allowedIds = allowedIdsRaw.map((e) => (e as num).toInt()).toList();
+              AuthStore().setAllowedSavingSchemeIds(allowedIds);
+            } else {
+              AuthStore().setAllowedSavingSchemeIds([]);
+            }
             double totalSavings = 0.0;
             double totalLoans = 0.0;
             double totalShares = 0.0;
@@ -371,6 +383,172 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     final store = AuthStore();
     final next = store.isDarkMode ? 'light' : 'dark';
     store.setThemeMode(next);
+  }
+
+  Future<void> _checkAndShowChangelog() async {
+    if (ChangelogData.versions.isEmpty) return;
+    final latestVersion = ChangelogData.versions.first;
+    final prefs = await SharedPreferences.getInstance();
+    final lastShownVersion = prefs.getString('last_shown_changelog_version');
+    if (lastShownVersion != latestVersion.version) {
+      if (mounted) {
+        await _showChangelogDialog(latestVersion);
+        await prefs.setString('last_shown_changelog_version', latestVersion.version);
+      }
+    }
+  }
+
+  Future<void> _showChangelogDialog(ChangelogVersion versionInfo) async {
+    final isDark = AuthStore().isDarkMode;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final dialogBgColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final accentColor = const Color(0xFF2563EB); // Vibrant Indigo/Blue
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFE2E8F0);
+
+    String formatNepaliNumbers(String input) {
+      return AuthStore().language == 'ne'
+          ? TranslationService.toNepaliNumbers(input)
+          : input;
+    }
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: dialogBgColor,
+          elevation: 12,
+          shadowColor: accentColor.withValues(alpha: isDark ? 0.3 : 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: borderColor, width: 1),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Top Header / Icon
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.rocket_launch_rounded,
+                        color: accentColor,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      "What's New!".tr,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: primaryTextColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${'Version'.tr} ${formatNepaliNumbers(versionInfo.version)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: accentColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Bullet logs scrollable area
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: versionInfo.logs.map((log) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6.0),
+                                  child: Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF64748B),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    log.tr,
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      color: secondaryTextColor,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Done/Dismiss Action Button
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Ok!'.tr,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _onTabChanged(int newIndex) {

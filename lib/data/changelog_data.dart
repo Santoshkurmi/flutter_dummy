@@ -9,9 +9,16 @@ class ChangelogVersion {
     required this.logs,
   });
 }
-
+//add Latest one at top not bottom
 class ChangelogData {
   static const List<ChangelogVersion> versions = [
+     ChangelogVersion(
+      version: '1.0.1',
+      date: '2082-02-26',
+      logs: [
+        'Some minor bugs fixes',
+      ],
+    ),
     ChangelogVersion(
       version: '1.0.0',
       date: '2082-02-22',
