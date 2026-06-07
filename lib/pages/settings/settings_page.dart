@@ -127,11 +127,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 24),
 
-            // Section 4: Appearance
-            _buildSectionHeader('APPEARANCE'.tr, isDarkMode),
+            // Section 4: Theme
+            _buildSectionHeader('THEME'.tr, isDarkMode),
             const SizedBox(height: 12),
             _buildThemeSelector(isDarkMode, authStore),
 
+            const SizedBox(height: 24),
+
+            // Section 5: Language
+            _buildSectionHeader('LANGUAGE'.tr, isDarkMode),
             const SizedBox(height: 12),
             _buildLanguageSelector(isDarkMode, authStore),
 

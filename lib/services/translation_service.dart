@@ -270,6 +270,8 @@ class TranslationService {
     'TRANSACTION LIMITS': 'कारोबार सीमा',
     'Daily Transfer Limit': 'दैनिक स्थानान्तरण सीमा',
     'APPEARANCE': 'देखावट',
+    'THEME': 'थिम',
+    'LANGUAGE': 'भाषा',
     'View All': 'सबै हेर्नुहोस्',
     'Show More': 'थप हेर्नुहोस्',
 
