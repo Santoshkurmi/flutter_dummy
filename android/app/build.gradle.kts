@@ -5,6 +5,67 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val changelogFile = file("../../assets/changelog.toml")
+var jsonVersionCode = 1
+var jsonVersionName = "1.0.0"
+
+if (changelogFile.exists()) {
+    try {
+        val lines = changelogFile.readLines()
+        var maxVersionCode = 0
+        var latestVersionName = "1.0.0"
+        
+        var currentVersionName = ""
+        var currentVersionCode = 0
+        
+        for (rawLine in lines) {
+            val line = rawLine.trim()
+            if (line.isEmpty() || line.startsWith("#")) continue
+            
+            if (line == "[[versions]]") {
+                if (currentVersionCode > maxVersionCode) {
+                    maxVersionCode = currentVersionCode
+                    latestVersionName = currentVersionName
+                }
+                currentVersionName = ""
+                currentVersionCode = 0
+                continue
+            }
+            
+            val eqIdx = line.indexOf("=")
+            if (eqIdx != -1) {
+                val key = line.substring(0, eqIdx).trim()
+                var value = line.substring(eqIdx + 1).trim()
+                if (value.endsWith(",")) {
+                    value = value.substring(0, value.length - 1).trim()
+                }
+                if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length - 1)
+                }
+                
+                if (key == "version") {
+                    currentVersionName = value
+                } else if (key == "versionCode") {
+                    currentVersionCode = value.toIntOrNull() ?: 0
+                }
+            }
+        }
+        
+        // Check last version entry in the file
+        if (currentVersionCode > maxVersionCode) {
+            maxVersionCode = currentVersionCode
+            latestVersionName = currentVersionName
+        }
+        
+        if (maxVersionCode > 0) {
+            jsonVersionCode = maxVersionCode
+            jsonVersionName = latestVersionName
+        }
+    } catch (e: Exception) {
+        println("Error parsing assets/changelog.toml: ${e.message}")
+    }
+}
+
 android {
     namespace = "com.mbright.sahakari"
     compileSdk = flutter.compileSdkVersion
@@ -27,8 +88,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = jsonVersionCode
+        versionName = jsonVersionName
         resValue("string", "app_name", "Mbright")
     }
 

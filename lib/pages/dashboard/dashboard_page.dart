@@ -386,14 +386,20 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   }
 
   Future<void> _checkAndShowChangelog() async {
+    await ChangelogData.load();
     if (ChangelogData.versions.isEmpty) return;
-    final latestVersion = ChangelogData.versions.first;
+
+    final latestVersion = ChangelogData.versions.firstWhere(
+      (v) => v.version == ChangelogData.versionName,
+      orElse: () => ChangelogData.versions.first,
+    );
+
     final prefs = await SharedPreferences.getInstance();
     final lastShownVersion = prefs.getString('last_shown_changelog_version');
-    if (lastShownVersion != latestVersion.version) {
+    if (lastShownVersion != ChangelogData.versionName) {
       if (mounted) {
         await _showChangelogDialog(latestVersion);
-        await prefs.setString('last_shown_changelog_version', latestVersion.version);
+        await prefs.setString('last_shown_changelog_version', ChangelogData.versionName);
       }
     }
   }

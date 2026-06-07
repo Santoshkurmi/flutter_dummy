@@ -26,6 +26,7 @@ import 'services/location_service.dart';
 import 'services/api_service.dart';
 import 'services/update_service.dart';
 import 'dart:convert';
+import 'data/changelog_data.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -68,6 +69,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ChangelogData.load();
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
