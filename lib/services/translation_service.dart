@@ -272,6 +272,12 @@ class TranslationService {
     'APPEARANCE': 'देखावट',
     'THEME': 'थिम',
     'LANGUAGE': 'भाषा',
+    'Accent Color': 'मुख्य रङ',
+    'Blue': 'नीलो',
+    'Green': 'हरियो',
+    'Orange': 'सुन्तला',
+    'Purple': 'बैजनी',
+    'Rose': 'गुलाबी',
     'View All': 'सबै हेर्नुहोस्',
     'Show More': 'थप हेर्नुहोस्',
 

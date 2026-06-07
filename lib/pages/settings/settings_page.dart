@@ -131,6 +131,8 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionHeader('THEME'.tr, isDarkMode),
             const SizedBox(height: 12),
             _buildThemeSelector(isDarkMode, authStore),
+            const SizedBox(height: 16),
+            _buildAccentColorSelector(isDarkMode, authStore),
 
             const SizedBox(height: 24),
 
@@ -230,6 +232,95 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAccentColorSelector(bool isDarkMode, AuthStore authStore) {
+    final colors = context.colors;
+    final currentTheme = authStore.colorTheme;
+    final themes = [
+      {'key': 'default', 'label': 'Blue'.tr, 'color': const Color(0xFF2563EB)},
+      {'key': 'emerald', 'label': 'Green'.tr, 'color': const Color(0xFF059669)},
+      {'key': 'orange', 'label': 'Orange'.tr, 'color': const Color(0xFFEA580C)},
+      {'key': 'purple', 'label': 'Purple'.tr, 'color': const Color(0xFF7C3AED)},
+      {'key': 'rose', 'label': 'Rose'.tr, 'color': const Color(0xFFE11D48)},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: colors.chipBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Accent Color'.tr,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: colors.secondaryText,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: themes.map((theme) {
+              final isSelected = currentTheme == theme['key'];
+              final themeColor = theme['color'] as Color;
+              return GestureDetector(
+                onTap: () => authStore.setColorTheme(theme['key'] as String),
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: themeColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? (isDarkMode ? Colors.white : const Color(0xFF0F172A))
+                              : Colors.transparent,
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: themeColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: isSelected
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      theme['label'] as String,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? colors.primaryText : colors.secondaryText,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
