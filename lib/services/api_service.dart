@@ -763,12 +763,35 @@ class ApiService {
     return await post('/activate-request/send-otp', payload);
   }
 
+  Future<String?> getFcmToken() async {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        await messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+        return await messaging.getToken();
+      } catch (_) {}
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>> activateSubmit(Map<String, dynamic> data) async {
     final payload = Map<String, dynamic>.from(data);
     if (!payload.containsKey('device_id') ||
         payload['device_id'] == null ||
         payload['device_id'].toString().isEmpty) {
       payload['device_id'] = await getDeviceId();
+    }
+    final fcmToken = await getFcmToken();
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      payload['fcm_token'] = fcmToken;
     }
     return await post('/activate-request/submit', payload);
   }
@@ -786,6 +809,10 @@ class ApiService {
         payload['device_id'] == null ||
         payload['device_id'].toString().isEmpty) {
       payload['device_id'] = await getDeviceId();
+    }
+    final fcmToken = await getFcmToken();
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      payload['fcm_token'] = fcmToken;
     }
     return await post('/device-link/verify-otp', payload);
   }

@@ -390,6 +390,26 @@ class _NotificationsTabState extends State<NotificationsTab> with WidgetsBinding
                   ),
                   child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
                 ),
+                confirmDismiss: (direction) async {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: colors.cardBackground,
+                      title: Text('Delete Notification'.tr, style: TextStyle(color: colors.primaryText)),
+                      content: Text('Are you sure you want to delete this notification?'.tr, style: TextStyle(color: colors.secondaryText)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel'.tr, style: TextStyle(color: colors.secondaryText)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text('Delete'.tr, style: const TextStyle(color: Color(0xFFEF4444))),
+                        ),
+                      ],
+                    ),
+                  );
+                },
                 onDismissed: (direction) {
                   store.deleteNotification(item['id']);
                   ScaffoldMessenger.of(context).showSnackBar(
