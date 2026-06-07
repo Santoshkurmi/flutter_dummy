@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:show_fps/show_fps.dart' hide AnimatedBuilder;
 // ignore: depend_on_referenced_packages
 import 'package:flutter_performance_monitor_plus/flutter_performance_monitor_plus.dart';
@@ -223,6 +224,16 @@ class BrightBankApp extends StatelessWidget {
               actionTextColor: ThemeColorService.colors.snackBarActionText,
             ),
             fontFamily: 'Roboto',
+            pageTransitionsTheme: PageTransitionsTheme(
+              builders: <TargetPlatform, PageTransitionsBuilder>{
+                TargetPlatform.android: AuthStore().customPageTransitionEnabled
+                    ? const CupertinoPageTransitionsBuilder()
+                    : const FadeForwardsPageTransitionsBuilder(),
+                TargetPlatform.iOS: AuthStore().customPageTransitionEnabled
+                    ? const FadeForwardsPageTransitionsBuilder()
+                    : const CupertinoPageTransitionsBuilder(),
+              },
+            ),
           ),
           home: const InitialRouter(),
           builder: (context, child) {

@@ -133,6 +133,25 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildThemeSelector(isDarkMode, authStore),
             const SizedBox(height: 16),
             _buildAccentColorSelector(isDarkMode, authStore),
+            const SizedBox(height: 16),
+            _buildSectionHeader('Transition'.tr, isDarkMode),
+            // const SizedBox(height: 16),
+
+            _buildToggleItem(
+              title: Platform.isIOS
+                  ? 'Android Transition Style'.tr
+                  : 'Iphone Transition Style'.tr,
+              subtitle: Platform.isIOS
+                  ? 'Use Android\'s slide-fade page navigation instead of iOS Cupertino transition'.tr
+                  : 'Use iOS-style predictive back gesture and horizontal slide navigation'.tr,
+              value: authStore.customPageTransitionEnabled,
+              onChanged: (val) async {
+                await authStore.setCustomPageTransitionEnabled(val);
+                setState(() {});
+              },
+              icon: Icons.animation_rounded,
+              isDarkMode: isDarkMode,
+            ),
 
             const SizedBox(height: 24),
 
