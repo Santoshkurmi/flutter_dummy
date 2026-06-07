@@ -16,6 +16,11 @@ abstract class ThemeColorSchema {
   Color get snackBarActionText;
   Color get inputFill;
 
+  // Bottom Navigation Bar
+  Color get bottomBarBackground;
+  Color get bottomBarSelected;
+  Color get bottomBarUnselected;
+
   // Icon / Status indicators
   Color get iconActive;
   Color get iconInactive;
@@ -67,11 +72,11 @@ class LightThemeColors implements ThemeColorSchema {
   @override
   Color get secondaryText => const Color(0xFF475569);
   @override
-  Color get cardBackground => const Color(0xFFF8FAFC);
+  Color get cardBackground => const Color(0xFFFFFFFF);
   @override
   Color get containerBackground => Colors.white;
   @override
-  Color get border => const Color(0xFFE2E8F0);
+  Color get border => const Color(0xFFF1F5F9);
   @override
   Color get accent => const Color(0xFF2563EB);
   @override
@@ -86,6 +91,13 @@ class LightThemeColors implements ThemeColorSchema {
   Color get snackBarActionText => const Color(0xFF60A5FA);
   @override
   Color get inputFill => const Color(0xFFF1F5F9);
+
+  @override
+  Color get bottomBarBackground => Colors.white;
+  @override
+  Color get bottomBarSelected => const Color(0xFF2563EB);
+  @override
+  Color get bottomBarUnselected => const Color(0xFF64748B);
 
   @override
   Color get iconActive => const Color(0xFF2563EB);
@@ -192,6 +204,13 @@ class DarkThemeColors implements ThemeColorSchema {
   Color get snackBarActionText => const Color(0xFF60A5FA);
   @override
   Color get inputFill => const Color(0xFF1E293B);
+
+  @override
+  Color get bottomBarBackground => const Color(0xFF020617);
+  @override
+  Color get bottomBarSelected => const Color(0xFF60A5FA);
+  @override
+  Color get bottomBarUnselected => const Color(0xFF64748B);
 
   @override
   Color get iconActive => const Color(0xFF60A5FA);

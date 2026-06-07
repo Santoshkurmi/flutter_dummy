@@ -33,6 +33,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String _dailyLimit = '50000';
   String _themeMode = 'system'; // 'system', 'dark', 'light'
   String _colorTheme = 'default'; // 'default', 'forest', 'ocean'
+  String _autoBiometricBehavior = 'sometime'; // 'sometime', 'never', 'always'
   // In-memory only — true between login-success and biometric setup completion
   bool _pendingBiometricSetup = false;
   bool _enableCaching = true;
@@ -85,6 +86,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   String get dailyLimit => _dailyLimit;
   String get themeMode => _themeMode;
   String get colorTheme => _colorTheme;
+  String get autoBiometricBehavior => _autoBiometricBehavior;
   bool get pendingBiometricSetup => _pendingBiometricSetup;
   bool get enableCaching => _enableCaching;
   bool get showDateNotification => _showDateNotification;
@@ -148,6 +150,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _dailyLimit = prefs.getString('dailyLimit') ?? '50000';
     _themeMode = prefs.getString('themeMode') ?? 'system';
     _colorTheme = prefs.getString('colorTheme') ?? 'default';
+    _autoBiometricBehavior = prefs.getString('autoBiometricBehavior') ?? 'sometime';
     _language = prefs.getString('language') ?? 'en';
     _preferencesSetupCompleted = prefs.getBool('preferences_setup_completed') ?? false;
     _enableCaching = prefs.getBool('enableCaching') ?? true;
@@ -208,6 +211,13 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _isBiometricEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isBiometricEnabled', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setAutoBiometricBehavior(String value) async {
+    _autoBiometricBehavior = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('autoBiometricBehavior', value);
     notifyListeners();
   }
 
@@ -386,6 +396,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _dailyLimit = '50000';
     _themeMode = 'system';
     _colorTheme = 'default';
+    _autoBiometricBehavior = 'sometime';
     _preferencesSetupCompleted = false;
     _enableCaching = true;
     _showDateNotification = false;

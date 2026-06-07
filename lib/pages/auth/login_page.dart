@@ -539,6 +539,20 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _checkAndAutoAuthenticate() async {
     if (!LoginPage.isAppStartup) return;
     LoginPage.isAppStartup = false;
+
+    final authStore = AuthStore();
+    final behavior = authStore.autoBiometricBehavior;
+    if (behavior == 'never') return;
+
+    if (behavior == 'always') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isLoading) {
+          _authenticateBiometrics();
+        }
+      });
+      return;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();

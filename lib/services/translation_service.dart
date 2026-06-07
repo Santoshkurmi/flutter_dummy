@@ -245,7 +245,11 @@ class TranslationService {
     'Enabled biometric fingerprint/Face ID authorization setup.': 'बायोमेट्रिक औंठाछाप/फेस आईडी प्रमाणीकरण सेटअप सक्षम गरियो।',
 
     // Bottom navigation tabs
-    'Home': 'गृहपृष्ठ',
+    'Ok!': 'उत्कृष्ट!',
+    'Auto Biometric Popup': 'बायोमेट्रिक स्वतः पपअप',
+    'Sometime': 'कहिलेकाहीँ',
+    'Never': 'कहिल्यै नगर्नुहोस्',
+    'Always': 'सधैं',
     'Payments': 'भुक्तानी',
     'Alerts': 'सूचनाहरू',
     'Profile': 'प्रोफाइल',

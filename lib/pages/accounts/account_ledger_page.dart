@@ -1333,7 +1333,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
 
               // Results Container
               Container(
@@ -1495,7 +1495,7 @@ class _AccountLedgerPageState extends State<AccountLedgerPage> with SingleTicker
         if (_hasError && _ledgerItems.isNotEmpty)
           _buildInlineErrorBanner(_errorMessage ?? 'Failed to refresh statement.', isDarkMode),
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

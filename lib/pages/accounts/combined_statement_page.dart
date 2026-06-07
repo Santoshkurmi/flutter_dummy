@@ -1018,7 +1018,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
 
               // Results Container
               Container(
@@ -1154,7 +1154,7 @@ class _CombinedStatementPageState extends State<CombinedStatementPage> {
         if (_hasError && _ledgerItems.isNotEmpty)
           _buildInlineErrorBanner(_errorMessage ?? 'Failed to refresh statement.', isDarkMode),
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

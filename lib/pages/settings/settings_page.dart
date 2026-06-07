@@ -118,6 +118,13 @@ class _SettingsPageState extends State<SettingsPage> {
               isDarkMode: isDarkMode,
             ),
 
+            if (authStore.isBiometricEnabled) ...[
+              const SizedBox(height: 16),
+              _buildSectionHeader('Auto Biometric Popup'.tr, isDarkMode),
+              const SizedBox(height: 8),
+              _buildAutoBiometricSelector(isDarkMode, authStore),
+            ],
+
             const SizedBox(height: 24),
 
             // Section 4: Appearance
@@ -270,6 +277,75 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 4),
                     Text(
                       lang['label'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? colors.primaryText
+                            : colors.secondaryText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAutoBiometricSelector(bool isDarkMode, AuthStore authStore) {
+    final colors = context.colors;
+    final currentBehavior = authStore.autoBiometricBehavior;
+    final options = [
+      {'key': 'sometime', 'label': 'Sometime'.tr, 'icon': Icons.timer_outlined},
+      {'key': 'never', 'label': 'Never'.tr, 'icon': Icons.block_rounded},
+      {'key': 'always', 'label': 'Always'.tr, 'icon': Icons.loop_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: colors.chipBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.border,
+        ),
+      ),
+      child: Row(
+        children: options.map((opt) {
+          final isSelected = currentBehavior == opt['key'];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                await authStore.setAutoBiometricBehavior(opt['key'] as String);
+                setState(() {});
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDarkMode ? colors.inputFill : colors.containerBackground)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected && !isDarkMode
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))]
+                      : [],
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      opt['icon'] as IconData,
+                      color: isSelected
+                          ? colors.accent
+                          : colors.secondaryText,
+                      size: 18,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      opt['label'] as String,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,

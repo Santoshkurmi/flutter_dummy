@@ -506,7 +506,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           ],
         ),
         bottomNavigationBar: Material(
-          color: context.colors.scaffoldBackground,
+          color: context.colors.bottomBarBackground,
           child: Container(
             decoration: BoxDecoration(
               border: Border(
@@ -521,8 +521,8 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               onTap: _onTabChanged,
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.transparent,
-              selectedItemColor: _isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
-              unselectedItemColor: const Color(0xFF64748B),
+              selectedItemColor: context.colors.bottomBarSelected,
+              unselectedItemColor: context.colors.bottomBarUnselected,
               selectedFontSize: 11,
               unselectedFontSize: 11,
               elevation: 0,
