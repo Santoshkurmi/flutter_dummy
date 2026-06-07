@@ -77,6 +77,12 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
+    // packaging {
+    //     jniLibs {
+    //         keepDebugSymbols.add("**/*.so")
+    //     }
+    // }
+
     buildFeatures {
         resValues = true
     }
@@ -95,14 +101,16 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release-key.jks")
-            storePassword = "password"
+            storeFile = file("my-release-key.keystore")
+            storePassword = "punkmonster"
             keyAlias = "my-key-alias"
-            keyPassword = "password"
+            keyPassword = "punkmonster"
         }
     }
 
     buildTypes {
+
+        
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
@@ -113,8 +121,9 @@ android {
             )
 
             ndk {
-            debugSymbolLevel = "NONE"
-        }
+                // debugSymbolLevel = "none"
+                abiFilters.addAll(setOf("armeabi-v7a", "arm64-v8a"))
+            }
         }
         getByName("debug") {
             applicationIdSuffix = ".debug"
