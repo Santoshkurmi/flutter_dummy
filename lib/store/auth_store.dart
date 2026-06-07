@@ -44,6 +44,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool _showFps = false;
   bool _showPerformanceMonitor = false;
   bool _customPageTransitionEnabled = false;
+  bool _disableCardTransition = false;
 
   String? get token => _token;
   String? get mobile => _mobile;
@@ -98,6 +99,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get showFps => _showFps;
   bool get showPerformanceMonitor => _showPerformanceMonitor;
   bool get customPageTransitionEnabled => _customPageTransitionEnabled;
+  bool get disableCardTransition => _disableCardTransition;
 
   void setPendingBiometricSetup(bool value) {
     _pendingBiometricSetup = value;
@@ -169,6 +171,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _showFps = prefs.getBool('showFps') ?? false;
     _showPerformanceMonitor = prefs.getBool('showPerformanceMonitor') ?? false;
     _customPageTransitionEnabled = prefs.getBool('customPageTransitionEnabled') ?? false;
+    _disableCardTransition = prefs.getBool('disableCardTransition') ?? false;
 
     notifyListeners();
   }
@@ -387,6 +390,13 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  Future<void> setDisableCardTransition(bool value) async {
+    _disableCardTransition = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('disableCardTransition', value);
+    notifyListeners();
+  }
+
   Future<void> disableDeveloperMode() async {
     _isDeveloperMode = false;
     _enableCaching = true;
@@ -424,6 +434,7 @@ class AuthStore extends ChangeNotifier with WidgetsBindingObserver {
     _showFps = false;
     _showPerformanceMonitor = false;
     _customPageTransitionEnabled = false;
+    _disableCardTransition = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     notifyListeners();

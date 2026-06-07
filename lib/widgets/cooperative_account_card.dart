@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
 import '../services/theme_color_service.dart';
 import 'flying_hero_interactor.dart';
+import '../store/auth_store.dart';
 
 class CooperativeAccountCard extends StatelessWidget {
   final bool isOverview;
@@ -449,7 +451,12 @@ class CooperativeAccountCard extends StatelessWidget {
     ),
   );
 
-  if (heroTag != null) {
+  final authStore = AuthStore();
+  final isCardTransitionDisabled = authStore.disableCardTransition &&
+      ((Platform.isAndroid && authStore.customPageTransitionEnabled) ||
+       (Platform.isIOS && !authStore.customPageTransitionEnabled));
+
+  if (heroTag != null && !isCardTransitionDisabled) {
     return Hero(
       tag: heroTag!,
       flightShuttleBuilder: (

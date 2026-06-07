@@ -113,6 +113,8 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
                               ? ClipOval(
                                   child: CachedImage(
                                     imageUrl: profileImg,
+                                    width: 88,
+                                    height: 88,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => _buildInitialsPlaceholder(name, colors),
                                     placeholder: _buildInitialsPlaceholder(name, colors),

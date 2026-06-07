@@ -469,6 +469,8 @@ class TranslationService {
     'Android Transition Style': 'एन्ड्रोइड पेज ट्रान्जिसन शैली',
     'Transition' : 'संक्रमण',
     'Iphone Transition Style': 'आईओएस पेज ट्रान्जिसन शैली',
+    'Disable Card Transition': 'कार्ड ट्रान्जिसन असक्षम गर्नुहोस्',
+    'Turn off the Hero sliding animation when opening account details and statement pages': 'खाता विवरण र विवरण (स्टेटमेन्ट) पृष्ठहरू खोल्दा हुने हिरो स्लाइडिङ एनिमेसन बन्द गर्नुहोस्',
     'Use Android\'s slide-fade page navigation instead of iOS Cupertino transition': 'आईओएस कुपरटिनो ट्रान्जिसनको सट्टा एन्ड्रोइडको स्लाइड-फेड पेज नेभिगेसन प्रयोग गर्नुहोस्',
     'Use iOS-style predictive back gesture and horizontal slide navigation': 'आईओएस शैलीको प्रेडिक्टिभ ब्याक गेस्चर र तेर्सो स्लाइड नेभिगेसन प्रयोग गर्नुहोस्',
     'Receive real-time transaction updates and alerts': 'वास्तविक-समय कारोबार अपडेट र अलर्टहरू प्राप्त गर्नुहोस्',

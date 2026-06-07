@@ -93,12 +93,35 @@ class _CachedImageState extends State<CachedImage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return widget.placeholder ?? _buildDefaultPlaceholder();
+      if (widget.placeholder != null) {
+        return SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: Center(child: widget.placeholder),
+        );
+      }
+      return _buildDefaultPlaceholder();
     }
 
     final url = widget.imageUrl.trim();
     if (url.isEmpty || !url.startsWith('http')) {
-      return widget.errorBuilder(context, Exception('Invalid URL'), null);
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: Center(
+          child: widget.errorBuilder(context, Exception('Invalid URL'), null),
+        ),
+      );
+    }
+
+    Widget buildErrorWidget(BuildContext context, Object error, StackTrace? stackTrace) {
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: Center(
+          child: widget.errorBuilder(context, error, stackTrace),
+        ),
+      );
     }
 
     if (_localPath != null) {
@@ -116,7 +139,7 @@ class _CachedImageState extends State<CachedImage> {
               width: widget.width,
               height: widget.height,
               fit: widget.fit,
-              errorBuilder: widget.errorBuilder,
+              errorBuilder: buildErrorWidget,
             );
           },
         );
@@ -129,7 +152,7 @@ class _CachedImageState extends State<CachedImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      errorBuilder: widget.errorBuilder,
+      errorBuilder: buildErrorWidget,
     );
   }
 

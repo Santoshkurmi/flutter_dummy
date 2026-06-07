@@ -147,11 +147,26 @@ class _SettingsPageState extends State<SettingsPage> {
               value: authStore.customPageTransitionEnabled,
               onChanged: (val) async {
                 await authStore.setCustomPageTransitionEnabled(val);
+                await authStore.setDisableCardTransition(false);
                 setState(() {});
               },
               icon: Icons.animation_rounded,
               isDarkMode: isDarkMode,
             ),
+            if ((Platform.isAndroid && authStore.customPageTransitionEnabled) || (Platform.isIOS && !authStore.customPageTransitionEnabled)) ...[
+              const SizedBox(height: 12),
+              _buildToggleItem(
+                title: 'Disable Card Transition'.tr,
+                subtitle: 'Turn off the Hero sliding animation when opening account details and statement pages'.tr,
+                value: authStore.disableCardTransition,
+                onChanged: (val) async {
+                  await authStore.setDisableCardTransition(val);
+                  setState(() {});
+                },
+                icon: Icons.disabled_by_default_rounded,
+                isDarkMode: isDarkMode,
+              ),
+            ],
 
             const SizedBox(height: 24),
 
